@@ -1,22 +1,8 @@
 using UnityEngine;
 using Unity.Cinemachine;
 
-/// <summary>
-/// Drives a Cinemachine OrbitalFollow camera with the new Input System.
-/// Clamps vertical pitch so the camera cannot go underground or flip over the player.
-///
-/// SETUP:
-/// 1. GameObject → Cinemachine → Cinemachine Camera
-/// 2. Add CinemachineOrbitalFollow to it
-/// 3. Add CinemachineRotationComposer to it
-/// 4. Set Tracking Target + Look At to your player
-/// 5. On CinemachineOrbitalFollow, DISABLE the built-in Input Axis sources
-///    (clear the Input field on Horizontal Axis and Vertical Axis) so this
-///    script is the only thing driving them.
-/// 6. Also add a CinemachineDeoccluder component — set Strategy to
-///    "Pull Camera Forward" to handle wall collision automatically.
-/// 7. Attach this script to the same CinemachineCamera GameObject.
-/// </summary>
+// Run before PlayerInputHandler clears look input this frame
+[DefaultExecutionOrder(-20)]
 public class PlayerFollowCamera : MonoBehaviour
 {
     [Header("Cinemachine")]
@@ -24,8 +10,12 @@ public class PlayerFollowCamera : MonoBehaviour
     public CinemachineCamera vcam;
 
     [Header("Sensitivity")]
-    [Tooltip("Mouse look sensitivity. Try 0.3–0.8 for comfortable feel.")]
-    public float mouseSensitivity = 0.5f;
+    [Tooltip("Mouse look sensitivity. Try 0.15–0.4 for comfortable feel.")]
+    public float mouseSensitivity = 0.25f;
+
+    [Header("Smoothing")]
+    [Tooltip("How quickly the camera catches up to mouse input. Lower = more lag/weight, higher = snappier. 15–25 is a good range.")]
+    public float cameraSmoothing = 20f;
 
     [Header("Pitch Limits")]
     [Tooltip("Lowest the camera can look (negative = below horizon). -5 prevents ground clipping.")]
@@ -48,6 +38,10 @@ public class PlayerFollowCamera : MonoBehaviour
     private bool _lockOnActive;
     private Vector3 _lockOnWorldPoint;
 
+    // Smoothed target angles — we drive toward these each frame
+    private float _targetYaw;
+    private float _targetPitch;
+
     // ──────────────────────────────────────────────────────────────────────
 
     private void Start()
@@ -64,6 +58,13 @@ public class PlayerFollowCamera : MonoBehaviour
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
             _input = player.GetComponent<PlayerInputHandler>();
+
+        // Seed smoothed targets from whatever Cinemachine starts at
+        if (_orbital != null)
+        {
+            _targetYaw   = _orbital.HorizontalAxis.Value;
+            _targetPitch = _orbital.VerticalAxis.Value;
+        }
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -86,11 +87,15 @@ public class PlayerFollowCamera : MonoBehaviour
     private void ApplyMouseOrbit()
     {
         Vector2 look = _input.LookInput;
-        _orbital.HorizontalAxis.Value += look.x * mouseSensitivity;
 
-        // Clamp BEFORE adding so we never push past the limit — no jitter
-        float newPitch = _orbital.VerticalAxis.Value - look.y * mouseSensitivity;
-        _orbital.VerticalAxis.Value = Mathf.Clamp(newPitch, minPitch, maxPitch);
+        // Accumulate raw mouse delta into target angles
+        _targetYaw   += look.x * mouseSensitivity;
+        _targetPitch  = Mathf.Clamp(_targetPitch - look.y * mouseSensitivity, minPitch, maxPitch);
+
+        // Smoothly drive Cinemachine axes toward the targets each frame
+        float t = 1f - Mathf.Exp(-cameraSmoothing * Time.deltaTime);
+        _orbital.HorizontalAxis.Value = Mathf.LerpAngle(_orbital.HorizontalAxis.Value, _targetYaw, t);
+        _orbital.VerticalAxis.Value   = Mathf.Lerp(_orbital.VerticalAxis.Value, _targetPitch, t);
     }
 
     // ── Lock-on orbit ─────────────────────────────────────────────────────
@@ -107,15 +112,15 @@ public class PlayerFollowCamera : MonoBehaviour
         float targetPitch = desired.eulerAngles.x;
         if (targetPitch > 180f) targetPitch -= 360f;
 
-        // Still respect pitch limits even during lock-on
         targetPitch = Mathf.Clamp(targetPitch, minPitch, maxPitch);
 
         float speed = lockOnLerpSpeed * Time.deltaTime;
-        _orbital.HorizontalAxis.Value = Mathf.LerpAngle(_orbital.HorizontalAxis.Value, targetYaw, speed);
-        _orbital.VerticalAxis.Value = Mathf.LerpAngle(_orbital.VerticalAxis.Value, targetPitch, speed);
+        _targetYaw   = Mathf.LerpAngle(_targetYaw, targetYaw, speed);
+        _targetPitch = Mathf.LerpAngle(_targetPitch, targetPitch, speed);
+
+        _orbital.HorizontalAxis.Value = _targetYaw;
+        _orbital.VerticalAxis.Value   = _targetPitch;
     }
-
-
 
     // ── Zoom ──────────────────────────────────────────────────────────────
 

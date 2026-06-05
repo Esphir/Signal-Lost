@@ -13,8 +13,10 @@ public class PlayerController : MonoBehaviour
     [Header("Movement")]
     public float moveSpeed = 7f;
     public float sprintSpeed = 11f;
-    public float acceleration = 20f;
-    public float deceleration = 25f;
+    [Tooltip("Time in seconds to reach full speed from rest. Lower = snappier.")]
+    public float accelerationTime = 0.12f;
+    [Tooltip("Time in seconds to stop from full speed. Lower = snappier.")]
+    public float decelerationTime = 0.08f;
     public float turnSpeed = 720f;
 
     [Header("Jump & Gravity")]
@@ -45,9 +47,13 @@ public class PlayerController : MonoBehaviour
     private PlayerDodge _dodge;
     private PlayerLockOn _lockOn;
     private PlayerInputHandler _input;
+    private Animator _animator;
+
+    private static readonly int HashSpeed = Animator.StringToHash("Speed");
 
     private Vector3 _velocity;
     private Vector3 _moveVelocity;
+    private Vector3 _moveVelocityRef;   // SmoothDamp internal state
     private float _coyoteTimer;
     private float _jumpBufferTimer;
 
@@ -62,6 +68,8 @@ public class PlayerController : MonoBehaviour
 
         if (cameraTransform == null && Camera.main != null)
             cameraTransform = Camera.main.transform;
+
+        _animator = GetComponentInChildren<Animator>();
     }
 
     private void Update()
@@ -114,12 +122,15 @@ public class PlayerController : MonoBehaviour
         Vector3 wishDir = camForward * input.z + camRight * input.x;
 
         float targetSpeed = IsSprinting ? sprintSpeed : moveSpeed;
-        float accel = wishDir.sqrMagnitude > 0f ? acceleration : deceleration;
+        float smoothTime = wishDir.sqrMagnitude > 0f ? accelerationTime : decelerationTime;
 
-        _moveVelocity = Vector3.MoveTowards(_moveVelocity, wishDir * targetSpeed, accel * Time.deltaTime);
+        _moveVelocity = Vector3.SmoothDamp(_moveVelocity, wishDir * targetSpeed, ref _moveVelocityRef, smoothTime);
 
         IsMoving = _moveVelocity.sqrMagnitude > 0.01f;
         CurrentSpeed = _moveVelocity.magnitude;
+
+        if (_animator != null)
+            _animator.SetFloat(HashSpeed, CurrentSpeed / moveSpeed);
     }
 
     private void HandleJump()
@@ -170,11 +181,11 @@ public class PlayerController : MonoBehaviour
 
         if (lookDir.sqrMagnitude > 0.001f)
         {
-            // Only drive yaw (Y axis), lock X and Z to zero
             float yaw = Quaternion.LookRotation(lookDir).eulerAngles.y;
             Quaternion targetRot = Quaternion.Euler(0f, yaw, 0f);
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation, targetRot, turnSpeed * Time.deltaTime);
+            // Exponential smoothing — feels weighted rather than mechanical
+            float t = 1f - Mathf.Exp(-turnSpeed * 0.01f * Time.deltaTime);
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, t);
         }
     }
 

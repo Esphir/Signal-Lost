@@ -4,6 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Melee combo system with hit-stop, screen shake, and charge attack.
 /// Reads input from PlayerInputHandler.
+/// Drives Animator with triggers: AttackR, AttackL, HeavyAttack.
 /// </summary>
 public class PlayerCombat : MonoBehaviour
 {
@@ -41,6 +42,12 @@ public class PlayerCombat : MonoBehaviour
     private PlayerController   _controller;
     private PlayerDodge        _dodge;
     private PlayerInputHandler _input;
+    private Animator           _animator;
+
+    private static readonly int HashAttackR     = Animator.StringToHash("AttackR");
+    private static readonly int HashAttackL     = Animator.StringToHash("AttackL");
+    private static readonly int HashHeavyAttack = Animator.StringToHash("HeavyAttack");
+    private static readonly int HashAttackSpeed = Animator.StringToHash("AttackSpeed");
 
     private int   _comboStep;
     private float _comboTimer;
@@ -55,6 +62,7 @@ public class PlayerCombat : MonoBehaviour
         _controller = GetComponent<PlayerController>();
         _dodge      = GetComponent<PlayerDodge>();
         _input      = GetComponent<PlayerInputHandler>();
+        _animator   = GetComponentInChildren<Animator>();
     }
 
     private void Update()
@@ -74,22 +82,28 @@ public class PlayerCombat : MonoBehaviour
         if (_dodge != null && _dodge.IsRolling) return;
         if (IsAttacking) return;
 
+        // Track how long the button is held so we can decide light vs heavy on release
         if (_input.AttackPressedThisFrame)
         {
             _attackHoldTimer = 0f;
             _attackHeld      = true;
+            // Fire light attack immediately on press for instant feedback
+            StartCoroutine(PerformLightAttack());
+            return;
         }
 
         if (_attackHeld)
             _attackHoldTimer += Time.deltaTime;
 
-        if (_input.AttackReleasedThisFrame && _attackHeld)
+        // If still held past the charge threshold, upgrade to a heavy attack on release
+        if (_input.AttackReleasedThisFrame && _attackHeld && _attackHoldTimer >= chargeThreshold)
         {
             _attackHeld = false;
-            if (_attackHoldTimer >= chargeThreshold)
-                StartCoroutine(PerformHeavyAttack());
-            else
-                StartCoroutine(PerformLightAttack());
+            StartCoroutine(PerformHeavyAttack());
+        }
+        else if (_input.AttackReleasedThisFrame)
+        {
+            _attackHeld = false;
         }
     }
 
@@ -103,6 +117,13 @@ public class PlayerCombat : MonoBehaviour
     {
         IsAttacking = true;
         _comboTimer = 0f;
+
+        // Even steps → right hand, odd steps → left hand
+        if (_animator != null)
+        {
+            int trigger = (_comboStep % 2 == 0) ? HashAttackR : HashAttackL;
+            _animator.SetTrigger(trigger);
+        }
 
         _controller.ApplyRootMotion(transform.forward * attackLunge * Time.deltaTime * 10f);
 
@@ -126,6 +147,13 @@ public class PlayerCombat : MonoBehaviour
     private IEnumerator PerformHeavyAttack()
     {
         IsAttacking = true;
+
+        if (_animator != null)
+        {
+            _animator.SetFloat(HashAttackSpeed, 0.7f);   // slower = heavier feel
+            _animator.SetTrigger(HashHeavyAttack);
+        }
+
         yield return new WaitForSeconds(0.15f);
 
         _controller.ApplyRootMotion(transform.forward * chargeLunge * Time.deltaTime * 10f);
@@ -138,6 +166,7 @@ public class PlayerCombat : MonoBehaviour
         }
 
         yield return new WaitForSeconds(0.35f);
+        if (_animator != null) _animator.SetFloat(HashAttackSpeed, 1f);
         _comboStep  = 0;
         IsAttacking = false;
     }

@@ -162,8 +162,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   moveSpeed: 7
   sprintSpeed: 11
-  acceleration: 20
-  deceleration: 25
+  accelerationTime: 0.12
+  decelerationTime: 0.08
   turnSpeed: 720
   jumpHeight: 2.2
   fallMultiplier: 2.5
@@ -271,7 +271,7 @@ MonoBehaviour:
   m_ActionEvents: []
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: 
+  m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
 --- !u!114 &190376257
@@ -691,6 +691,11 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 1
+--- !u!4 &647650983 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -3494375403550423450, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+  m_PrefabInstance: {fileID: 1571941605}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -967,6 +972,24 @@ Transform:
   - {fileID: 393049814}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1530082777 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: -3858638838303969124, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+  m_PrefabInstance: {fileID: 1571941605}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1530082779
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1530082777}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dd95fd526fbaddd4e96feb1b5b051f7f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  originalSpine: {fileID: 647650983}
 --- !u!1001 &1571941605
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1026,7 +1049,7 @@ PrefabInstance:
     - target: {fileID: 5866666021909216657, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       propertyPath: m_Controller
       value: 
-      objectReference: {fileID: 9100000, guid: 773bf579c71bd3b4aa3f4ed40c97b7c5, type: 2}
+      objectReference: {fileID: 9100000, guid: 8b38541f364c25041acfe206266eaa0a, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -1058,6 +1081,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 190376257}
+    - targetCorrespondingSourceObject: {fileID: -3858638838303969124, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1530082779}
   m_SourcePrefab: {fileID: 100100000, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
 --- !u!1 &1930780932
 GameObject:
@@ -1110,6 +1136,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   vcam: {fileID: 1930780937}
   mouseSensitivity: 0.3
+  cameraSmoothing: 20
   minPitch: -15
   maxPitch: 45
   zoomSpeed: 3
