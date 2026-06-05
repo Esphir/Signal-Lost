@@ -118,7 +118,7 @@ public class PlayerCombat : MonoBehaviour
         IsAttacking = true;
         _comboTimer = 0f;
 
-        // Even steps → right hand, odd steps → left hand
+        // Even steps - right hand, odd steps - left hand
         if (_animator != null)
         {
             int trigger = (_comboStep % 2 == 0) ? HashAttackR : HashAttackL;
