@@ -1,10 +1,13 @@
 using UnityEngine;
+using Signal.Combat.Interfaces;
 
 /// <summary>
 /// AI turret that detects targets within range and fires lobbing projectiles at them.
 /// Predicts target movement to lead shots correctly.
 /// Attach to a turret GameObject. Assign barrelTip, projectilePrefab, and optionally
 /// a turretHead (the part that rotates horizontally) and barrelPivot (pitches up/down).
+/// If an IStunnable component (e.g. ImpactStunController) is present, the turret stops
+/// tracking and firing while stunned; immune variants simply omit that component.
 /// </summary>
 public class LobTurret : MonoBehaviour
 {
@@ -61,11 +64,19 @@ public class LobTurret : MonoBehaviour
     private Vector3 _lastTargetPos;
     private float _fireTimer;
     private Vector3 _predictedAimPoint;   // stored for gizmos & aiming
+    private IStunnable _stunnable;        // optional — absent on stun-immune variants
 
     // ──────────────────────────────────────────────────────────────────────
 
+    private void Awake()
+    {
+        _stunnable = GetComponent<IStunnable>();
+    }
+
     private void Update()
     {
+        if (_stunnable != null && _stunnable.IsStunned) return;
+
         FindTarget();
 
         if (_target == null) return;

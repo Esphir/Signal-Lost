@@ -1,11 +1,14 @@
 using System.Collections;
 using UnityEngine;
+using Signal.Combat.Interfaces;
 
 /// <summary>
 /// Dodge roll with i-frames and perfect-dodge slow-mo.
 /// Reads input from PlayerInputHandler.
+/// Implements IInvulnerabilityGate so HealthComponent automatically ignores damage during i-frames
+/// without any direct reference between the two systems.
 /// </summary>
-public class PlayerDodge : MonoBehaviour
+public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
 {
     [Header("Roll Settings")]
     public float rollDistance    = 5f;
@@ -23,6 +26,8 @@ public class PlayerDodge : MonoBehaviour
     // ── State ──────────────────────────────────────────────────────────────
     public bool IsRolling    { get; private set; }
     public bool IsInvincible { get; private set; }
+
+    bool IInvulnerabilityGate.IsInvulnerable => IsInvincible;
 
     // ── Private ───────────────────────────────────────────────────────────
     private PlayerController   _controller;

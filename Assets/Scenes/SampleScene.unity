@@ -174,7 +174,7 @@ MonoBehaviour:
   groundCheckOffset: 0.05
   groundMask:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 64
   cameraTransform: {fileID: 330585546}
 --- !u!143 &190376252
 CharacterController:
@@ -213,25 +213,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 180ae088bdeeaa64caef51472337a3aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxComboSteps: 3
-  comboWindow: 0.5
-  attackLunge: 1.5
-  lightDamage: 10
-  heavyDamage: 35
-  hitRadius: 1.2
-  hitOffset: 1
+  lightAttackConfig: {fileID: 11400000, guid: 81b12c96b8b27f3488923418cb1da90b, type: 2}
+  heavyAttackConfig: {fileID: 11400000, guid: 8464b5a80b881e7418646fc3dee8b5ca, type: 2}
+  kickConfig: {fileID: 11400000, guid: bea3b7b023c7cb549bf6afe02a852893, type: 2}
   hitMask:
     serializedVersion: 2
     m_Bits: 8
-  chargeThreshold: 0.5
-  chargeLunge: 4
-  hitStopDuration: 0.06
+  maxHitTargets: 8
   hitStopScale: 0.05
+  inputBufferTime: 0.3
   cameraShake: {fileID: 0}
-  lightShakeAmount: 0.1
-  lightShakeDuration: 0.1
-  heavyShakeAmount: 0.3
-  heavyShakeDuration: 0.2
+  upperBodyLayerName: Upper Body
+  upperBodyBlendSpeed: 10
+  upperBodyHoldTime: 0.35
+  kickLayerName: Kick Layer
 --- !u!114 &190376255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -292,6 +287,21 @@ MonoBehaviour:
   lockOnIndicator: {fileID: 0}
   targetHeightOffset: 1
   cycleSensitivity: 0.5
+--- !u!114 &190376258
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 190376240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4fcfcf48f19f05429a27c4aae36012f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 100
+  startAtMaxHealth: 1
+  startingHealth: 100
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -474,7 +484,7 @@ GameObject:
   - component: {fileID: 393049817}
   - component: {fileID: 393049816}
   - component: {fileID: 393049815}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Cube
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -821,7 +831,11 @@ GameObject:
   - component: {fileID: 1239947384}
   - component: {fileID: 1239947383}
   - component: {fileID: 1239947382}
-  m_Layer: 0
+  - component: {fileID: 1239947390}
+  - component: {fileID: 1239947391}
+  - component: {fileID: 1239947392}
+  - component: {fileID: 1239947393}
+  m_Layer: 3
   m_Name: Cube
   m_TagString: Enemy
   m_Icon: {fileID: 0}
@@ -972,6 +986,68 @@ Transform:
   - {fileID: 393049814}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1239947390
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239947381}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4fcfcf48f19f05429a27c4aae36012f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealth: 1115.6
+  startAtMaxHealth: 1
+  startingHealth: 1396.7
+--- !u!114 &1239947391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239947381}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55d83faa54146f946a3b7307df6895cf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  knockbackMultiplier: 1
+--- !u!114 &1239947392
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239947381}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac21571e915769c4787d08e246baa566, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stunDuration: 2
+  knockbackWindow: 1.5
+  minImpactSpeed: 3
+  solidCollisionMask:
+    serializedVersion: 2
+    m_Bits: 65
+--- !u!114 &1239947393
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1239947381}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3ed62af8bdf4791bc0d66a00ca2593a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  destroyDelay: 2
+  disableCollidersOnDeath: 1
+  behavioursToDisable:
+  - {fileID: 1239947382}
 --- !u!1 &1530082777 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -3858638838303969124, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
@@ -1081,6 +1157,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 190376257}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 190376258}
     - targetCorrespondingSourceObject: {fileID: -3858638838303969124, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1530082779}

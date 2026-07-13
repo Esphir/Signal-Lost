@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Signal.Combat;
+using Signal.Combat.Interfaces;
 
 /// <summary>
 /// Central input reader. Attach to the player alongside all other player scripts.
@@ -12,12 +14,16 @@ using UnityEngine.InputSystem;
 ///   Jump        - Button
 ///   Sprint      - Button
 ///   Dodge       - Button
-///   Attack      - Button
+///   Attack      - Button           (light attack)
+///   HeavyAttack - Button           (heavy attack — separate binding, e.g. Middle Mouse Button)
 ///   Kick        - Button
 ///   LockOn      - Button
+///
+/// Implements ICombatInputSource so combat code depends on that abstraction rather than this
+/// concrete MonoBehaviour.
 /// </summary>
 [RequireComponent(typeof(PlayerInput))]
-public class PlayerInputHandler : MonoBehaviour
+public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
 {
     // ── Polled state ──────────────────────────────────────────────────────
     public Vector2 MoveInput             { get; private set; }
@@ -32,10 +38,41 @@ public class PlayerInputHandler : MonoBehaviour
     public bool    AttackPressed            { get; private set; }
     public bool    AttackPressedThisFrame   { get; private set; }
     public bool    AttackReleasedThisFrame  { get; private set; }
+    public bool    HeavyAttackHeld              { get; private set; }
+    public bool    HeavyAttackPressedThisFrame   { get; private set; }
+    public bool    HeavyAttackReleasedThisFrame  { get; private set; }
     public bool    KickPressedThisFrame     { get; private set; }
     public bool    LockOnPressedThisFrame   { get; private set; }
 
+    // ── Actions polled directly (held state) ─────────────────────────────
+    private InputAction _jumpAction;
+    private InputAction _sprintAction;
+    private InputAction _heavyAttackAction;
+
     // ──────────────────────────────────────────────────────────────────────
+
+    private void Awake()
+    {
+        PlayerInput playerInput = GetComponent<PlayerInput>();
+        _jumpAction        = playerInput.actions.FindAction("Jump");
+        _sprintAction      = playerInput.actions.FindAction("Sprint");
+        _heavyAttackAction = playerInput.actions.FindAction("HeavyAttack");
+
+        if (_heavyAttackAction == null)
+            Debug.LogError("[Combat] PlayerInputHandler: 'HeavyAttack' action not found in the assigned Input Actions asset — heavy attacks will not work.", this);
+    }
+
+    private void Update()
+    {
+        // Held states are polled from the actions each frame rather than trusting Send Messages
+        // release callbacks: Button-action 'canceled' messages proved unreliable here, and a
+        // missed release leaves a held flag stuck true forever — which parks hold-to-charge
+        // attacks in their wait loop (and sticks sprint / low-jump gravity). Coroutines resume
+        // after Update, so charge loops always read the real button state.
+        if (_jumpAction != null)        JumpHeld        = _jumpAction.IsPressed();
+        if (_sprintAction != null)      SprintHeld      = _sprintAction.IsPressed();
+        if (_heavyAttackAction != null) HeavyAttackHeld = _heavyAttackAction.IsPressed();
+    }
 
     private void LateUpdate()
     {
@@ -44,6 +81,8 @@ public class PlayerInputHandler : MonoBehaviour
         DodgePressedThisFrame    = false;
         AttackPressedThisFrame   = false;
         AttackReleasedThisFrame  = false;
+        HeavyAttackPressedThisFrame  = false;
+        HeavyAttackReleasedThisFrame = false;
         KickPressedThisFrame     = false;
         LockOnPressedThisFrame   = false;
         LookInput                = Vector2.zero;  // mouse delta resets each frame
@@ -80,6 +119,14 @@ public class PlayerInputHandler : MonoBehaviour
         AttackPressed = value.isPressed;
         if (value.isPressed)  AttackPressedThisFrame  = true;
         if (!value.isPressed) AttackReleasedThisFrame = true;
+    }
+
+    public void OnHeavyAttack(InputValue value)
+    {
+        HeavyAttackHeld = value.isPressed;
+        if (value.isPressed)  HeavyAttackPressedThisFrame  = true;
+        if (!value.isPressed) HeavyAttackReleasedThisFrame = true;
+        CombatLog.Info(value.isPressed ? "HeavyAttack input pressed" : "HeavyAttack input released", this);
     }
 
     public void OnKick(InputValue value)

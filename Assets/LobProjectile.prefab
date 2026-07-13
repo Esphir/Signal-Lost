@@ -153,7 +153,7 @@ MonoBehaviour:
   splashRadius: 3
   damageMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 1
   impactVFX: {fileID: 0}
   lifetime: 10
   orientToVelocity: 1
