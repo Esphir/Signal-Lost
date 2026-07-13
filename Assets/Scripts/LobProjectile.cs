@@ -1,104 +1,141 @@
-﻿using UnityEngine;
+using System;
+using UnityEngine;
+using Signal.Combat;
+using Signal.Combat.Detection;
+using Signal.Combat.Projectiles;
 
 /// <summary>
-/// A physics-driven lobbing projectile.
-/// Attach to a Rigidbody GameObject used as the projectile prefab.
-/// Call Launch(velocity) after instantiation, or let LobTurret do it automatically.
+/// A physics-driven explosive projectile. All gameplay data comes from a
+/// <see cref="ProjectileConfigSO"/> — this component only executes it.
+/// Explodes once on collision (or despawns quietly at end of lifetime), damaging every
+/// IDamageable inside the explosion radius via the shared combat resolver.
+/// Supports pooling: when a despawn handler is set (by <see cref="ProjectilePool"/>) the
+/// projectile is released instead of destroyed.
 /// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class LobProjectile : MonoBehaviour
 {
-    [Header("Damage")]
-    public float damage = 25f;
-    public float splashRadius = 3f;         // 0 = no splash
-    public LayerMask damageMask;            // What layers receive damage
+    [SerializeField]
+    [Tooltip("All projectile data (damage, gravity, explosion, lifetime) lives in this asset.")]
+    private ProjectileConfigSO config;
 
-    [Header("Impact")]
-    [Tooltip("Particle effect spawned on impact. Optional.")]
-    public GameObject impactVFX;
-
-    [Tooltip("Seconds before self-destructing if it never hits anything.")]
-    public float lifetime = 10f;
-
-    [Header("Trail")]
+    [SerializeField]
     [Tooltip("Orient the projectile along its velocity each frame.")]
-    public bool orientToVelocity = true;
+    private bool orientToVelocity = true;
+
+    public ProjectileConfigSO Config => config;
 
     // ── Private ───────────────────────────────────────────────────────────
     private Rigidbody _rb;
-    private bool _hasLaunched;
-    private bool _hasHit;
-    private float _spawnTime;
+    private OverlapSphereHitDetector _detector;
+    private readonly CombatHitResolver _resolver = new CombatHitResolver();
+    private Action<LobProjectile> _despawnHandler;
+
+    private bool _launched;
+    private bool _exploded;
+    private bool _despawned;
+    private float _launchTime;
+    private float _despawnAt;
 
     // ──────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
         _rb = GetComponent<Rigidbody>();
-        _rb.useGravity = true;
         _rb.interpolation = RigidbodyInterpolation.Interpolate;
         _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        // Gravity is applied manually so the config's gravity scale works.
+        _rb.useGravity = false;
 
-        _spawnTime = Time.time;
-        Destroy(gameObject, lifetime);
+        if (config == null)
+        {
+            Debug.LogError($"[Combat] LobProjectile '{name}' has no ProjectileConfigSO assigned.", this);
+            enabled = false;
+            return;
+        }
+
+        _detector = new OverlapSphereHitDetector(config.maxExplosionTargets);
     }
+
+    // ── Public API ────────────────────────────────────────────────────────
+
+    /// <summary>Set by ProjectilePool so despawning releases instead of destroying. Optional.</summary>
+    public void SetDespawnHandler(Action<LobProjectile> handler) => _despawnHandler = handler;
+
+    /// <summary>Launches with the given velocity and resets all per-flight state (pool-safe).</summary>
+    public void Launch(Vector3 velocity)
+    {
+        _launched = true;
+        _exploded = false;
+        _despawned = false;
+        _launchTime = Time.time;
+        _despawnAt = Time.time + config.lifetime;
+        _rb.linearVelocity = velocity;
+        _rb.angularVelocity = Vector3.zero;
+    }
+
+    // ── Flight ────────────────────────────────────────────────────────────
 
     private void FixedUpdate()
     {
-        if (!_hasLaunched || _hasHit) return;
+        if (!_launched || _exploded) return;
+
+        _rb.AddForce(Physics.gravity * config.gravityScale, ForceMode.Acceleration);
 
         if (orientToVelocity && _rb.linearVelocity.sqrMagnitude > 0.1f)
             transform.rotation = Quaternion.LookRotation(_rb.linearVelocity);
     }
 
-    // ── Public API ────────────────────────────────────────────────────────
-
-    /// <summary>Sets the Rigidbody velocity to launch the projectile.</summary>
-    public void Launch(Vector3 velocity)
+    private void Update()
     {
-        _rb.linearVelocity = velocity;
-        _hasLaunched = true;
+        if (_launched && !_exploded && Time.time >= _despawnAt)
+            Despawn(); // timed out mid-air — vanish without exploding
     }
 
-    // ── Collision ─────────────────────────────────────────────────────────
+    // ── Explosion ─────────────────────────────────────────────────────────
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (_hasHit) return;
-        // Ignore collisions in the first 100ms to prevent self-collision on spawn
-        if (Time.time - _spawnTime < 0.1f) return;
-        _hasHit = true;
+        if (_exploded || !_launched) return;
+        // Ignore contacts in the first 100ms to prevent self-collision on spawn.
+        if (Time.time - _launchTime < 0.1f) return;
 
-        // Splash damage
-        if (splashRadius > 0f)
-        {
-            foreach (Collider col in Physics.OverlapSphere(transform.position, splashRadius, damageMask))
-            {
-                // Look for any component with a TakeDamage method via interface or SendMessage.
-                col.SendMessage("TakeDamage", damage, SendMessageOptions.DontRequireReceiver);
-            }
-        }
-        else
-        {
-            // Direct hit only
-            collision.collider.SendMessage("TakeDamage", damage, SendMessageOptions.DontRequireReceiver);
-        }
+        Explode(collision.GetContact(0).point);
+    }
 
-        // Spawn VFX
-        if (impactVFX != null)
-            Instantiate(impactVFX, transform.position, Quaternion.identity);
+    private void Explode(Vector3 point)
+    {
+        _exploded = true; // hard guard: one explosion per flight
 
-        Destroy(gameObject);
+        int count = _detector.Detect(point, config.explosionRadius, config.damageMask);
+        _resolver.BeginSwing();
+        int hits = _resolver.ApplyDamage(_detector.Buffer, count, config.damage, gameObject, point);
+        CombatLog.Info($"'{name}' exploded: {count} collider(s) in radius {config.explosionRadius:0.#}, {hits} target(s) damaged for {config.damage:0.#}.", this);
+
+        if (config.explosionVfx != null)
+            Instantiate(config.explosionVfx, point, Quaternion.identity);
+        if (config.explosionSfx != null)
+            AudioSource.PlayClipAtPoint(config.explosionSfx, point, config.sfxVolume);
+
+        Despawn();
+    }
+
+    private void Despawn()
+    {
+        if (_despawned) return;
+        _despawned = true;
+        _launched = false;
+
+        if (_despawnHandler != null) _despawnHandler(this);
+        else Destroy(gameObject);
     }
 
     // ── Gizmos ────────────────────────────────────────────────────────────
 
     private void OnDrawGizmosSelected()
     {
-        if (splashRadius > 0f)
-        {
-            Gizmos.color = new Color(1f, 0.3f, 0f, 0.4f);
-            Gizmos.DrawWireSphere(transform.position, splashRadius);
-        }
+        if (config == null) return;
+        Gizmos.color = new Color(1f, 0.3f, 0f, 0.4f);
+        Gizmos.DrawWireSphere(transform.position, config.explosionRadius);
     }
 }

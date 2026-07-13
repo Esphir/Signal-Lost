@@ -1,5 +1,6 @@
 using UnityEngine;
 using Signal.Combat.Interfaces;
+using Signal.Combat.Projectiles;
 
 /// <summary>
 /// AI turret that detects targets within range and fires lobbing projectiles at them.
@@ -65,12 +66,29 @@ public class LobTurret : MonoBehaviour
     private float _fireTimer;
     private Vector3 _predictedAimPoint;   // stored for gizmos & aiming
     private IStunnable _stunnable;        // optional — absent on stun-immune variants
+    private ProjectilePool _pool;         // optional — instantiates directly when absent
+    private LobProjectile _projectileTemplate;
+    private float _projectileGravity;     // effective gravity from the projectile's config
 
     // ──────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
         _stunnable = GetComponent<IStunnable>();
+        _pool = GetComponent<ProjectilePool>();
+
+        _projectileTemplate = projectilePrefab != null ? projectilePrefab.GetComponent<LobProjectile>() : null;
+        if (_projectileTemplate == null)
+            Debug.LogError("[Combat] LobTurret: projectile prefab has no LobProjectile component.", this);
+
+        // Prediction must use the gravity the projectile will actually experience (its config's
+        // gravity scale), or lead shots would miss whenever the scale isn't 1.
+        _projectileGravity = _projectileTemplate != null && _projectileTemplate.Config != null
+            ? _projectileTemplate.Config.EffectiveGravity
+            : Mathf.Abs(Physics.gravity.y);
+
+        if (_pool != null && !_pool.HasPrefab && _projectileTemplate != null)
+            _pool.SetPrefab(_projectileTemplate);
     }
 
     private void Update()
@@ -84,7 +102,8 @@ public class LobTurret : MonoBehaviour
         SampleTargetVelocity();
 
         _predictedAimPoint = PredictInterceptPoint(
-            barrelTip.position, _target.position, _targetVelocity, lobAngle, predictionIterations);
+            barrelTip.position, _target.position, _targetVelocity, lobAngle, predictionIterations,
+            _projectileGravity);
 
         RotateTowardPoint(_predictedAimPoint);
 
@@ -165,13 +184,13 @@ public class LobTurret : MonoBehaviour
     /// </summary>
     public static Vector3 PredictInterceptPoint(
         Vector3 origin, Vector3 targetPos, Vector3 targetVelocity,
-        float angleDeg, int iterations)
+        float angleDeg, int iterations, float gravity)
     {
         Vector3 intercept = targetPos;
 
         for (int i = 0; i < iterations; i++)
         {
-            Vector3? vel = CalculateLobVelocity(origin, intercept, angleDeg);
+            Vector3? vel = CalculateLobVelocity(origin, intercept, angleDeg, gravity);
             if (vel == null) break; // unreachable — fall back to current best guess
 
             float flightTime = EstimateFlightTime(vel.Value, origin, intercept);
@@ -231,12 +250,16 @@ public class LobTurret : MonoBehaviour
 
     private void Fire(Vector3 aimPoint)
     {
-        if (projectilePrefab == null || barrelTip == null) return;
+        if (_projectileTemplate == null || barrelTip == null) return;
 
-        Vector3? velocity = CalculateLobVelocity(barrelTip.position, aimPoint, lobAngle);
+        Vector3? velocity = CalculateLobVelocity(barrelTip.position, aimPoint, lobAngle, _projectileGravity);
         if (velocity == null) return;
 
-        GameObject proj = Instantiate(projectilePrefab, barrelTip.position, Quaternion.identity);
+        // Pooled when a ProjectilePool sits next to this turret; plain instantiate otherwise.
+        LobProjectile proj = _pool != null
+            ? _pool.Spawn(barrelTip.position, Quaternion.identity)
+            : Instantiate(_projectileTemplate, barrelTip.position, Quaternion.identity);
+        if (proj == null) return;
 
         // Prevent the projectile from immediately colliding with the turret itself
         Collider projCol = proj.GetComponent<Collider>();
@@ -246,17 +269,16 @@ public class LobTurret : MonoBehaviour
                 Physics.IgnoreCollision(projCol, turretCol);
         }
 
-        Rigidbody rb = proj.GetComponent<Rigidbody>();
-        if (rb != null) rb.linearVelocity = velocity.Value;
+        proj.Launch(velocity.Value);
     }
 
     /// <summary>
-    /// Calculates the launch velocity for a ballistic arc at a fixed angle.
-    /// Returns null if the target is unreachable at the given angle.
+    /// Calculates the launch velocity for a ballistic arc at a fixed angle under the given
+    /// gravity magnitude. Returns null if the target is unreachable at the given angle.
     /// </summary>
-    public static Vector3? CalculateLobVelocity(Vector3 origin, Vector3 target, float angleDeg)
+    public static Vector3? CalculateLobVelocity(Vector3 origin, Vector3 target, float angleDeg, float gravity)
     {
-        float g = Mathf.Abs(Physics.gravity.y);
+        float g = gravity;
         float angleRad = angleDeg * Mathf.Deg2Rad;
 
         Vector3 toTarget = target - origin;

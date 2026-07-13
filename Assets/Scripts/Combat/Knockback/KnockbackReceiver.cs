@@ -26,6 +26,9 @@ namespace Signal.Combat.Knockback
 
         public void ApplyKnockback(Vector3 force, ForceMode forceMode)
         {
+            // Kinematic bodies (e.g. an enemy mid-leap under scripted motion) can't take forces.
+            if (_rigidbody.isKinematic) return;
+
             _rigidbody.AddForce(force * knockbackMultiplier, forceMode);
             KnockbackApplied?.Invoke(force);
         }
