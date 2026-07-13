@@ -15,7 +15,7 @@ MonoBehaviour:
   damage: 25
   damageMask:
     serializedVersion: 2
-    m_Bits: 8
+    m_Bits: 256
   maxExplosionTargets: 12
   speed: 20
   gravityScale: 1

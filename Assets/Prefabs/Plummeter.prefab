@@ -18,9 +18,14 @@ GameObject:
   - component: {fileID: 832212653146474616}
   - component: {fileID: 6100724910009048537}
   - component: {fileID: 7130117319680664962}
-  m_Layer: 0
+  - component: {fileID: 5152042692491368001}
+  - component: {fileID: 5152042692491368002}
+  - component: {fileID: 5152042692491368003}
+  - component: {fileID: 5152042692491368004}
+  - component: {fileID: 5152042692491368005}
+  m_Layer: 3
   m_Name: Plummeter
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -172,7 +177,7 @@ MonoBehaviour:
   config: {fileID: 11400000, guid: fe9e5a8cf03742bf8f1d748f0c9f67c0, type: 2}
   hitMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 256
 --- !u!114 &832212653146474616
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -219,3 +224,77 @@ MonoBehaviour:
   disableCollidersOnDeath: 0
   behavioursToDisable:
   - {fileID: 4608299661194689317}
+  - {fileID: 832212653146474616}
+  - {fileID: 8909212559469331284}
+--- !u!114 &5152042692491368001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8111276562493136826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55d83faa54146f946a3b7307df6895cf, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  knockbackMultiplier: 1
+--- !u!114 &5152042692491368002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8111276562493136826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac21571e915769c4787d08e246baa566, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  stunDuration: 2
+  knockbackWindow: 1.5
+  minImpactSpeed: 3
+  solidCollisionMask:
+    serializedVersion: 2
+    m_Bits: 193
+--- !u!114 &5152042692491368003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8111276562493136826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a2082b2ba1b4ab40ac5420808b6ec57, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+--- !u!114 &5152042692491368004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8111276562493136826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2d7c807455e6b34e8c823c8dac85244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  indicator: {fileID: 0}
+  autoIndicatorOffset: {x: 0, y: 2.2, z: 0}
+--- !u!114 &5152042692491368005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8111276562493136826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f88d5bdf418a47edae962bba464e891e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  flashDuration: 0.07
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  renderers: []

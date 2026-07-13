@@ -9,13 +9,13 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Hit Mask
+  - Enemy Hit Mask
   - Water
   - UI
   - Ground
   - Wall
-  - 
-  - 
+  - Player Hit Mask
+  -
   - 
   - 
   - 

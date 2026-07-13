@@ -395,10 +395,18 @@ public class PlayerCombat : MonoBehaviour, IAttacker
 
     private void OnDrawGizmosSelected()
     {
-        if (lightAttackConfig == null) return;
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(
-            transform.position + transform.forward * lightAttackConfig.hitOffset + Vector3.up * 0.8f,
-            lightAttackConfig.hitRadius);
+        // Live inspector values straight from the config assets:
+        // red = light, orange = heavy (full-charge radius), blue = kick.
+        Vector3 origin = transform.position + Vector3.up * 0.8f;
+        DrawAttackRangeGizmo(lightAttackConfig, Color.red, origin);
+        DrawAttackRangeGizmo(heavyAttackConfig, new Color(1f, 0.5f, 0f), origin);
+        DrawAttackRangeGizmo(kickConfig, Color.blue, origin);
+    }
+
+    private void DrawAttackRangeGizmo(AttackConfigBaseSO config, Color color, Vector3 origin)
+    {
+        if (config == null) return;
+        Gizmos.color = color;
+        Gizmos.DrawWireSphere(origin + transform.forward * config.hitOffset, config.hitRadius);
     }
 }

@@ -19,7 +19,7 @@ public class LobTurret : MonoBehaviour
     [Tooltip("The horizontal rotating part of the turret (yaw).")]
     public Transform turretHead;
 
-    [Tooltip("The vertical pitching part of the turret (pitch). Can be null.")]
+    [Tooltip("Projectile spawn point (and vertical pitch pivot). Falls back to Barrel Tip with a console warning when unassigned.")]
     public Transform barrelPivot;
 
     [Tooltip("Projectile prefab to spawn.")]
@@ -72,10 +72,18 @@ public class LobTurret : MonoBehaviour
 
     // ──────────────────────────────────────────────────────────────────────
 
+    /// <summary>Where projectiles spawn: BarrelPivot when assigned, else BarrelTip, else the root.</summary>
+    private Transform SpawnPoint =>
+        barrelPivot != null ? barrelPivot :
+        barrelTip != null ? barrelTip : transform;
+
     private void Awake()
     {
         _stunnable = GetComponent<IStunnable>();
         _pool = GetComponent<ProjectilePool>();
+
+        if (barrelPivot == null)
+            Debug.LogWarning($"[Combat] LobTurret '{name}': 'Barrel Pivot' is not assigned — projectiles will spawn from {(barrelTip != null ? "Barrel Tip" : "the turret root")} instead.", this);
 
         _projectileTemplate = projectilePrefab != null ? projectilePrefab.GetComponent<LobProjectile>() : null;
         if (_projectileTemplate == null)
@@ -102,7 +110,7 @@ public class LobTurret : MonoBehaviour
         SampleTargetVelocity();
 
         _predictedAimPoint = PredictInterceptPoint(
-            barrelTip.position, _target.position, _targetVelocity, lobAngle, predictionIterations,
+            SpawnPoint.position, _target.position, _targetVelocity, lobAngle, predictionIterations,
             _projectileGravity);
 
         RotateTowardPoint(_predictedAimPoint);
@@ -147,8 +155,8 @@ public class LobTurret : MonoBehaviour
     private bool HasLineOfSight()
     {
         if (_target == null) return false;
-        Vector3 dir = _target.position - barrelTip.position;
-        return !Physics.Raycast(barrelTip.position, dir.normalized, dir.magnitude, obstructionMask);
+        Vector3 dir = _target.position - SpawnPoint.position;
+        return !Physics.Raycast(SpawnPoint.position, dir.normalized, dir.magnitude, obstructionMask);
     }
 
     // ── Velocity sampling ─────────────────────────────────────────────────
@@ -250,15 +258,17 @@ public class LobTurret : MonoBehaviour
 
     private void Fire(Vector3 aimPoint)
     {
-        if (_projectileTemplate == null || barrelTip == null) return;
+        if (_projectileTemplate == null) return;
 
-        Vector3? velocity = CalculateLobVelocity(barrelTip.position, aimPoint, lobAngle, _projectileGravity);
+        // IsAimedAt() has already verified we're facing the target before this is called.
+        Vector3 origin = SpawnPoint.position;
+        Vector3? velocity = CalculateLobVelocity(origin, aimPoint, lobAngle, _projectileGravity);
         if (velocity == null) return;
 
         // Pooled when a ProjectilePool sits next to this turret; plain instantiate otherwise.
         LobProjectile proj = _pool != null
-            ? _pool.Spawn(barrelTip.position, Quaternion.identity)
-            : Instantiate(_projectileTemplate, barrelTip.position, Quaternion.identity);
+            ? _pool.Spawn(origin, Quaternion.identity)
+            : Instantiate(_projectileTemplate, origin, Quaternion.identity);
         if (proj == null) return;
 
         // Prevent the projectile from immediately colliding with the turret itself
@@ -302,20 +312,33 @@ public class LobTurret : MonoBehaviour
 
     private void OnDrawGizmosSelected()
     {
+        // Yellow = attack/detection range.
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, detectionRange);
 
-        if (_target == null || barrelTip == null) return;
+        // Orange = explosion radius of the configured projectile (live from its config asset),
+        // drawn at the predicted landing point while playing, else around the turret.
+        LobProjectile template = _projectileTemplate != null ? _projectileTemplate
+            : projectilePrefab != null ? projectilePrefab.GetComponent<LobProjectile>() : null;
+        if (template != null && template.Config != null)
+        {
+            Gizmos.color = new Color(1f, 0.5f, 0f);
+            Vector3 explosionCenter = Application.isPlaying && _predictedAimPoint != Vector3.zero
+                ? _predictedAimPoint
+                : transform.position;
+            Gizmos.DrawWireSphere(explosionCenter, template.Config.explosionRadius);
+        }
 
-        // Current target position
+        if (_target == null) return;
+
+        // Red = current target, cyan = predicted intercept.
         Gizmos.color = Color.red;
-        Gizmos.DrawLine(barrelTip.position, _target.position);
+        Gizmos.DrawLine(SpawnPoint.position, _target.position);
 
-        // Predicted intercept point
         if (showPredictionGizmo && _predictedAimPoint != Vector3.zero)
         {
             Gizmos.color = Color.cyan;
-            Gizmos.DrawLine(barrelTip.position, _predictedAimPoint);
+            Gizmos.DrawLine(SpawnPoint.position, _predictedAimPoint);
             Gizmos.DrawWireSphere(_predictedAimPoint, 0.3f);
         }
     }

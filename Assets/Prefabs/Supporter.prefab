@@ -16,9 +16,16 @@ GameObject:
   - component: {fileID: 6213597194477930048}
   - component: {fileID: 3996999485723740308}
   - component: {fileID: 9097924222050554606}
-  m_Layer: 0
+  - component: {fileID: 6021129370711652001}
+  - component: {fileID: 6021129370711652002}
+  - component: {fileID: 6021129370711652003}
+  - component: {fileID: 6021129370711652004}
+  - component: {fileID: 6021129370711652005}
+  - component: {fileID: 6021129370711652006}
+  - component: {fileID: 6021129370711652007}
+  m_Layer: 3
   m_Name: Supporter
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -137,7 +144,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!114 &6213597194477930048
 MonoBehaviour:
@@ -167,12 +174,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: da438d1f362fb4c419b4776eac3594e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  buff: {fileID: 0}
+  buff: {fileID: 11400000, guid: d29eb262232d4fd3b916304c2ce4c908, type: 2}
   cooldown: 6
   buffRadius: 8
   allyMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
   maxAllies: 8
 --- !u!114 &9097924222050554606
 MonoBehaviour:
@@ -191,7 +198,112 @@ MonoBehaviour:
   allySearchRadius: 12
   allyMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
   coverDistance: 2.5
   retreatDistance: 8
   repositionThreshold: 0.75
+--- !u!114 &6021129370711652001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1513119564538955794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4fcfcf48f19f05429a27c4aae36012f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  maxHealth: 60
+  startAtMaxHealth: 1
+  startingHealth: 60
+--- !u!114 &6021129370711652002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1513119564538955794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3ed62af8bdf4791bc0d66a00ca2593a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  destroyDelay: 2
+  disableCollidersOnDeath: 1
+  behavioursToDisable:
+  - {fileID: 6213597194477930048}
+  - {fileID: 3996999485723740308}
+  - {fileID: 9097924222050554606}
+--- !u!114 &6021129370711652003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1513119564538955794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 55d83faa54146f946a3b7307df6895cf, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  knockbackMultiplier: 1
+--- !u!114 &6021129370711652004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1513119564538955794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac21571e915769c4787d08e246baa566, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  stunDuration: 2
+  knockbackWindow: 1.5
+  minImpactSpeed: 3
+  solidCollisionMask:
+    serializedVersion: 2
+    m_Bits: 193
+--- !u!114 &6021129370711652005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1513119564538955794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2a2082b2ba1b4ab40ac5420808b6ec57, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+--- !u!114 &6021129370711652006
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1513119564538955794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2d7c807455e6b34e8c823c8dac85244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  indicator: {fileID: 0}
+  autoIndicatorOffset: {x: 0, y: 2.2, z: 0}
+--- !u!114 &6021129370711652007
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1513119564538955794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f88d5bdf418a47edae962bba464e891e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  flashDuration: 0.07
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  renderers: []
