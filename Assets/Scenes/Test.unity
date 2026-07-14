@@ -218,18 +218,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lightAttackConfig: {fileID: 11400000, guid: 81b12c96b8b27f3488923418cb1da90b, type: 2}
   heavyAttackConfig: {fileID: 11400000, guid: 8464b5a80b881e7418646fc3dee8b5ca, type: 2}
-  kickConfig: {fileID: 11400000, guid: bea3b7b023c7cb549bf6afe02a852893, type: 2}
+  bashConfig: {fileID: 11400000, guid: bea3b7b023c7cb549bf6afe02a852893, type: 2}
   hitMask:
     serializedVersion: 2
     m_Bits: 8
   maxHitTargets: 8
   hitStopScale: 0.05
+  critDamageMultiplier: 2
   inputBufferTime: 0.3
   cameraShake: {fileID: 0}
   upperBodyLayerName: Upper Body
   upperBodyBlendSpeed: 10
   upperBodyHoldTime: 0.35
-  kickLayerName: Kick Layer
+  bashLayerName: Bash Layer
+  spineProxySuspendWeight: 0.5
 --- !u!114 &190376255
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -350,6 +352,34 @@ MonoBehaviour:
   movementLayerName: Movement
   layerBlendSpeed: 12
   spineProxySuspendWeight: 0.5
+--- !u!114 &190376263
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 190376240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b08df33533c4cd0ec84713fc381558b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &190376264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 190376240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efeb582c992754ab934ecf4483276db1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  upgradeTable: {fileID: 11400000, guid: db97d4b0b619d096cb488c3313e48324, type: 2}
+  choiceCount: 3
+  pauseDuringChoice: 1
+  debugHotkey: 1
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -882,10 +912,62 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 190376262}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 190376263}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 190376264}
     - targetCorrespondingSourceObject: {fileID: -3858638838303969124, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1530082779}
   m_SourcePrefab: {fileID: 100100000, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+--- !u!1 &1900000201
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1900000202}
+  - component: {fileID: 1900000203}
+  m_Layer: 0
+  m_Name: GameplayHUD
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1900000202
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000201}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1900000203
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1900000201}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 809d1ea28d90b2eea9a98cd22cb6e975, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerHealthBarPrefab: {fileID: 8300000000000000003, guid: 033449bde0c3cc66c1f19d1be07afbd4, type: 3}
+  targetCanvas: {fileID: 0}
 --- !u!1 &1930780932
 GameObject:
   m_ObjectHideFlags: 0
@@ -1306,6 +1388,10 @@ PrefabInstance:
       propertyPath: maxHealth
       value: 150
       objectReference: {fileID: 0}
+    - target: {fileID: 187897479789510400, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
+      propertyPath: startingHealth
+      value: 150
+      objectReference: {fileID: 0}
     - target: {fileID: 3353941715628646101, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0.478
@@ -1315,12 +1401,24 @@ PrefabInstance:
       value: -0.038
       objectReference: {fileID: 0}
     - target: {fileID: 5316653858241794030, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
+      propertyPath: destroyDelay
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5316653858241794030, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
       propertyPath: disableCollidersOnDeath
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8412061647620010887, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
       propertyPath: lobAngle
-      value: 22.5
+      value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 8412061647620010887, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
+      propertyPath: maxLaunchAngle
+      value: 85
+      objectReference: {fileID: 0}
+    - target: {fileID: 8412061647620010887, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
+      propertyPath: predictionStrength
+      value: 0.2
       objectReference: {fileID: 0}
     - target: {fileID: 9057840908425027667, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1368,7 +1466,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9171620467850103300, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1423,13 +1521,29 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6100724910009048537, guid: 93fb79be2942ab14b8c7551146aea0d8, type: 3}
+      propertyPath: maxHealth
+      value: 150
+      objectReference: {fileID: 0}
+    - target: {fileID: 6100724910009048537, guid: 93fb79be2942ab14b8c7551146aea0d8, type: 3}
+      propertyPath: startingHealth
+      value: 150
+      objectReference: {fileID: 0}
+    - target: {fileID: 7130117319680664962, guid: 93fb79be2942ab14b8c7551146aea0d8, type: 3}
+      propertyPath: destroyDelay
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7130117319680664962, guid: 93fb79be2942ab14b8c7551146aea0d8, type: 3}
+      propertyPath: disableCollidersOnDeath
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8111276562493136826, guid: 93fb79be2942ab14b8c7551146aea0d8, type: 3}
       propertyPath: m_Name
       value: Plummeter
       objectReference: {fileID: 0}
     - target: {fileID: 8111276562493136826, guid: 93fb79be2942ab14b8c7551146aea0d8, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1450,7 +1564,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1513119564538955794, guid: 3bdaec7a99280a04caa90f55b6793885, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3996999485723740308, guid: 3bdaec7a99280a04caa90f55b6793885, type: 3}
       propertyPath: cooldown
@@ -1497,8 +1611,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6021129370711652002, guid: 3bdaec7a99280a04caa90f55b6793885, type: 3}
+      propertyPath: destroyDelay
+      value: 0.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6021129370711652002, guid: 3bdaec7a99280a04caa90f55b6793885, type: 3}
       propertyPath: disableCollidersOnDeath
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1518,3 +1636,4 @@ SceneRoots:
   - {fileID: 1930780938}
   - {fileID: 2569993131456577109}
   - {fileID: 6576780806833532008}
+  - {fileID: 1900000202}

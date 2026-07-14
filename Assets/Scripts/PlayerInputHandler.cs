@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Signal.Combat;
 using Signal.Combat.Interfaces;
+using Signal.UI;
 
 /// <summary>
 /// Central input reader. Attach to the player alongside all other player scripts.
@@ -16,7 +17,7 @@ using Signal.Combat.Interfaces;
 ///   Dodge       - Button
 ///   Attack      - Button           (light attack — Left Mouse Button)
 ///   HeavyAttack - Button           (Right Mouse Button)
-///   Kick        - Button           (F)
+///   Bash        - Button           (F)
 ///   LockOn      - Button
 ///
 /// Implements ICombatInputSource so combat code depends on that abstraction rather than this
@@ -41,7 +42,7 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
     public bool    HeavyAttackHeld              { get; private set; }
     public bool    HeavyAttackPressedThisFrame   { get; private set; }
     public bool    HeavyAttackReleasedThisFrame  { get; private set; }
-    public bool    KickPressedThisFrame     { get; private set; }
+    public bool    BashPressedThisFrame     { get; private set; }
     public bool    LockOnPressedThisFrame   { get; private set; }
 
     // ── Actions polled directly (held state) ─────────────────────────────
@@ -54,6 +55,11 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
     private void Awake()
     {
         PlayerInput playerInput = GetComponent<PlayerInput>();
+
+        // PlayerInput uses a per-player clone of the actions asset, so saved rebinds must be
+        // applied here as well as in the menu.
+        InputBindingStorage.Load(playerInput.actions);
+
         _jumpAction        = playerInput.actions.FindAction("Jump");
         _sprintAction      = playerInput.actions.FindAction("Sprint");
         _heavyAttackAction = playerInput.actions.FindAction("HeavyAttack");
@@ -83,7 +89,7 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
         AttackReleasedThisFrame  = false;
         HeavyAttackPressedThisFrame  = false;
         HeavyAttackReleasedThisFrame = false;
-        KickPressedThisFrame     = false;
+        BashPressedThisFrame     = false;
         LockOnPressedThisFrame   = false;
         LookInput                = Vector2.zero;  // mouse delta resets each frame
         ScrollInput              = 0f;
@@ -129,9 +135,9 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
         CombatLog.Info(value.isPressed ? "HeavyAttack input pressed" : "HeavyAttack input released", this);
     }
 
-    public void OnKick(InputValue value)
+    public void OnBash(InputValue value)
     {
-        if (value.isPressed) KickPressedThisFrame = true;
+        if (value.isPressed) BashPressedThisFrame = true;
     }
 
     public void OnLockOn(InputValue value)

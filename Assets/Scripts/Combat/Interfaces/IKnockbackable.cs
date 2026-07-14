@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Signal.Combat.Interfaces
 {
     /// <summary>
-    /// Anything that can be physically shoved by a force (a kick, an explosion, etc).
+    /// Anything that can be physically shoved by a force (a bash, an explosion, etc).
     /// Implementations typically wrap a <see cref="Rigidbody"/> — mass-dependent falloff comes
     /// for free from <see cref="Rigidbody.AddForce(Vector3, ForceMode)"/> and needs no extra math.
     /// </summary>

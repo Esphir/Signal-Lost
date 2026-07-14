@@ -40,7 +40,9 @@ namespace Signal.Combat.Projectiles
                 Create, OnGet, OnRelease, OnDestroyItem, false, defaultCapacity, maxSize);
 
             LobProjectile projectile = _pool.Get();
-            projectile.transform.SetPositionAndRotation(position, rotation);
+            // PlaceAt (not transform.SetPositionAndRotation) so a reused instance can't inherit the
+            // previous flight's Rigidbody pose/velocity/interpolation state.
+            projectile.PlaceAt(position, rotation);
             return projectile;
         }
 

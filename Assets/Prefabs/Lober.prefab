@@ -161,6 +161,8 @@ GameObject:
   - component: {fileID: 3353941715628646002}
   - component: {fileID: 3353941715628646003}
   - component: {fileID: 3353941715628646004}
+  - component: {fileID: 4644212239799148001}
+  - component: {fileID: 4644212239799149001}
   m_Layer: 3
   m_Name: Lober
   m_TagString: Enemy
@@ -431,3 +433,31 @@ MonoBehaviour:
   flashDuration: 0.07
   flashColor: {r: 1, g: 0, b: 0, a: 1}
   renderers: []
+--- !u!114 &4644212239799148001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9171620467850103300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6850b7745753b7f8c28d8ccee93ad77e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  settings: {fileID: 11400000, guid: 4737176b639b1a90932b3cc0f13cf214, type: 2}
+--- !u!114 &4644212239799149001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9171620467850103300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5c7bffaab4adc0eed3bcfe7562be826d, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  barPrefab: {fileID: 8300000000000000013, guid: 18847d41619a12a6dd1b1fcb06f0669d, type: 3}
+  heightOffset: 2.0
+  billboardCamera: {fileID: 0}

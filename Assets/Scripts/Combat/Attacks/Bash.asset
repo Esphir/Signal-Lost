@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2c26a82cc4e32e44288f483d4da27000, type: 3}
-  m_Name: Kick
+  m_Name: Bash
   m_EditorClassIdentifier: 
-  attackName: Kick
-  animatorTrigger: Kick
-  animatorStateName: Kick
+  attackName: Bash
+  animatorTrigger: Bash
+  animatorStateName: Bash_Standing
   impactNormalizedTime: 0.3
   activeEndNormalizedTime: 0.45
   exitNormalizedTime: 0.85
@@ -22,10 +22,14 @@ MonoBehaviour:
   recoveryTime: 0.3
   hitOffset: 1
   hitRadius: 1.2
-  lungeDistance: 0.3
+  lungeDistance: 0
   hitStopDuration: 0.06
   cameraShakeAmount: 0.1
   cameraShakeDuration: 0.1
-  forwardForce: 8
+  forwardForce: 9
   upwardForce: 5
   forceMode: 1
+  movingStateName: Bash_Moving
+  standingBoolParameter: BashStanding
+  movingInputThreshold: 0.1
+  movingSpeedThreshold: 0.15

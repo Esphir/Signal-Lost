@@ -5,6 +5,7 @@ using UnityEngine;
 using Signal.Combat.Configs;
 using Signal.Combat.Interfaces;
 using Signal.Combat.Detection;
+using Signal.Stats;
 
 namespace Signal.Combat.Data
 {
@@ -40,6 +41,32 @@ namespace Signal.Combat.Data
         /// <summary>Move the attacker by a world-space delta (attack lunge / root motion).</summary>
         public Action<Vector3> ApplyRootMotion;
 
+        /// <summary>Attacker's horizontal speed (m/s); lets variant attacks tell moving from standing.</summary>
+        public Func<float> GetPlanarSpeed;
+
+        /// <summary>Resolves a stat's final value (base + run modifiers). Unwired, base values pass through.</summary>
+        public Func<StatType, float, float> GetStat;
+
+        public float ResolveStat(StatType stat, float baseValue)
+            => GetStat?.Invoke(stat, baseValue) ?? baseValue;
+
+        /// <summary>Damage multiplier applied on a critical hit. Set by the composition root.</summary>
+        public float CriticalMultiplier = 2f;
+
+        /// <summary>Hook for crit VFX/SFX/UI, invoked with the hit position when a crit connects.</summary>
+        public Action<Vector3> OnCriticalHit;
+
+        /// <summary>Reports damage dealt to targets (per sweep). Life steal and similar hook in here.</summary>
+        public Action<float> OnDamageDealt;
+
+        /// <summary>Rolls the attacker's crit chance (a 0–100 stat) and scales the damage on success.</summary>
+        public float RollCritical(float damage, out bool isCritical)
+        {
+            float chance = ResolveStat(StatType.CritChance, 0f);
+            isCritical = chance > 0f && UnityEngine.Random.value * 100f < chance;
+            return isCritical ? damage * CriticalMultiplier : damage;
+        }
+
         /// <summary>Trigger a brief time-scale hit-stop of the given duration (seconds, unscaled).</summary>
         public Action<float> TriggerHitStop;
 
@@ -54,9 +81,8 @@ namespace Signal.Combat.Data
 
         /// <summary>
         /// Fires the attack's animator trigger with validation and logging. An empty trigger name
-        /// means "no animation for this attack" (e.g. the kick, which has no state in the controller
-        /// yet) and is skipped quietly; a trigger that doesn't exist on the Animator is a
-        /// configuration error and logged loudly every swing.
+        /// means "no animation for this attack" and is skipped quietly; a trigger that doesn't
+        /// exist on the Animator is a configuration error and logged loudly every swing.
         /// </summary>
         /// <returns>True if the trigger was actually set.</returns>
         public bool SetAttackTrigger(AttackConfigBaseSO config)
@@ -88,17 +114,16 @@ namespace Signal.Combat.Data
 
         // ── Animation-driven timing ───────────────────────────────────────
 
-        // Caches which animator layer each attack state lives on so different attacks can be on
-        // different layers (e.g. sword attacks on the masked Upper Body layer, the full-body kick
-        // on its own Kick Layer). -1 = state not found on any layer.
+        // State hash → owning layer (-1 = not found). Keyed by hash so per-swing variants like the
+        // bash's moving/standing states each cache independently. Attacks may live on different layers.
         private readonly Dictionary<int, int> _stateLayerCache = new Dictionary<int, int>();
 
-        /// <summary>Finds (and caches) the animator layer whose state machine contains the config's state.</summary>
+        /// <summary>Finds (and caches) the animator layer whose state machine contains the config's active state.</summary>
         private int ResolveAttackLayer(AttackConfigBaseSO config)
         {
             if (Animator == null || !config.HasAnimatorState) return -1;
 
-            int stateHash = config.AnimatorStateHash;
+            int stateHash = config.ActiveAnimatorStateHash;
             if (_stateLayerCache.TryGetValue(stateHash, out int cached)) return cached;
 
             int found = -1;
@@ -115,9 +140,9 @@ namespace Signal.Combat.Data
             => Animator != null && config.HasAnimatorState && ResolveAttackLayer(config) >= 0;
 
         /// <summary>
-        /// Reads the normalized time of the attack's state on whichever layer owns it, checking both
-        /// the current state and the cross-fade target so entry transitions are covered. Returns
-        /// false whenever the state isn't active.
+        /// Reads the normalized time of the attack's active state on whichever layer owns it,
+        /// checking both the current state and the cross-fade target so entry transitions are
+        /// covered. Returns false whenever the state isn't active.
         /// </summary>
         public bool TryGetAttackNormalizedTime(AttackConfigBaseSO config, out float normalizedTime)
         {
@@ -126,14 +151,14 @@ namespace Signal.Combat.Data
             if (layer < 0) return false;
 
             AnimatorStateInfo current = Animator.GetCurrentAnimatorStateInfo(layer);
-            if (current.shortNameHash == config.AnimatorStateHash)
+            if (current.shortNameHash == config.ActiveAnimatorStateHash)
             {
                 normalizedTime = current.normalizedTime;
                 return true;
             }
 
             AnimatorStateInfo next = Animator.GetNextAnimatorStateInfo(layer);
-            if (next.shortNameHash == config.AnimatorStateHash)
+            if (next.shortNameHash == config.ActiveAnimatorStateHash)
             {
                 normalizedTime = next.normalizedTime;
                 return true;
@@ -164,7 +189,7 @@ namespace Signal.Combat.Data
                 waited += Time.deltaTime;
                 if (waited >= enterTimeout)
                 {
-                    CombatLog.Warn($"'{config.name}': animator state '{config.animatorStateName}' never became active — using fixed startup time instead.", Animator);
+                    CombatLog.Warn($"'{config.name}': animator state '{config.ActiveAnimatorStateName}' never became active — using fixed startup time instead.", Animator);
                     yield return new WaitForSeconds(config.startupTime);
                     yield break;
                 }

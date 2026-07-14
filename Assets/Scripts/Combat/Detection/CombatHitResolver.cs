@@ -30,7 +30,7 @@ namespace Signal.Combat.Detection
 
         /// <summary>Deals <paramref name="damage"/> to every unique <see cref="IDamageable"/> found in the buffer.</summary>
         /// <returns>Number of unique targets hit this sweep.</returns>
-        public int ApplyDamage(Collider[] buffer, int count, float damage, GameObject instigator, Vector3 hitPoint = default, bool isHeavy = false)
+        public int ApplyDamage(Collider[] buffer, int count, float damage, GameObject instigator, Vector3 hitPoint = default, bool isHeavy = false, bool isCritical = false)
         {
             int hits = 0;
 
@@ -46,8 +46,8 @@ namespace Signal.Combat.Detection
                 if (!_damagedThisSwing.Add(damageable)) continue;
 
                 Vector3 hitDir = (buffer[i].transform.position - instigator.transform.position).normalized;
-                damageable.TakeDamage(new DamageInfo(damage, instigator, hitPoint, hitDir, isHeavy));
-                CombatLog.Info($"Dealt {damage:0.#} damage to '{(damageable as Component)?.name}'.", buffer[i]);
+                damageable.TakeDamage(new DamageInfo(damage, instigator, hitPoint, hitDir, isHeavy, isCritical));
+                CombatLog.Info($"Dealt {damage:0.#} damage to '{(damageable as Component)?.name}'{(isCritical ? " (CRIT)" : "")}.", buffer[i]);
                 hits++;
             }
 
@@ -65,7 +65,7 @@ namespace Signal.Combat.Detection
                 var knockbackable = buffer[i].GetComponentInParent<IKnockbackable>();
                 if (knockbackable == null)
                 {
-                    CombatLog.Warn($"'{buffer[i].name}' is on the hit mask but has no IKnockbackable in its parents — kick has no effect on it.", buffer[i]);
+                    CombatLog.Warn($"'{buffer[i].name}' is on the hit mask but has no IKnockbackable in its parents — bash has no effect on it.", buffer[i]);
                     continue;
                 }
                 if (!_knockedThisSwing.Add(knockbackable)) continue;

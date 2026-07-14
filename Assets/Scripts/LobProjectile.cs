@@ -64,6 +64,32 @@ public class LobProjectile : MonoBehaviour
     /// <summary>Set by ProjectilePool so despawning releases instead of destroying. Optional.</summary>
     public void SetDespawnHandler(Action<LobProjectile> handler) => _despawnHandler = handler;
 
+    /// <summary>
+    /// Teleports the projectile to a spawn pose, fully clearing the previous flight's physics
+    /// state. Pooled Rigidbodies keep their last pose, momentum, and interpolation history; setting
+    /// only <c>transform.position</c> leaves that history intact, so the first rendered frames smear
+    /// from the previous landing point (often inside the floor). Teleporting through the Rigidbody
+    /// and dropping the interpolation buffer guarantees the shot always starts exactly here.
+    /// </summary>
+    public void PlaceAt(Vector3 position, Quaternion rotation)
+    {
+        if (_rb == null) _rb = GetComponent<Rigidbody>();
+
+        _rb.linearVelocity = Vector3.zero;
+        _rb.angularVelocity = Vector3.zero;
+
+        RigidbodyInterpolation previous = _rb.interpolation;
+        _rb.interpolation = RigidbodyInterpolation.None; // drops the stale interpolation buffer
+        _rb.position = position;
+        _rb.rotation = rotation;
+        transform.SetPositionAndRotation(position, rotation);
+        _rb.interpolation = previous;
+
+        _launched = false;
+        _exploded = false;
+        _despawned = false;
+    }
+
     /// <summary>Launches with the given velocity and resets all per-flight state (pool-safe). No landing indicator.</summary>
     public void Launch(Vector3 velocity) => Launch(velocity, default, -1f);
 
@@ -153,6 +179,11 @@ public class LobProjectile : MonoBehaviour
         if (_despawned) return;
         _despawned = true;
         _launched = false;
+
+        // Clear momentum before returning to the pool so a reused instance can't carry the last
+        // flight's velocity into its next spawn (PlaceAt resets again on reuse — belt and braces).
+        _rb.linearVelocity = Vector3.zero;
+        _rb.angularVelocity = Vector3.zero;
 
         // Covers every end-of-flight path: explosion (incl. early terrain hits), mid-air timeout,
         // and pool release — the indicator can never outlive its projectile's flight.

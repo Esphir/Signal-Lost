@@ -100,6 +100,25 @@ namespace Signal.Combat.Health
             HealthChanged?.Invoke(CurrentHealth, maxHealth);
         }
 
+        /// <summary>
+        /// Changes max health at runtime (run upgrades, level scaling). Increases can optionally
+        /// heal by the same amount; current health is always clamped into the new range.
+        /// </summary>
+        public void SetMaxHealth(float newMax, bool healByIncrease)
+        {
+            newMax = Mathf.Max(1f, newMax);
+            if (Mathf.Approximately(newMax, maxHealth)) return;
+
+            float increase = newMax - maxHealth;
+            maxHealth = newMax;
+
+            if (healByIncrease && increase > 0f && IsAlive)
+                CurrentHealth += increase;
+            CurrentHealth = Mathf.Min(CurrentHealth, maxHealth);
+
+            HealthChanged?.Invoke(CurrentHealth, maxHealth);
+        }
+
         private void Die()
         {
             IsDead = true;

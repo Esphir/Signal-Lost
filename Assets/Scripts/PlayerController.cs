@@ -1,5 +1,7 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Signal.Run;
+using Signal.Stats;
 
 /// <summary>
 /// Third-person player controller mimicking Into the Unwell's movement feel.
@@ -131,7 +133,8 @@ public class PlayerController : MonoBehaviour
         Vector3 camRight = Quaternion.Euler(0f, camYaw, 0f) * Vector3.right;
         Vector3 wishDir = camForward * input.z + camRight * input.x;
 
-        float targetSpeed = IsSprinting ? sprintSpeed : moveSpeed;
+        // Run move-speed upgrades scale the base speeds; bases themselves never change.
+        float targetSpeed = RunManager.QueryStat(StatType.MoveSpeed, IsSprinting ? sprintSpeed : moveSpeed);
         float smoothTime = wishDir.sqrMagnitude > 0f ? accelerationTime : decelerationTime;
 
         _moveVelocity = Vector3.SmoothDamp(_moveVelocity, wishDir * targetSpeed, ref _moveVelocityRef, smoothTime);
@@ -140,7 +143,7 @@ public class PlayerController : MonoBehaviour
         CurrentSpeed = _moveVelocity.magnitude;
 
         if (_animator != null)
-            _animator.SetFloat(HashSpeed, CurrentSpeed / moveSpeed);
+            _animator.SetFloat(HashSpeed, CurrentSpeed / RunManager.QueryStat(StatType.MoveSpeed, moveSpeed));
     }
 
     private void HandleJump()

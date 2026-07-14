@@ -8,7 +8,7 @@ namespace Signal.Combat.Feedback
     /// <summary>
     /// Flashes every renderer a solid color for a very short time whenever the sibling
     /// <see cref="IHealth"/> actually takes damage (mitigated-to-zero hits don't flash).
-    /// Uses MaterialPropertyBlocks — no material instances are ever created — and restores each
+    /// Uses MaterialPropertyBlocks no material instances are ever created and restores each
     /// renderer's previous property block afterwards, so it coexists with other MPB users
     /// (e.g. BuffIndicator tints). Drop on any damageable object, player or enemy.
     /// </summary>

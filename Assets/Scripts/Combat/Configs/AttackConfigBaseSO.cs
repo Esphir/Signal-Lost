@@ -7,11 +7,10 @@ namespace Signal.Combat.Configs
     /// types extend this rather than duplicating these fields, and designers tune balance entirely
     /// as ScriptableObject assets without touching code.
     ///
-    /// Timing model: when <see cref="animatorStateName"/> is set, the attack rides the actual clip —
+    /// Timing model: when <see cref="animatorStateName"/> is set, the attack rides the actual clip
     /// impact, active window and exit are normalized times inside that state, so a clip that changes
     /// length (or plays at a different speed) can never desync from gameplay. The fixed
-    /// startup/recovery seconds are only a fallback for attacks without an animation state
-    /// (e.g. the kick until it gets a clip).
+    /// startup/recovery seconds are only a fallback for attacks without an animation state.
     /// </summary>
     public abstract class AttackConfigBaseSO : ScriptableObject
     {
@@ -80,7 +79,11 @@ namespace Signal.Combat.Configs
             }
         }
 
-        private void OnValidate()
+        /// <summary>State driving timing right now. Variant attacks (e.g. bash) override to track the playing state.</summary>
+        public virtual string ActiveAnimatorStateName => animatorStateName;
+        public virtual int ActiveAnimatorStateHash => AnimatorStateHash;
+
+        protected virtual void OnValidate()
         {
             _animatorTriggerHash = -1;
             _animatorStateHash = -1;

@@ -7,27 +7,31 @@ using Signal.Combat.Interfaces;
 namespace Signal.Combat.Attacks
 {
     /// <summary>
-    /// Crowd-control kick. Deals zero damage — it only ever calls
-    /// <see cref="Signal.Combat.Detection.CombatHitResolver.ApplyKnockback"/>, never ApplyDamage.
-    /// The kick has no animator state yet, so it runs on the config's fallback timing; give it a
-    /// state name in <see cref="KickConfigSO"/> once a clip exists and it becomes animation-synced
-    /// automatically, like the other attacks.
+    /// Crowd-control bash: knockback only, never damage. Picks the upper-body (moving) or full-body
+    /// (standing) animation variant per swing; both share the same gameplay timing.
     /// </summary>
-    public sealed class KickStrategy : IAttackStrategy
+    public sealed class BashStrategy : IAttackStrategy
     {
-        private readonly KickConfigSO _config;
+        private readonly BashConfigSO _config;
 
-        public KickStrategy(KickConfigSO config)
+        public BashStrategy(BashConfigSO config)
         {
             _config = config;
         }
 
         public void Tick(float deltaTime) { }
 
-        public bool CanExecute(ICombatInputSource input) => input.KickPressedThisFrame;
+        public bool CanExecute(ICombatInputSource input) => input.BashPressedThisFrame;
 
         public IEnumerator Execute(AttackExecutionContext ctx, ICombatInputSource input)
         {
+            // Latch once for the whole swing so a mid-bash stick wiggle can't flip states.
+            bool moving = input.MoveInput.magnitude > _config.movingInputThreshold
+                          || (ctx.GetPlanarSpeed?.Invoke() ?? 0f) > _config.movingSpeedThreshold;
+            _config.SelectVariant(moving);
+            SetStandingBool(ctx, standing: !moving);
+            CombatLog.Info(moving ? "Bash variant: moving" : "Bash variant: standing");
+
             ctx.SetAttackTrigger(_config);
 
             yield return ctx.WaitForImpactPhase(_config);
@@ -57,9 +61,19 @@ namespace Signal.Combat.Attacks
             }
 
             if (totalHits > 0) ctx.OnAttackLanded?.Invoke(totalHits);
-            CombatLog.Info($"Kick: {totalHits} target(s) knocked back (kick deals no damage by design)");
+            CombatLog.Info($"Bash: {totalHits} target(s) knocked back");
 
             yield return ctx.WaitForAttackExit(_config);
+        }
+
+        // Missing parameter is already reported at startup by PlayerCombat, so skip quietly here.
+        private void SetStandingBool(AttackExecutionContext ctx, bool standing)
+        {
+            if (ctx.Animator == null || string.IsNullOrEmpty(_config.standingBoolParameter)) return;
+            if (ctx.ValidAnimatorParameters != null &&
+                !ctx.ValidAnimatorParameters.Contains(_config.StandingBoolHash)) return;
+
+            ctx.Animator.SetBool(_config.StandingBoolHash, standing);
         }
     }
 }

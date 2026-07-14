@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Signal.Combat.Interfaces
 {
     /// <summary>
@@ -14,6 +16,9 @@ namespace Signal.Combat.Interfaces
         bool HeavyAttackPressedThisFrame { get; }
         bool HeavyAttackReleasedThisFrame { get; }
 
-        bool KickPressedThisFrame { get; }
+        bool BashPressedThisFrame { get; }
+
+        /// <summary>Current movement input; the bash uses its magnitude to pick moving vs standing animation.</summary>
+        Vector2 MoveInput { get; }
     }
 }

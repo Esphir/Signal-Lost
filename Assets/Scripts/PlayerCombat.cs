@@ -2,12 +2,15 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
+using KevinIglesias;
 using Signal.Combat;
 using Signal.Combat.Attacks;
 using Signal.Combat.Configs;
 using Signal.Combat.Data;
 using Signal.Combat.Detection;
 using Signal.Combat.Interfaces;
+using Signal.Run;
 
 /// <summary>
 /// Composition root for player combat. Owns no attack logic itself — it wires up the current
@@ -23,7 +26,7 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     [Header("Attack Configs")]
     [SerializeField] private LightAttackConfigSO lightAttackConfig;
     [SerializeField] private HeavyAttackConfigSO heavyAttackConfig;
-    [SerializeField] private KickConfigSO kickConfig;
+    [SerializeField, FormerlySerializedAs("kickConfig")] private BashConfigSO bashConfig;
 
     [Header("Detection")]
     [SerializeField] private LayerMask hitMask;
@@ -31,6 +34,11 @@ public class PlayerCombat : MonoBehaviour, IAttacker
 
     [Header("Hit-Stop")]
     [SerializeField] private float hitStopScale = 0.05f;
+
+    [Header("Critical Hits")]
+    [SerializeField, Min(1f)]
+    [Tooltip("Damage multiplier when an attack rolls a critical hit (crit chance comes from run upgrades).")]
+    private float critDamageMultiplier = 2f;
 
     [Header("Input Buffering")]
     [SerializeField, Min(0f)]
@@ -51,13 +59,20 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     [Tooltip("Seconds the upper-body layer stays blended in after an attack ends, so quick combo hits don't pop back to locomotion between swings.")]
     private float upperBodyHoldTime = 0.35f;
 
-    [SerializeField]
-    [Tooltip("Full-body layer that plays the kick over everything. Weight is driven 0→1 only while the kick clip plays, so it never forces bind pose the rest of the time.")]
-    private string kickLayerName = "Kick Layer";
+    [SerializeField, FormerlySerializedAs("kickLayerName")]
+    [Tooltip("Full-body layer that plays the standing bash over everything. Weight is driven 0→1 only while the standing bash clip plays, so it never forces bind pose the rest of the time.")]
+    private string bashLayerName = "Bash Layer";
+
+    [SerializeField, Range(0f, 1f)]
+    [Tooltip("Bash-layer weight above which the SpineProxy copy is suspended so the full-body standing bash owns the spine. Resumes automatically as the layer blends back out.")]
+    private float spineProxySuspendWeight = 0.5f;
 
     // ── IAttacker ────────────────────────────────────────────────────────────
     public bool IsAttacking { get; private set; }
     public event Action<int> AttackLanded;
+
+    /// <summary>Raised with the damage dealt each time an attack sweep connects (life steal hooks in here).</summary>
+    public event Action<float> DamageDealt;
 
     // ── Private ───────────────────────────────────────────────────────────
     private PlayerController _controller;
@@ -73,7 +88,8 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     private float _upperBodyHoldTimer;
     private float _lastUpperBodyTarget;
 
-    private int _kickLayerIndex = -1;
+    private int _bashLayerIndex = -1;
+    private SpineProxy _spineProxy; // optional — suspended while the full-body standing bash plays
 
     private int _bufferedStrategyIndex = -1;
     private float _bufferedUntil;
@@ -84,6 +100,7 @@ public class PlayerCombat : MonoBehaviour, IAttacker
         _dodge = GetComponent<PlayerDodge>();
         _input = GetComponent<ICombatInputSource>();
         _animator = GetComponentInChildren<Animator>();
+        _spineProxy = GetComponentInChildren<SpineProxy>();
 
         if (!ValidateSetup())
         {
@@ -101,6 +118,17 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             Resolver = new CombatHitResolver(),
             ValidAnimatorParameters = CacheAnimatorParameters(),
             ApplyRootMotion = delta => _controller?.ApplyRootMotion(delta),
+            GetPlanarSpeed = () =>
+            {
+                if (_controller == null) return 0f;
+                Vector3 v = _controller.Velocity;
+                v.y = 0f;
+                return v.magnitude;
+            },
+            GetStat = RunManager.QueryStat,
+            CriticalMultiplier = critDamageMultiplier,
+            OnCriticalHit = position => CombatLog.Info("Critical hit!", this), // future VFX/SFX hook
+            OnDamageDealt = amount => DamageDealt?.Invoke(amount),
             TriggerHitStop = duration => StartCoroutine(HitStopRoutine(duration)),
             TriggerCameraShake = (amount, duration) => cameraShake?.Shake(amount, duration),
             OnAttackLanded = hits => AttackLanded?.Invoke(hits)
@@ -108,24 +136,30 @@ public class PlayerCombat : MonoBehaviour, IAttacker
 
         // Layer index must be resolved before trigger/state validation can check HasState.
         InitializeUpperBodyLayer();
-        InitializeKickLayer();
+        InitializeBashLayer();
         WarnAboutMissingTriggers();
         _context.AttackTriggerHashes = CollectAttackTriggerHashes();
 
         // Order matters only in that each strategy owns its own input check (different buttons),
-        // so any order is safe. Kick first purely by convention (crowd-control takes priority read).
+        // so any order is safe. Bash first purely by convention (crowd-control takes priority read).
         _strategies = new IAttackStrategy[]
         {
-            new KickStrategy(kickConfig),
+            new BashStrategy(bashConfig),
             new HeavyAttackStrategy(heavyAttackConfig),
             new LightAttackStrategy(lightAttackConfig),
         };
     }
 
+    private void OnDisable()
+    {
+        // Never leave the proxy suspended if combat is torn down mid-bash.
+        SpineProxyGate.SetSuspended(_spineProxy, this, false);
+    }
+
     private void Update()
     {
         UpdateUpperBodyLayer();
-        UpdateKickLayer();
+        UpdateBashLayer();
 
         for (int i = 0; i < _strategies.Length; i++)
             _strategies[i].Tick(Time.deltaTime);
@@ -196,7 +230,7 @@ public class PlayerCombat : MonoBehaviour, IAttacker
 
         if (lightAttackConfig == null) { Debug.LogError("[Combat] PlayerCombat: 'Light Attack Config' is not assigned in the Inspector.", this); ok = false; }
         if (heavyAttackConfig == null) { Debug.LogError("[Combat] PlayerCombat: 'Heavy Attack Config' is not assigned in the Inspector.", this); ok = false; }
-        if (kickConfig == null)        { Debug.LogError("[Combat] PlayerCombat: 'Kick Config' is not assigned in the Inspector.", this); ok = false; }
+        if (bashConfig == null)        { Debug.LogError("[Combat] PlayerCombat: 'Bash Config' is not assigned in the Inspector.", this); ok = false; }
         if (_input == null)            { Debug.LogError("[Combat] PlayerCombat: no ICombatInputSource (PlayerInputHandler) found on this GameObject.", this); ok = false; }
 
         if (_animator == null)
@@ -222,7 +256,7 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     }
 
     /// <summary>
-    /// Distinct, valid trigger hashes across the whole moveset (light combo chain + heavy + kick).
+    /// Distinct, valid trigger hashes across the whole moveset (light combo chain + heavy + bash).
     /// Used to clear stale queued triggers before each swing so spam-clicking can't stack phantom attacks.
     /// </summary>
     private int[] CollectAttackTriggerHashes()
@@ -245,7 +279,7 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             if (step == lightAttackConfig) break;
         }
         Add(heavyAttackConfig);
-        Add(kickConfig);
+        Add(bashConfig);
 
         var result = new int[hashes.Count];
         hashes.CopyTo(result);
@@ -265,7 +299,31 @@ public class PlayerCombat : MonoBehaviour, IAttacker
         }
 
         ReportTriggerState(heavyAttackConfig);
-        ReportTriggerState(kickConfig);
+        ReportTriggerState(bashConfig);
+        ReportBashVariantState();
+    }
+
+    // Validates what the shared trigger/state checks miss: the moving-variant state and routing bool.
+    private void ReportBashVariantState()
+    {
+        if (bashConfig == null || _animator == null) return;
+
+        if (!string.IsNullOrEmpty(bashConfig.movingStateName) &&
+            !StateExistsOnAnyLayer(Animator.StringToHash(bashConfig.movingStateName)))
+        {
+            Debug.LogError(
+                $"[Combat] Animator has no state '{bashConfig.movingStateName}' on any layer (attack '{bashConfig.name}') — the moving bash will never animate.",
+                this);
+        }
+
+        if (!string.IsNullOrEmpty(bashConfig.standingBoolParameter) &&
+            _context.ValidAnimatorParameters != null &&
+            !_context.ValidAnimatorParameters.Contains(bashConfig.StandingBoolHash))
+        {
+            Debug.LogError(
+                $"[Combat] Animator is missing bool '{bashConfig.standingBoolParameter}' required to route the bash's standing/moving states (attack '{bashConfig.name}').",
+                this);
+        }
     }
 
     private void ReportTriggerState(AttackConfigBaseSO config)
@@ -313,11 +371,8 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             return;
         }
 
-        // The controller authors this Override layer at weight 1, which makes CombatIdle
-        // permanently replace the top half of idle/walk. Start relaxed instead — the weight is
-        // blended up only while attacking, so full-body locomotion shows the rest of the time.
-        // (The full-body Kick Layer is self-managing via its WriteDefaults-off Empty state, so it
-        // needs no weight driving here; the strategies resolve each attack's layer for timing.)
+        // Controller authors this Override layer at weight 1 (CombatIdle would permanently replace
+        // the top half of locomotion); start at 0 and blend up only while attacking.
         _animator.SetLayerWeight(_upperBodyLayerIndex, 0f);
     }
 
@@ -348,38 +403,46 @@ public class PlayerCombat : MonoBehaviour, IAttacker
                 Mathf.MoveTowards(current, target, upperBodyBlendSpeed * Time.deltaTime));
     }
 
-    // ── Kick layer blending ───────────────────────────────────────────────
+    // ── Bash layer blending ───────────────────────────────────────────────
 
-    private void InitializeKickLayer()
+    private void InitializeBashLayer()
     {
         if (_animator == null) return;
 
-        _kickLayerIndex = _animator.GetLayerIndex(kickLayerName);
-        if (_kickLayerIndex < 0)
+        _bashLayerIndex = _animator.GetLayerIndex(bashLayerName);
+        if (_bashLayerIndex < 0)
         {
-            CombatLog.Warn($"Animator has no '{kickLayerName}' layer — kick will play on its config's fallback layer.", this);
+            CombatLog.Warn($"Animator has no '{bashLayerName}' layer — the standing bash will play on its config's fallback layer.", this);
             return;
         }
 
-        // Full-body Override layer: it must sit at weight 0 when idle, otherwise its Empty state
-        // forces the whole rig to bind pose (T-pose). Weight is raised only while the kick plays.
-        _animator.SetLayerWeight(_kickLayerIndex, 0f);
+        // Must idle at weight 0 or this Override layer's Empty state forces the rig to T-pose.
+        // Raised only during the standing bash; the moving bash lives on the Upper Body layer.
+        _animator.SetLayerWeight(_bashLayerIndex, 0f);
     }
 
-    private void UpdateKickLayer()
+    private void UpdateBashLayer()
     {
-        if (_kickLayerIndex < 0 || kickConfig == null) return;
+        if (_bashLayerIndex < 0 || bashConfig == null) return;
 
-        // Show the kick only while its clip is actually playing and before its exit point, so the
-        // weight is back to 0 by the time the layer returns to its Empty (pass-through) state.
-        bool showing = _context.TryGetAttackNormalizedTime(kickConfig, out float t)
-                       && t < kickConfig.exitNormalizedTime;
+        // Only the standing variant uses this full-body layer; the moving one rides Upper Body.
+        // Drop back to 0 by exit so the layer returns to its pass-through Empty state.
+        bool showing = bashConfig.StandingVariantSelected
+                       && _context.TryGetAttackNormalizedTime(bashConfig, out float t)
+                       && t < bashConfig.exitNormalizedTime;
         float target = showing ? 1f : 0f;
 
-        float current = _animator.GetLayerWeight(_kickLayerIndex);
+        float current = _animator.GetLayerWeight(_bashLayerIndex);
         if (!Mathf.Approximately(current, target))
-            _animator.SetLayerWeight(_kickLayerIndex,
-                Mathf.MoveTowards(current, target, upperBodyBlendSpeed * Time.deltaTime));
+        {
+            current = Mathf.MoveTowards(current, target, upperBodyBlendSpeed * Time.deltaTime);
+            _animator.SetLayerWeight(_bashLayerIndex, current);
+        }
+
+        // Suspend the SpineProxy while the standing bash owns the rig, else it stomps the clip's
+        // spine every LateUpdate. Weight-driven, so it resumes as the layer blends back out.
+        if (_spineProxy != null)
+            SpineProxyGate.SetSuspended(_spineProxy, this, current >= spineProxySuspendWeight);
     }
 
     // ── Hit-stop ──────────────────────────────────────────────────────────
@@ -402,11 +465,11 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     private void OnDrawGizmosSelected()
     {
         // Live inspector values straight from the config assets:
-        // red = light, orange = heavy (full-charge radius), blue = kick.
+        // red = light, orange = heavy (full-charge radius), blue = bash.
         Vector3 origin = transform.position + Vector3.up * 0.8f;
         DrawAttackRangeGizmo(lightAttackConfig, Color.red, origin);
         DrawAttackRangeGizmo(heavyAttackConfig, new Color(1f, 0.5f, 0f), origin);
-        DrawAttackRangeGizmo(kickConfig, Color.blue, origin);
+        DrawAttackRangeGizmo(bashConfig, Color.blue, origin);
     }
 
     private void DrawAttackRangeGizmo(AttackConfigBaseSO config, Color color, Vector3 origin)

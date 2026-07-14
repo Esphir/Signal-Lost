@@ -4,16 +4,12 @@ using KevinIglesias;
 using Signal.Combat;
 
 /// <summary>
-/// Drives the full-body "Movement" animator layer (jump / falling loop / directional rolls).
-/// Feeds IsGrounded + VerticalVelocity every frame and blends the layer weight in only while
-/// airborne or rolling.
+/// Drives the full-body "Movement" animator layer (jump / falling loop / directional rolls),
+/// blending it in only while airborne or rolling.
 ///
-/// Also gates the Kevin Iglesias <see cref="SpineProxy"/> helper: that script copies the
-/// B-spineProxy bone's rotation onto the real spine every LateUpdate, but the Mixamo movement
-/// clips contain no curves for that proxy bone — so while the Movement layer owns the body the
-/// proxy still holds the locomotion pose and would stomp the rolling/falling spine upright.
-/// The proxy copy is suspended while the Movement layer's weight is dominant and resumes as it
-/// blends back out, so combat's spine-proxy behavior is untouched on the ground.
+/// Suspends the <see cref="SpineProxy"/> while this layer dominates: the Mixamo movement clips
+/// have no proxy-bone curves, so the proxy would otherwise stomp the rolling/falling spine into
+/// the locomotion pose every LateUpdate. Resumes as the layer blends back out.
 /// </summary>
 public class PlayerMovementAnimator : MonoBehaviour
 {
@@ -79,6 +75,12 @@ public class PlayerMovementAnimator : MonoBehaviour
         CacheRollClipLengths();
     }
 
+    private void OnDisable()
+    {
+        // Never leave the proxy suspended if this component is torn down while airborne/rolling.
+        SpineProxyGate.SetSuspended(_spineProxy, this, false);
+    }
+
     private void Update()
     {
         _animator.SetBool(HashIsGrounded, _controller.IsGrounded);
@@ -93,18 +95,9 @@ public class PlayerMovementAnimator : MonoBehaviour
             _animator.SetLayerWeight(_layerIndex, weight);
         }
 
-        // Suspend the spine-proxy copy while movement clips own the body (they have no proxy-bone
-        // curves, so the copy would freeze the spine in the locomotion pose). Weight-driven, so it
-        // resumes automatically and smoothly as the layer blends back out — no timers involved.
+        // Via the gate (not SpineProxy.enabled directly) since PlayerCombat suspends it too.
         if (_spineProxy != null)
-        {
-            bool suspend = weight >= spineProxySuspendWeight;
-            if (_spineProxy.enabled == suspend)
-            {
-                _spineProxy.enabled = !suspend;
-                CombatLog.Info(suspend ? "SpineProxy suspended (movement layer owns the body)" : "SpineProxy resumed", this);
-            }
-        }
+            SpineProxyGate.SetSuspended(_spineProxy, this, weight >= spineProxySuspendWeight);
     }
 
     /// <summary>

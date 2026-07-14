@@ -318,7 +318,9 @@ public class LobTurret : MonoBehaviour
         if (_projectileTemplate == null) return;
 
         // IsAimedAt() has already verified we're facing the target before this is called.
+        // Read spawn pose fresh from the barrel every shot so it never lags the pivot's aim.
         Vector3 origin = SpawnPoint.position;
+        Quaternion spawnRotation = SpawnPoint.rotation;
         Vector3? velocity = CalculateLobVelocity(origin, aimPoint, _currentLaunchAngle, _projectileGravity);
         if (velocity == null && _target != null)
         {
@@ -329,9 +331,10 @@ public class LobTurret : MonoBehaviour
         if (velocity == null) return;
 
         // Pooled when a ProjectilePool sits next to this turret; plain instantiate otherwise.
+        // Both spawn exactly at the barrel pose; the pool path resets pooled Rigidbody state.
         LobProjectile proj = _pool != null
-            ? _pool.Spawn(origin, Quaternion.identity)
-            : Instantiate(_projectileTemplate, origin, Quaternion.identity);
+            ? _pool.Spawn(origin, spawnRotation)
+            : Instantiate(_projectileTemplate, origin, spawnRotation);
         if (proj == null) return;
 
         // Prevent the projectile from immediately colliding with the turret itself

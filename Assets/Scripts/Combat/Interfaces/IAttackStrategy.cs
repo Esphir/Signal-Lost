@@ -4,7 +4,7 @@ using Signal.Combat.Data;
 namespace Signal.Combat.Interfaces
 {
     /// <summary>
-    /// A single attack's behaviour (light, heavy, kick, or any future type). PlayerCombat holds a
+    /// A single attack's behaviour (light, heavy, bash, or any future type). PlayerCombat holds a
     /// list of these and drives whichever one reports it can run — adding a new attack type means
     /// writing one new class and dropping it in the list, no changes to PlayerCombat itself.
     /// </summary>

@@ -10,7 +10,7 @@ namespace Signal.Combat.Configs
         HoldToCharge
     }
 
-    /// <summary>Configurable heavy attack — either an instant single-click hit or a hold-to-charge swing.</summary>
+    /// <summary>Configurable heavy attack either an instant single-click hit or a hold-to-charge swing.</summary>
     [CreateAssetMenu(menuName = "Combat/Attacks/Heavy Attack", fileName = "HeavyAttack")]
     public class HeavyAttackConfigSO : DamagingAttackConfigSO
     {

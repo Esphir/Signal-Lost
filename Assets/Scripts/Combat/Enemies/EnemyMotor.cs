@@ -5,7 +5,7 @@ namespace Signal.Combat.Enemies
 {
     /// <summary>
     /// Shared Rigidbody locomotion for ground enemies: velocity-based steering toward a
-    /// destination, facing, and automatic yielding to stuns and knockback (so a kicked enemy
+    /// destination, facing, and automatic yielding to stuns and knockback (so a bashed enemy
     /// actually flies instead of instantly steering back). AI components stay pure
     /// decision-makers and just call <see cref="MoveTowards"/> / <see cref="Stop"/>.
     /// </summary>

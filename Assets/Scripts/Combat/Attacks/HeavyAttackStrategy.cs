@@ -3,6 +3,7 @@ using UnityEngine;
 using Signal.Combat.Configs;
 using Signal.Combat.Data;
 using Signal.Combat.Interfaces;
+using Signal.Stats;
 
 namespace Signal.Combat.Attacks
 {
@@ -50,7 +51,10 @@ namespace Signal.Combat.Attacks
                 CombatLog.Info($"Heavy attack released at {chargeRatio:P0} charge");
             }
 
-            float damage = Mathf.Lerp(_config.damage * _config.minChargeDamageMultiplier, _config.damage, chargeRatio);
+            float damage = ctx.RollCritical(
+                ctx.ResolveStat(StatType.AttackDamage,
+                    Mathf.Lerp(_config.damage * _config.minChargeDamageMultiplier, _config.damage, chargeRatio)),
+                out bool isCritical);
             float radius = Mathf.Lerp(_config.hitRadius * _config.minChargeRangeMultiplier, _config.hitRadius, chargeRatio);
 
             ctx.SetAttackTrigger(_config);
@@ -66,14 +70,19 @@ namespace Signal.Combat.Attacks
             {
                 Vector3 hitCenter = ctx.Origin.position + ctx.Origin.forward * _config.hitOffset + Vector3.up * 0.8f;
                 int count = ctx.HitDetector.Detect(hitCenter, radius, ctx.HitMask);
-                int newHits = ctx.Resolver.ApplyDamage(ctx.HitDetector.Buffer, count, damage, ctx.Instigator, hitCenter, isHeavy: true);
+                int newHits = ctx.Resolver.ApplyDamage(ctx.HitDetector.Buffer, count, damage, ctx.Instigator, hitCenter, isHeavy: true, isCritical: isCritical);
                 totalHits += newHits;
 
-                if (newHits > 0 && !feedbackFired)
+                if (newHits > 0)
                 {
-                    feedbackFired = true;
-                    ctx.TriggerHitStop?.Invoke(_config.hitStopDuration);
-                    ctx.TriggerCameraShake?.Invoke(_config.cameraShakeAmount, _config.cameraShakeDuration);
+                    ctx.OnDamageDealt?.Invoke(newHits * damage);
+                    if (!feedbackFired)
+                    {
+                        feedbackFired = true;
+                        if (isCritical) ctx.OnCriticalHit?.Invoke(hitCenter);
+                        ctx.TriggerHitStop?.Invoke(_config.hitStopDuration);
+                        ctx.TriggerCameraShake?.Invoke(_config.cameraShakeAmount, _config.cameraShakeDuration);
+                    }
                 }
 
                 if (!ctx.IsInActiveWindow(_config)) break;
