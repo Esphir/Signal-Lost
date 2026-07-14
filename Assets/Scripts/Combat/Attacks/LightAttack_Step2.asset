@@ -22,10 +22,10 @@ MonoBehaviour:
   recoveryTime: 0.15
   hitOffset: 1
   hitRadius: 1.2
-  lungeDistance: 0.3
+  lungeDistance: 0
   hitStopDuration: 0.06
   cameraShakeAmount: 0.1
   cameraShakeDuration: 0.1
-  damage: 10
+  damage: 15
   nextComboStep: {fileID: 11400000, guid: 81b12c96b8b27f3488923418cb1da90b, type: 2}
   comboResetWindow: 0.5

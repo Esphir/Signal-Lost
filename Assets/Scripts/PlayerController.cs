@@ -25,6 +25,8 @@ public class PlayerController : MonoBehaviour
     public float lowJumpMultiplier = 2f;
     public float coyoteTime = 0.15f;
     public float jumpBufferTime = 0.12f;
+    [Tooltip("Extra jumps allowed while airborne. 1 = double jump.")]
+    public int maxAirJumps = 1;
 
     [Header("Ground Check")]
     public float groundCheckRadius = 0.3f;
@@ -56,6 +58,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 _moveVelocityRef;   // SmoothDamp internal state
     private float _coyoteTimer;
     private float _jumpBufferTimer;
+    private int _airJumpsRemaining;
 
     // ──────────────────────────────────────────────────────────────────────
 
@@ -95,8 +98,15 @@ public class PlayerController : MonoBehaviour
 
     private void HandleCoyoteTime()
     {
-        if (IsGrounded) _coyoteTimer = coyoteTime;
-        else _coyoteTimer -= Time.deltaTime;
+        if (IsGrounded)
+        {
+            _coyoteTimer = coyoteTime;
+            _airJumpsRemaining = maxAirJumps;
+        }
+        else
+        {
+            _coyoteTimer -= Time.deltaTime;
+        }
     }
 
     private void HandleJumpBuffer()
@@ -135,13 +145,18 @@ public class PlayerController : MonoBehaviour
 
     private void HandleJump()
     {
-        bool canJump = _coyoteTimer > 0f;
-        if (_jumpBufferTimer > 0f && canJump && !IsRolling)
+        if (_jumpBufferTimer <= 0f || IsRolling) return;
+
+        bool groundJump = _coyoteTimer > 0f;
+        if (!groundJump)
         {
-            _velocity.y = Mathf.Sqrt(jumpHeight * 2f * Mathf.Abs(Physics.gravity.y));
-            _jumpBufferTimer = 0f;
-            _coyoteTimer = 0f;
+            if (_airJumpsRemaining <= 0) return;
+            _airJumpsRemaining--; // double jump (resets on landing)
         }
+
+        _velocity.y = Mathf.Sqrt(jumpHeight * 2f * Mathf.Abs(Physics.gravity.y));
+        _jumpBufferTimer = 0f;
+        _coyoteTimer = 0f;
     }
 
     private void ApplyGravity()
@@ -190,6 +205,17 @@ public class PlayerController : MonoBehaviour
     }
 
     public void ApplyRootMotion(Vector3 delta) => _cc.Move(delta);
+
+    /// <summary>
+    /// Clears the smoothed horizontal movement state so control resumes cleanly after external
+    /// motion (e.g. a dodge roll) — held input re-accelerates immediately instead of blending
+    /// out of a stale pre-roll velocity.
+    /// </summary>
+    public void ResetHorizontalMomentum()
+    {
+        _moveVelocity = Vector3.zero;
+        _moveVelocityRef = Vector3.zero;
+    }
 
     public Vector3 GetMoveDirection()
     {

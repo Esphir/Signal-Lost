@@ -3,6 +3,7 @@ using UnityEngine;
 using Signal.Combat;
 using Signal.Combat.Detection;
 using Signal.Combat.Projectiles;
+using Signal.Combat.Telegraphs;
 
 /// <summary>
 /// A physics-driven explosive projectile. All gameplay data comes from a
@@ -30,6 +31,7 @@ public class LobProjectile : MonoBehaviour
     private OverlapSphereHitDetector _detector;
     private readonly CombatHitResolver _resolver = new CombatHitResolver();
     private Action<LobProjectile> _despawnHandler;
+    private AoeTelegraph _indicator;
 
     private bool _launched;
     private bool _exploded;
@@ -62,8 +64,14 @@ public class LobProjectile : MonoBehaviour
     /// <summary>Set by ProjectilePool so despawning releases instead of destroying. Optional.</summary>
     public void SetDespawnHandler(Action<LobProjectile> handler) => _despawnHandler = handler;
 
-    /// <summary>Launches with the given velocity and resets all per-flight state (pool-safe).</summary>
-    public void Launch(Vector3 velocity)
+    /// <summary>Launches with the given velocity and resets all per-flight state (pool-safe). No landing indicator.</summary>
+    public void Launch(Vector3 velocity) => Launch(velocity, default, -1f);
+
+    /// <summary>
+    /// Launch with the predicted landing point and flight time from the shooter's OWN ballistic
+    /// solution — the landing indicator is placed there, so it always matches the real trajectory.
+    /// </summary>
+    public void Launch(Vector3 velocity, Vector3 predictedLanding, float flightTime)
     {
         _launched = true;
         _exploded = false;
@@ -72,6 +80,26 @@ public class LobProjectile : MonoBehaviour
         _despawnAt = Time.time + config.lifetime;
         _rb.linearVelocity = velocity;
         _rb.angularVelocity = Vector3.zero;
+
+        ShowLandingIndicator(predictedLanding, flightTime);
+    }
+
+    private void ShowLandingIndicator(Vector3 predictedLanding, float flightTime)
+    {
+        if (flightTime <= 0f || !config.showLandingIndicator) return;
+
+        // One telegraph per projectile, created once and reused across pool cycles.
+        if (_indicator == null)
+            _indicator = AoeTelegraph.Create(config.landingIndicatorPrefab);
+
+        _indicator.Show(predictedLanding, new AoeTelegraphSettings
+        {
+            Radius = config.explosionRadius,
+            Color = config.indicatorColor,
+            ScaleMultiplier = config.indicatorScaleMultiplier,
+            PulseSpeed = config.indicatorPulseSpeed,
+            WarningDuration = flightTime
+        });
     }
 
     // ── Flight ────────────────────────────────────────────────────────────
@@ -126,8 +154,17 @@ public class LobProjectile : MonoBehaviour
         _despawned = true;
         _launched = false;
 
+        // Covers every end-of-flight path: explosion (incl. early terrain hits), mid-air timeout,
+        // and pool release — the indicator can never outlive its projectile's flight.
+        if (_indicator != null) _indicator.Hide();
+
         if (_despawnHandler != null) _despawnHandler(this);
         else Destroy(gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        if (_indicator != null) Destroy(_indicator.gameObject);
     }
 
     // ── Gizmos ────────────────────────────────────────────────────────────

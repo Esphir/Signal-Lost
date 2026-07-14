@@ -325,10 +325,16 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     {
         if (_upperBodyLayerIndex < 0) return;
 
-        if (IsAttacking) _upperBodyHoldTimer = upperBodyHoldTime;
+        // A dodge roll owns the whole body: drop the upper-body override (and its post-attack
+        // hold) immediately so a lingering combat stance can't play over the roll's torso/arms.
+        // The layer resumes normally the moment an attack starts again — nothing permanent.
+        bool rolling = _dodge != null && _dodge.IsRolling;
+
+        if (rolling) _upperBodyHoldTimer = 0f;
+        else if (IsAttacking) _upperBodyHoldTimer = upperBodyHoldTime;
         else if (_upperBodyHoldTimer > 0f) _upperBodyHoldTimer -= Time.deltaTime;
 
-        float target = (IsAttacking || _upperBodyHoldTimer > 0f) ? 1f : 0f;
+        float target = (!rolling && (IsAttacking || _upperBodyHoldTimer > 0f)) ? 1f : 0f;
 
         if (!Mathf.Approximately(target, _lastUpperBodyTarget))
         {

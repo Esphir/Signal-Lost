@@ -17,10 +17,15 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   maxExplosionTargets: 12
-  speed: 20
+  speed: 30
   gravityScale: 1
   lifetime: 10
-  explosionRadius: 3
+  explosionRadius: 4
   explosionVfx: {fileID: 0}
   explosionSfx: {fileID: 0}
   sfxVolume: 1
+  showLandingIndicator: 1
+  landingIndicatorPrefab: {fileID: 0}
+  indicatorColor: {r: 1, g: 0.55, b: 0.1, a: 0.9}
+  indicatorScaleMultiplier: 1
+  indicatorPulseSpeed: 2

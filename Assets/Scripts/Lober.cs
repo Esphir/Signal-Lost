@@ -46,12 +46,31 @@ public class LobTurret : MonoBehaviour
     public float aimTolerance = 5f;
 
     [Header("Lob Settings")]
-    [Tooltip("Launch angle in degrees above horizontal. Higher = steeper arc.")]
+    [Tooltip("Normal (minimum) launch angle in degrees, used at and beyond Close Range Distance.")]
     [Range(10f, 80f)]
     public float lobAngle = 45f;
 
+    [Header("Close-Range Arc")]
+    [Min(0f)]
+    [Tooltip("Below this distance to the target the launch angle steepens, trading flat fast shots for high slow arcs the player can react to. 0 disables the adjustment.")]
+    public float closeRangeDistance = 8f;
+    [Range(10f, 85f)]
+    [Tooltip("Launch angle used at point-blank range. The shot still lands exactly on target — it just hangs longer.")]
+    public float maxLaunchAngle = 70f;
+    [Min(0.1f)]
+    [Tooltip("How aggressively the arc steepens as the player closes in. 1 = linear ramp; 2 = full max angle already at half the close-range distance (even more reaction time).")]
+    public float reactionTimeMultiplier = 1f;
+
     [Header("Lead Prediction")]
-    [Tooltip("How many iterations to refine the predicted intercept point. 3-5 is usually enough.")]
+    [Range(0f, 1f)]
+    [Tooltip("0 = aim at the player's current position (default — most accurate). 1 = fully lead the target by its velocity. Lob flight times are long, so even small values shift shots far ahead.")]
+    public float predictionStrength = 0f;
+
+    [Min(0f)]
+    [Tooltip("Hard cap on how far ahead of the player the turret may aim, in meters.")]
+    public float maxPredictionDistance = 4f;
+
+    [Tooltip("How many iterations to refine the predicted intercept point (only used when Prediction Strength > 0).")]
     [Range(1, 8)]
     public int predictionIterations = 4;
 
@@ -69,6 +88,7 @@ public class LobTurret : MonoBehaviour
     private ProjectilePool _pool;         // optional — instantiates directly when absent
     private LobProjectile _projectileTemplate;
     private float _projectileGravity;     // effective gravity from the projectile's config
+    private float _currentLaunchAngle;    // distance-adjusted angle, shared by aim + pitch + fire
 
     // ──────────────────────────────────────────────────────────────────────
 
@@ -81,6 +101,7 @@ public class LobTurret : MonoBehaviour
     {
         _stunnable = GetComponent<IStunnable>();
         _pool = GetComponent<ProjectilePool>();
+        _currentLaunchAngle = lobAngle;
 
         if (barrelPivot == null)
             Debug.LogWarning($"[Combat] LobTurret '{name}': 'Barrel Pivot' is not assigned — projectiles will spawn from {(barrelTip != null ? "Barrel Tip" : "the turret root")} instead.", this);
@@ -109,9 +130,13 @@ public class LobTurret : MonoBehaviour
 
         SampleTargetVelocity();
 
+        // One angle per frame, used consistently by prediction, barrel pitch, and firing —
+        // the aim solution and the launched projectile can never disagree.
+        _currentLaunchAngle = CurrentLaunchAngle();
+
         _predictedAimPoint = PredictInterceptPoint(
-            SpawnPoint.position, _target.position, _targetVelocity, lobAngle, predictionIterations,
-            _projectileGravity);
+            SpawnPoint.position, _target.position, _targetVelocity, _currentLaunchAngle, predictionIterations,
+            _projectileGravity, predictionStrength, maxPredictionDistance);
 
         RotateTowardPoint(_predictedAimPoint);
 
@@ -186,23 +211,37 @@ public class LobTurret : MonoBehaviour
     // ── Lead prediction ───────────────────────────────────────────────────
 
     /// <summary>
-    /// Iteratively refines an intercept point for a lobbing projectile against a moving target.
-    /// Starts with the current target position, calculates flight time, advances the target
-    /// by that time, then recalculates — converges in a few iterations.
+    /// Aim-point selection with tunable lead. Accuracy first: at strength 0 (default) this is
+    /// simply the target's current position. With strength > 0 the classic iterative intercept
+    /// runs, but the lead is scaled by <paramref name="predictionStrength"/>, uses only the
+    /// target's horizontal velocity (jumps/falls are ignored), is hard-capped at
+    /// <paramref name="maxPredictionDistance"/>, and falls back to the current position whenever
+    /// the ballistic solution can't reach the predicted point.
     /// </summary>
     public static Vector3 PredictInterceptPoint(
         Vector3 origin, Vector3 targetPos, Vector3 targetVelocity,
-        float angleDeg, int iterations, float gravity)
+        float angleDeg, int iterations, float gravity,
+        float predictionStrength, float maxPredictionDistance)
     {
+        if (predictionStrength <= 0.001f) return targetPos;
+
+        // Vertical velocity is irrelevant to where the player will be standing.
+        Vector3 flatVelocity = new Vector3(targetVelocity.x, 0f, targetVelocity.z);
+        if (flatVelocity.sqrMagnitude < 0.04f) return targetPos; // effectively stationary
+
         Vector3 intercept = targetPos;
 
         for (int i = 0; i < iterations; i++)
         {
             Vector3? vel = CalculateLobVelocity(origin, intercept, angleDeg, gravity);
-            if (vel == null) break; // unreachable — fall back to current best guess
+            if (vel == null) return targetPos; // unreachable — reliable fallback: current position
 
             float flightTime = EstimateFlightTime(vel.Value, origin, intercept);
-            intercept = targetPos + targetVelocity * flightTime;
+            Vector3 lead = flatVelocity * (flightTime * predictionStrength);
+            if (lead.sqrMagnitude > maxPredictionDistance * maxPredictionDistance)
+                lead = lead.normalized * maxPredictionDistance;
+
+            intercept = targetPos + lead;
         }
 
         return intercept;
@@ -239,10 +278,28 @@ public class LobTurret : MonoBehaviour
         if (barrelPivot != null)
         {
             Vector3 aimEuler = barrelPivot.localEulerAngles;
-            float targetPitch = -lobAngle;
+            float targetPitch = -_currentLaunchAngle;
             aimEuler.x = Mathf.MoveTowardsAngle(aimEuler.x, targetPitch, rotationSpeed * Time.deltaTime);
             barrelPivot.localEulerAngles = aimEuler;
         }
+    }
+
+    /// <summary>
+    /// Distance-based arc: at or beyond Close Range Distance this is the normal Lob Angle; inside
+    /// it, the angle ramps toward Max Launch Angle (scaled by Reaction Time Multiplier). A steeper
+    /// angle means a higher, slower arc — same exact landing point, more time to see it coming.
+    /// </summary>
+    private float CurrentLaunchAngle()
+    {
+        if (_target == null || closeRangeDistance <= 0.01f) return lobAngle;
+
+        Vector3 toTarget = _target.position - SpawnPoint.position;
+        toTarget.y = 0f;
+        float distance = toTarget.magnitude;
+        if (distance >= closeRangeDistance) return lobAngle;
+
+        float closeness = Mathf.Clamp01((1f - distance / closeRangeDistance) * reactionTimeMultiplier);
+        return Mathf.Lerp(lobAngle, Mathf.Max(lobAngle, maxLaunchAngle), closeness);
     }
 
     private bool IsAimedAt(Vector3 point)
@@ -262,7 +319,13 @@ public class LobTurret : MonoBehaviour
 
         // IsAimedAt() has already verified we're facing the target before this is called.
         Vector3 origin = SpawnPoint.position;
-        Vector3? velocity = CalculateLobVelocity(origin, aimPoint, lobAngle, _projectileGravity);
+        Vector3? velocity = CalculateLobVelocity(origin, aimPoint, _currentLaunchAngle, _projectileGravity);
+        if (velocity == null && _target != null)
+        {
+            // Predicted point unreachable — fall back to the player's current position.
+            aimPoint = _target.position;
+            velocity = CalculateLobVelocity(origin, aimPoint, _currentLaunchAngle, _projectileGravity);
+        }
         if (velocity == null) return;
 
         // Pooled when a ProjectilePool sits next to this turret; plain instantiate otherwise.
@@ -279,7 +342,10 @@ public class LobTurret : MonoBehaviour
                 Physics.IgnoreCollision(projCol, turretCol);
         }
 
-        proj.Launch(velocity.Value);
+        // The landing point and flight time come from the SAME ballistic solution used to launch,
+        // so the projectile's landing indicator matches the real impact without duplicated math.
+        float flightTime = EstimateFlightTime(velocity.Value, origin, aimPoint);
+        proj.Launch(velocity.Value, aimPoint, flightTime);
     }
 
     /// <summary>

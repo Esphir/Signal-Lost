@@ -29,5 +29,23 @@ namespace Signal.Combat.Enemies
         public GameObject impactVfxPrefab;
         public AudioClip impactSfx;
         [Range(0f, 1f)] public float sfxVolume = 1f;
+
+        [Header("Telegraph")]
+        [Tooltip("Show a ground warning at the landing point from the moment the leap commits until impact.")]
+        public bool showTelegraph = true;
+        [Tooltip("Optional custom telegraph prefab. Leave empty for the built-in ring + center marker.")]
+        public GameObject telegraphPrefab;
+        public Color telegraphColor = new Color(1f, 0.25f, 0.1f, 0.9f);
+        [Min(0.05f)]
+        [Tooltip("1 = the ring exactly matches the slam's max AoE radius.")]
+        public float telegraphScaleMultiplier = 1f;
+        [Min(0f)]
+        [Tooltip("Pulses per second of the warning's breathing animation. 0 = none.")]
+        public float telegraphPulseSpeed = 3f;
+        [Tooltip("Optional VFX spawned when the warning appears.")]
+        public GameObject telegraphVfx;
+        [Tooltip("Optional SFX played when the warning appears.")]
+        public AudioClip telegraphSfx;
+        [Range(0f, 1f)] public float telegraphSfxVolume = 1f;
     }
 }

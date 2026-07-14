@@ -12,6 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aea364ac194f4afeb064f567fc50926b, type: 3}
   m_Name: ShieldBuff
   m_EditorClassIdentifier: 
-  duration: 10
+  duration: 5
   indicatorColor: {r: 0.2, g: 0.9, b: 1, a: 1}
   shieldAmount: 50

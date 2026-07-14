@@ -14,9 +14,9 @@ using Signal.Combat.Interfaces;
 ///   Jump        - Button
 ///   Sprint      - Button
 ///   Dodge       - Button
-///   Attack      - Button           (light attack)
-///   HeavyAttack - Button           (heavy attack — separate binding, e.g. Middle Mouse Button)
-///   Kick        - Button
+///   Attack      - Button           (light attack — Left Mouse Button)
+///   HeavyAttack - Button           (Right Mouse Button)
+///   Kick        - Button           (F)
 ///   LockOn      - Button
 ///
 /// Implements ICombatInputSource so combat code depends on that abstraction rather than this

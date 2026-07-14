@@ -29,6 +29,19 @@ namespace Signal.Combat.Projectiles
         public AudioClip explosionSfx;
         [Range(0f, 1f)] public float sfxVolume = 1f;
 
+        [Header("Landing Indicator")]
+        [Tooltip("Show a ground marker at the predicted impact point for the projectile's flight.")]
+        public bool showLandingIndicator = true;
+        [Tooltip("Optional custom indicator prefab (an AoeTelegraph is added if missing). Leave empty for the built-in ring + center marker.")]
+        public GameObject landingIndicatorPrefab;
+        public Color indicatorColor = new Color(1f, 0.55f, 0.1f, 0.9f);
+        [Min(0.05f)]
+        [Tooltip("1 = the ring exactly matches the explosion radius. Scale up only for readability.")]
+        public float indicatorScaleMultiplier = 1f;
+        [Min(0f)]
+        [Tooltip("Pulses per second of the indicator's breathing animation. 0 = no pulse.")]
+        public float indicatorPulseSpeed = 2f;
+
         /// <summary>Gravity magnitude this projectile actually experiences (for ballistic prediction).</summary>
         public float EffectiveGravity => Mathf.Abs(Physics.gravity.y) * gravityScale;
     }

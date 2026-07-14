@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using Signal.Combat.Detection;
+using Signal.Combat.Telegraphs;
 
 namespace Signal.Combat.Enemies
 {
@@ -30,6 +31,7 @@ namespace Signal.Combat.Enemies
         private Rigidbody _rb;
         private OverlapSphereHitDetector _detector;
         private readonly CombatHitResolver _resolver = new CombatHitResolver();
+        private AoeTelegraph _telegraph; // created once, reused per slam
         private float _nextReadyTime;
         private float _liveShockwaveRadius; // for gizmos
         private Vector3 _liveShockwaveCenter;
@@ -67,8 +69,12 @@ namespace Signal.Combat.Enemies
             Vector3 start = transform.position;
             // Land at the target's ground position; keep our own height as ground reference
             // (flat-arena assumption — swap in a ground raycast here for uneven terrain).
+            // The landing point is locked HERE, when the leap commits — it never changes after
+            // the warning appears, so the telegraph is always truthful.
             Vector3 landing = new Vector3(targetPoint.x, start.y, targetPoint.z);
             Vector3 apex = landing + Vector3.up * config.jumpHeight;
+
+            ShowTelegraph(landing);
 
             if (config.preJumpDelay > 0f) yield return new WaitForSeconds(config.preJumpDelay);
 
@@ -101,6 +107,9 @@ namespace Signal.Combat.Enemies
 
         private void OnImpact(Vector3 point)
         {
+            // The warning must vanish the instant the slam lands.
+            if (_telegraph != null) _telegraph.Hide();
+
             if (config.impactVfxPrefab != null)
                 Instantiate(config.impactVfxPrefab, point, Quaternion.identity);
             if (config.impactSfx != null)
@@ -135,6 +144,42 @@ namespace Signal.Combat.Enemies
 
             CombatLog.Info($"'{name}' shockwave finished: {totalHits} target(s) damaged for {config.damage:0.#}.", this);
             _liveShockwaveRadius = 0f;
+        }
+
+        private void ShowTelegraph(Vector3 landing)
+        {
+            if (!config.showTelegraph) return;
+
+            if (_telegraph == null)
+                _telegraph = AoeTelegraph.Create(config.telegraphPrefab);
+
+            // Warning duration = the leap's full committed timeline, so the heat-up tint peaks
+            // exactly at impact: pre-jump + rise + apex hang + plummet.
+            float warningDuration =
+                config.preJumpDelay + config.riseDuration + config.apexPause + config.slamDuration;
+
+            _telegraph.Show(landing, new AoeTelegraphSettings
+            {
+                Radius = config.aoeMaxRadius,
+                Color = config.telegraphColor,
+                ScaleMultiplier = config.telegraphScaleMultiplier,
+                PulseSpeed = config.telegraphPulseSpeed,
+                WarningDuration = warningDuration,
+                AppearVfx = config.telegraphVfx,
+                AppearSfx = config.telegraphSfx,
+                SfxVolume = config.telegraphSfxVolume
+            });
+        }
+
+        private void OnDisable()
+        {
+            // Coroutines die with the component — never leave a live warning behind.
+            if (_telegraph != null) _telegraph.Hide();
+        }
+
+        private void OnDestroy()
+        {
+            if (_telegraph != null) Destroy(_telegraph.gameObject);
         }
 
         private void OnDrawGizmosSelected()
