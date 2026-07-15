@@ -14,7 +14,7 @@ namespace Signal.UI
         [SerializeField] private string gameTitle = "SIGNAL LOST";
         [SerializeField]
         [Tooltip("Scene loaded by the Start button. Must be in Build Settings.")]
-        private string gameplaySceneName = "Test";
+        private string gameplaySceneName = "Tutorial";
         [SerializeField] private SettingsUI settingsUI;
 
         private static readonly Color BackgroundColor = new Color(0.07f, 0.07f, 0.1f);

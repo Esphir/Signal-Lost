@@ -207,9 +207,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4fcfcf48f19f05429a27c4aae36012f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 100
+  maxHealth: 200
   startAtMaxHealth: 1
-  startingHealth: 100
+  startingHealth: 200
 --- !u!114 &7130117319680664962
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -238,8 +238,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 55d83faa54146f946a3b7307df6895cf, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   knockbackMultiplier: 1
 --- !u!114 &5152042692491368002
 MonoBehaviour:
@@ -251,8 +251,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ac21571e915769c4787d08e246baa566, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   stunDuration: 2
   knockbackWindow: 1.5
   minImpactSpeed: 3
@@ -269,8 +269,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2a2082b2ba1b4ab40ac5420808b6ec57, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &5152042692491368004
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -281,8 +281,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f2d7c807455e6b34e8c823c8dac85244, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   indicator: {fileID: 0}
   autoIndicatorOffset: {x: 0, y: 2.2, z: 0}
 --- !u!114 &5152042692491368005
@@ -295,8 +295,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f88d5bdf418a47edae962bba464e891e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   flashDuration: 0.07
   flashColor: {r: 1, g: 0, b: 0, a: 1}
   renderers: []
@@ -310,8 +310,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6850b7745753b7f8c28d8ccee93ad77e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 4737176b639b1a90932b3cc0f13cf214, type: 2}
 --- !u!114 &4644212239799149002
 MonoBehaviour:
@@ -323,8 +323,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5c7bffaab4adc0eed3bcfe7562be826d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   barPrefab: {fileID: 8300000000000000013, guid: 18847d41619a12a6dd1b1fcb06f0669d, type: 3}
   heightOffset: 2.6
   billboardCamera: {fileID: 0}

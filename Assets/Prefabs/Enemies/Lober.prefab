@@ -313,6 +313,11 @@ MonoBehaviour:
   rotationSpeed: 90
   aimTolerance: 5
   lobAngle: 45
+  closeRangeDistance: 8
+  maxLaunchAngle: 85
+  reactionTimeMultiplier: 1
+  predictionStrength: 0
+  maxPredictionDistance: 4
   predictionIterations: 4
   showPredictionGizmo: 1
 --- !u!114 &187897479789510400
@@ -327,9 +332,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d4fcfcf48f19f05429a27c4aae36012f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  maxHealth: 200
+  maxHealth: 150
   startAtMaxHealth: 1
-  startingHealth: 200
+  startingHealth: 150
 --- !u!114 &3496113839073391455
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -360,7 +365,7 @@ MonoBehaviour:
   minImpactSpeed: 3
   solidCollisionMask:
     serializedVersion: 2
-    m_Bits: 193
+    m_Bits: 192
 --- !u!114 &5316653858241794030
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -373,7 +378,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c3ed62af8bdf4791bc0d66a00ca2593a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  destroyDelay: 2
+  destroyDelay: 0.1
   disableCollidersOnDeath: 1
   behavioursToDisable:
   - {fileID: 8412061647620010887}
@@ -443,8 +448,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6850b7745753b7f8c28d8ccee93ad77e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 4737176b639b1a90932b3cc0f13cf214, type: 2}
 --- !u!114 &4644212239799149001
 MonoBehaviour:
@@ -456,8 +461,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5c7bffaab4adc0eed3bcfe7562be826d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   barPrefab: {fileID: 8300000000000000013, guid: 18847d41619a12a6dd1b1fcb06f0669d, type: 3}
-  heightOffset: 2.0
+  heightOffset: 2
   billboardCamera: {fileID: 0}

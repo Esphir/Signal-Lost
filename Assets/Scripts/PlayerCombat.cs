@@ -150,6 +150,24 @@ public class PlayerCombat : MonoBehaviour, IAttacker
         SpineProxyGate.SetSuspended(_spineProxy, this, false);
     }
 
+    /// <summary>
+    /// Aborts any in-progress attack and hit-stop and clears buffered input, releasing the attack
+    /// lock so control returns immediately (used on respawn). StopAllCoroutines skips the RunAttack
+    /// finally, so IsAttacking is cleared here directly.
+    /// </summary>
+    public void CancelAttack()
+    {
+        StopAllCoroutines();
+        IsAttacking = false;
+        _bufferedStrategyIndex = -1;
+        if (_hitStopActive)
+        {
+            Time.timeScale = 1f;
+            Time.fixedDeltaTime = 0.02f;
+            _hitStopActive = false;
+        }
+    }
+
     private void Update()
     {
         UpdateUpperBodyLayer();

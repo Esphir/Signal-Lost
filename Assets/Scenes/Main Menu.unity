@@ -352,10 +352,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0e049f5c058e434dd2e4740894b14dbe, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   gameTitle: SIGNAL LOST
-  gameplaySceneName: Test
+  gameplaySceneName: Tutorial
   settingsUI: {fileID: 1900000104}
 --- !u!114 &1900000104
 MonoBehaviour:
@@ -367,9 +367,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 50f4a3aa4edd2ea3a47e775b9cbf6e41, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   rebindUI: {fileID: 1900000105}
+  minSensitivity: 0.1
+  maxSensitivity: 5
 --- !u!114 &1900000105
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -380,8 +382,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: cfe841d883fcfb2b6fed386e6c483be1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   actionMapName: Player
   keyboardMouseGroup: Keyboard&Mouse

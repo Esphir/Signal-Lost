@@ -29,6 +29,10 @@ public class PlayerController : MonoBehaviour
     public float jumpBufferTime = 0.12f;
     [Tooltip("Extra jumps allowed while airborne. 1 = double jump.")]
     public int maxAirJumps = 1;
+    [Tooltip("Air (double) jump height as a multiple of Jump Height. >1 makes the second jump higher; 1 = same as the first.")]
+    public float airJumpHeightMultiplier = 1.25f;
+    [Tooltip("After jumping, ignore the ground check for this long so the player clears it — stops coyote time/air jumps from refreshing and the second jump being treated as a ground jump.")]
+    public float jumpGroundIgnoreTime = 0.1f;
 
     [Header("Ground Check")]
     public float groundCheckRadius = 0.3f;
@@ -59,6 +63,7 @@ public class PlayerController : MonoBehaviour
     private float _coyoteTimer;
     private float _jumpBufferTimer;
     private int _airJumpsRemaining;
+    private float _jumpGraceTimer;
 
 
     private void Awake()
@@ -88,6 +93,16 @@ public class PlayerController : MonoBehaviour
 
     private void CheckGround()
     {
+        // Briefly after a jump, force "airborne" so the still-overlapping ground check can't
+        // re-ground the player and refresh coyote time / air jumps (which would turn a fast
+        // second tap into another ground jump).
+        if (_jumpGraceTimer > 0f)
+        {
+            _jumpGraceTimer -= Time.deltaTime;
+            IsGrounded = false;
+            return;
+        }
+
         Vector3 origin = transform.position + Vector3.up * groundCheckOffset;
         IsGrounded = Physics.CheckSphere(origin, groundCheckRadius, groundMask,
                                           QueryTriggerInteraction.Ignore);
@@ -154,9 +169,11 @@ public class PlayerController : MonoBehaviour
             _airJumpsRemaining--; // double jump (resets on landing)
         }
 
-        _velocity.y = Mathf.Sqrt(jumpHeight * 2f * Mathf.Abs(Physics.gravity.y));
+        float height = groundJump ? jumpHeight : jumpHeight * airJumpHeightMultiplier;
+        _velocity.y = Mathf.Sqrt(height * 2f * Mathf.Abs(Physics.gravity.y));
         _jumpBufferTimer = 0f;
         _coyoteTimer = 0f;
+        _jumpGraceTimer = jumpGroundIgnoreTime;
     }
 
     private void ApplyGravity()
@@ -205,6 +222,37 @@ public class PlayerController : MonoBehaviour
     }
 
     public void ApplyRootMotion(Vector3 delta) => _cc.Move(delta);
+
+    /// <summary>
+    /// Zeroes all movement state (vertical + horizontal velocity, smoothing, jump timers) so the
+    /// player lands in a clean, controllable state after a teleport/respawn.
+    /// </summary>
+    public void ResetMotionState()
+    {
+        _velocity = Vector3.zero;
+        _moveVelocity = Vector3.zero;
+        _moveVelocityRef = Vector3.zero;
+        _coyoteTimer = 0f;
+        _jumpBufferTimer = 0f;
+        _jumpGraceTimer = 0f;
+        _airJumpsRemaining = maxAirJumps;
+    }
+
+    /// <summary>
+    /// Post-teleport reset: clears motion state, re-checks grounded at the NEW position, and pushes
+    /// the locomotion Speed param to 0, so Idle/Run resumes immediately instead of lingering in a
+    /// fall/land pose driven by stale airborne data. Works even while this component is disabled.
+    /// </summary>
+    public void SnapToGround()
+    {
+        ResetMotionState();
+
+        Vector3 origin = transform.position + Vector3.up * groundCheckOffset;
+        IsGrounded = Physics.CheckSphere(origin, groundCheckRadius, groundMask, QueryTriggerInteraction.Ignore);
+        if (IsGrounded) _velocity.y = -2f;
+
+        if (_animator != null) _animator.SetFloat(HashSpeed, 0f);
+    }
 
     /// <summary>
     /// Clears the smoothed horizontal movement state so control resumes cleanly after external

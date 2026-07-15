@@ -142,6 +142,22 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
         return true;
     }
 
+    /// <summary>Aborts an in-progress roll and its i-frame/slow-mo coroutines — used on respawn.</summary>
+    public void CancelDodge()
+    {
+        StopAllCoroutines();
+        if (_perfectActive)
+        {
+            Time.timeScale = 1f;
+            Time.fixedDeltaTime = 0.02f;
+            _perfectActive = false;
+        }
+        IsRolling = false;
+        IsInvincible = false;
+        _rollTimer = 0f;
+        _cooldownTimer = 0f;
+    }
+
     private IEnumerator PerfectDodgeSlowMo()
     {
         _perfectActive      = true;

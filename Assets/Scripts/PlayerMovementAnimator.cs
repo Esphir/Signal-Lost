@@ -101,6 +101,19 @@ public class PlayerMovementAnimator : MonoBehaviour
     }
 
     /// <summary>
+    /// Immediately forces the movement layer off and marks the animator grounded, so a fall/land
+    /// state can't linger across a teleport/respawn. Safe to call while this component is disabled.
+    /// </summary>
+    public void SnapToGrounded()
+    {
+        if (_animator == null) return;
+        _animator.SetBool(HashIsGrounded, true);
+        _animator.SetFloat(HashVerticalVelocity, 0f);
+        if (_layerIndex >= 0) _animator.SetLayerWeight(_layerIndex, 0f);
+        SpineProxyGate.SetSuspended(_spineProxy, this, false);
+    }
+
+    /// <summary>
     /// Plays the roll animation matching a world-space direction (resolved against current facing)
     /// and reports the real clip length so gameplay can pace the dodge to the animation.
     /// Returns false when unavailable — callers should fall back to their own timing.
