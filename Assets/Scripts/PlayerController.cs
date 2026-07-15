@@ -38,7 +38,6 @@ public class PlayerController : MonoBehaviour
     [Header("Camera")]
     public Transform cameraTransform;
 
-    // ── Public state ──────────────────────────────────────────────────────
     public bool IsGrounded { get; private set; }
     public bool IsMoving { get; private set; }
     public bool IsSprinting { get; private set; }
@@ -46,7 +45,6 @@ public class PlayerController : MonoBehaviour
     public float CurrentSpeed { get; private set; }
     public Vector3 Velocity => _velocity;
 
-    // ── Private ───────────────────────────────────────────────────────────
     private CharacterController _cc;
     private PlayerDodge _dodge;
     private PlayerLockOn _lockOn;
@@ -62,7 +60,6 @@ public class PlayerController : MonoBehaviour
     private float _jumpBufferTimer;
     private int _airJumpsRemaining;
 
-    // ──────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {

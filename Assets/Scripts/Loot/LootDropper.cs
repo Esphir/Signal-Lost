@@ -33,6 +33,8 @@ namespace Signal.Loot
 
         private void OnDied()
         {
+            if (RunManager.HasInstance) RunManager.Instance.ReportEnemyKilled();
+
             if (Random.value > settings.dropChance) return;
 
             ItemRarity rarity = settings.RollRarity();
@@ -44,6 +46,7 @@ namespace Signal.Loot
             }
 
             loot.Initialize(rarity, settings);
+            if (RunManager.HasInstance) RunManager.Instance.ReportLootDropped();
             Debug.Log($"[Loot] '{name}' dropped {rarity} loot.", loot);
         }
     }

@@ -77,6 +77,6 @@ namespace Signal.Run
                 _animator.SetFloat(AttackSpeedHash, RunManager.QueryStat(StatType.AttackSpeed, 1f));
         }
 
-        private void OnPlayerDied() => RunManager.Instance.EndRun("player died");
+        private void OnPlayerDied() => RunManager.Instance.EndRun(RunEndReason.PlayerDied);
     }
 }

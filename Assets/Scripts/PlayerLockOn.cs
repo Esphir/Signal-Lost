@@ -18,21 +18,18 @@ public class PlayerLockOn : MonoBehaviour
     [Header("Cycle")]
     public float cycleSensitivity   = 0.5f;
 
-    // ── State ──────────────────────────────────────────────────────────────
     public bool      HasTarget      => _target != null;
     public Vector3   TargetPosition => _target != null
                                        ? _target.position + Vector3.up * targetHeightOffset
                                        : Vector3.zero;
     public Transform CurrentTarget  => _target;
 
-    // ── Private ───────────────────────────────────────────────────────────
     private PlayerInputHandler _input;
     private PlayerFollowCamera _followCam;
     private Transform          _target;
     private Camera             _cam;
     private float              _cycleDelay;
 
-    // ──────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -58,7 +55,6 @@ public class PlayerLockOn : MonoBehaviour
         }
     }
 
-    // ── Acquire / Release ─────────────────────────────────────────────────
 
     private void AcquireLock()
     {
@@ -89,7 +85,6 @@ public class PlayerLockOn : MonoBehaviour
         }
     }
 
-    // ── Validation ────────────────────────────────────────────────────────
 
     private void ValidateLock()
     {
@@ -98,7 +93,6 @@ public class PlayerLockOn : MonoBehaviour
             ReleaseLock();
     }
 
-    // ── Cycle ─────────────────────────────────────────────────────────────
 
     private void CycleTarget()
     {
@@ -129,7 +123,6 @@ public class PlayerLockOn : MonoBehaviour
         if (best != null) { ReleaseLock(); SetTarget(best); }
     }
 
-    // ── Best target ───────────────────────────────────────────────────────
 
     private Transform FindBestTarget()
     {
@@ -152,7 +145,6 @@ public class PlayerLockOn : MonoBehaviour
         return best;
     }
 
-    // ── Indicator billboard ───────────────────────────────────────────────
 
     private void UpdateIndicator()
     {
@@ -160,7 +152,6 @@ public class PlayerLockOn : MonoBehaviour
         lockOnIndicator.transform.LookAt(lockOnIndicator.transform.position + _cam.transform.forward);
     }
 
-    // ── Gizmos ────────────────────────────────────────────────────────────
 
     private void OnDrawGizmosSelected()
     {

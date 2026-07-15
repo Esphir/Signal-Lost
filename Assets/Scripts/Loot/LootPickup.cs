@@ -107,6 +107,7 @@ namespace Signal.Loot
             if (ui.IsOpen) return; // finish the current choice first; the loot stays on the ground
 
             SpawnPickupVfx();
+            if (RunManager.HasInstance) RunManager.Instance.ReportLootCollected(Rarity);
             ui.Open(Rarity, _settings != null ? _settings.GetColor(Rarity) : Color.white);
             LootPool.Release(this);
         }

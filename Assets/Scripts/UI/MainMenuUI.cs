@@ -1,3 +1,4 @@
+using Signal.Dev;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -53,6 +54,7 @@ namespace Signal.UI
 
             AddButton(buttons.transform, "Start", OnStart);
             AddButton(buttons.transform, "Settings", OnSettings);
+            AddButton(buttons.transform, "Developer Menu", OnDeveloperMenu);
             AddButton(buttons.transform, "Quit", OnQuit);
         }
 
@@ -63,7 +65,17 @@ namespace Signal.UI
             button.onClick.AddListener(onClick);
         }
 
-        private void OnStart() => SceneManager.LoadScene(gameplaySceneName);
+        private void OnStart()
+        {
+            DeveloperModeManager.DeveloperMode = false;
+            SceneManager.LoadScene(gameplaySceneName);
+        }
+
+        private void OnDeveloperMenu()
+        {
+            DeveloperModeManager.DeveloperMode = true;
+            SceneManager.LoadScene(gameplaySceneName);
+        }
 
         private void OnSettings()
         {

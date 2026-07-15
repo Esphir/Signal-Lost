@@ -35,13 +35,11 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
     public float perfectTimeScale   = 0.2f;
     public float perfectSlowDuration = 0.35f;
 
-    // ── State ──────────────────────────────────────────────────────────────
     public bool IsRolling    { get; private set; }
     public bool IsInvincible { get; private set; }
 
     bool IInvulnerabilityGate.IsInvulnerable => IsInvincible;
 
-    // ── Private ───────────────────────────────────────────────────────────
     private PlayerController      _controller;
     private PlayerInputHandler    _input;
     private PlayerMovementAnimator _movementAnimator; // optional — resolves which roll clip plays
@@ -53,7 +51,6 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
     private Vector3 _rollDirection;
     private bool    _perfectActive;
 
-    // ──────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {

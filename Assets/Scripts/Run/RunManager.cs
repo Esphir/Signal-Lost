@@ -5,11 +5,30 @@ using UnityEngine.SceneManagement;
 
 namespace Signal.Run
 {
+    public enum RunEndReason
+    {
+        PlayerDied,
+        ReturnedToMenu,
+        Victory,
+    }
+
+    /// <summary>Snapshot of a run's tallies. A value type, so a copy handed to the run-end UI survives the run being cleared.</summary>
+    public struct RunStats
+    {
+        public int EnemiesKilled;
+        public int LootDropped;
+        public int LootCollected;
+        public int UpgradesSelected;
+        public float Duration;
+        public bool HasCollectedLoot;
+        public ItemRarity HighestRarity;
+    }
+
     /// <summary>
-    /// Owns the current run: acquired items and their aggregated stat modifiers. Survives scene
-    /// loads (DontDestroyOnLoad) and is created on first access, so any scene can be played
-    /// directly. Knows nothing about player components — they read final stats via
-    /// <see cref="QueryStat"/> and react to <see cref="StatsChanged"/>.
+    /// Owns the current run: acquired upgrades, their aggregated stat modifiers, and per-run
+    /// statistics. Survives scene loads (DontDestroyOnLoad) and is created on first access.
+    /// Knows nothing about player, loot, or UI components — they read stats via <see cref="QueryStat"/>
+    /// / <see cref="Statistics"/>, report tallies through the Report* methods, and react to events.
     /// </summary>
     public sealed class RunManager : MonoBehaviour
     {
@@ -40,11 +59,28 @@ namespace Signal.Run
         public RunData Data { get; } = new RunData();
         public bool RunActive { get; private set; }
 
+        /// <summary>Live statistics for the current run (duration is filled to the moment of access).</summary>
+        public RunStats Statistics
+        {
+            get
+            {
+                RunStats snapshot = _stats;
+                snapshot.Duration = RunActive ? Time.time - _runStartTime : _stats.Duration;
+                return snapshot;
+            }
+        }
+
         /// <summary>Raised whenever run stats change (upgrade gained, run started/ended).</summary>
         public event Action StatsChanged;
 
         /// <summary>Raised when the player picks an upgrade.</summary>
         public event Action<RunUpgrade> UpgradeAcquired;
+
+        /// <summary>Raised when a run ends, with a snapshot of its statistics and the reason.</summary>
+        public event Action<RunStats, RunEndReason> RunEnded;
+
+        private RunStats _stats;
+        private float _runStartTime;
 
         private void Awake()
         {
@@ -68,18 +104,26 @@ namespace Signal.Run
         public void StartRun()
         {
             Data.Clear();
+            _stats = default;
+            _runStartTime = Time.time;
             RunActive = true;
             Debug.Log("[Run] Run started.");
             StatsChanged?.Invoke();
         }
 
-        /// <summary>Ends the run and wipes all run progression (death, back to menu, …).</summary>
-        public void EndRun(string reason = null)
+        /// <summary>Ends the run, snapshots its statistics for the <see cref="RunEnded"/> event, then wipes all run progression.</summary>
+        public void EndRun(RunEndReason reason)
         {
             if (!RunActive) return;
-            Data.Clear();
+
+            _stats.Duration = Time.time - _runStartTime;
+            RunStats snapshot = _stats;
             RunActive = false;
-            Debug.Log($"[Run] Run ended{(string.IsNullOrEmpty(reason) ? "" : $" ({reason})")} — run upgrades reset.");
+
+            RunEnded?.Invoke(snapshot, reason);
+
+            Data.Clear();
+            Debug.Log($"[Run] Run ended ({reason}) — run upgrades reset.");
             StatsChanged?.Invoke();
         }
 
@@ -89,19 +133,41 @@ namespace Signal.Run
             if (!RunActive) StartRun(); // picking an upgrade after death/menu implicitly begins a fresh run
 
             Data.Add(upgrade);
+            _stats.UpgradesSelected++;
             Debug.Log($"[Run] Upgrade chosen: {upgrade.label} ({upgrade.rarity}) — {Data.Upgrades.Count} upgrade(s) this run.");
             UpgradeAcquired?.Invoke(upgrade);
             StatsChanged?.Invoke();
+        }
+
+        public void ReportEnemyKilled() => _stats.EnemiesKilled++;
+
+        public void ReportLootDropped() => _stats.LootDropped++;
+
+        public void ReportLootCollected(ItemRarity rarity)
+        {
+            _stats.LootCollected++;
+            if (!_stats.HasCollectedLoot || (int)rarity > (int)_stats.HighestRarity)
+                _stats.HighestRarity = rarity;
+            _stats.HasCollectedLoot = true;
         }
 
         public float GetStatValue(StatType stat, float baseValue) => Data.Stats.GetValue(stat, baseValue);
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            if (scene.name == MainMenuSceneName) EndRun("returned to main menu");
+            Time.timeScale = 1f; // a freshly loaded scene always starts unpaused
+
+            if (scene.name == MainMenuSceneName)
+            {
+                EndRun(RunEndReason.ReturnedToMenu);
+                return;
+            }
+
+            // Entering a gameplay scene with no run active (e.g. a new game from the menu) starts a
+            // fresh run; an already-active run carries across level transitions untouched.
+            if (!RunActive) StartRun();
         }
 
-        // Statics outlive play sessions when domain reload is off; reset per run of the game.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStatics() => _instance = null;
     }

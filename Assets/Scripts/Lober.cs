@@ -77,20 +77,18 @@ public class LobTurret : MonoBehaviour
     [Tooltip("Draw a gizmo sphere at the predicted intercept point.")]
     public bool showPredictionGizmo = true;
 
-    // ── Private state ──────────────────────────────────────────────────────
     private Transform _target;
-    private Rigidbody _targetRb;          // cached for velocity sampling
-    private Vector3 _targetVelocity;      // smoothed velocity estimate
+    private Rigidbody _targetRb;
+    private Vector3 _targetVelocity;
     private Vector3 _lastTargetPos;
     private float _fireTimer;
-    private Vector3 _predictedAimPoint;   // stored for gizmos & aiming
-    private IStunnable _stunnable;        // optional — absent on stun-immune variants
-    private ProjectilePool _pool;         // optional — instantiates directly when absent
+    private Vector3 _predictedAimPoint;
+    private IStunnable _stunnable;
+    private ProjectilePool _pool;
     private LobProjectile _projectileTemplate;
-    private float _projectileGravity;     // effective gravity from the projectile's config
-    private float _currentLaunchAngle;    // distance-adjusted angle, shared by aim + pitch + fire
+    private float _projectileGravity;
+    private float _currentLaunchAngle;
 
-    // ──────────────────────────────────────────────────────────────────────
 
     /// <summary>Where projectiles spawn: BarrelPivot when assigned, else BarrelTip, else the root.</summary>
     private Transform SpawnPoint =>
@@ -148,7 +146,6 @@ public class LobTurret : MonoBehaviour
         }
     }
 
-    // ── Target detection ──────────────────────────────────────────────────
 
     private void FindTarget()
     {
@@ -168,7 +165,6 @@ public class LobTurret : MonoBehaviour
             }
         }
 
-        // Re-cache Rigidbody if target changed
         if (_target != previous)
         {
             _targetRb = _target != null ? _target.GetComponent<Rigidbody>() : null;
@@ -184,7 +180,6 @@ public class LobTurret : MonoBehaviour
         return !Physics.Raycast(SpawnPoint.position, dir.normalized, dir.magnitude, obstructionMask);
     }
 
-    // ── Velocity sampling ─────────────────────────────────────────────────
 
     private void SampleTargetVelocity()
     {
@@ -208,7 +203,6 @@ public class LobTurret : MonoBehaviour
         _targetVelocity = Vector3.Lerp(_targetVelocity, rawVelocity, 10f * Time.deltaTime);
     }
 
-    // ── Lead prediction ───────────────────────────────────────────────────
 
     /// <summary>
     /// Aim-point selection with tunable lead. Accuracy first: at strength 0 (default) this is
@@ -260,7 +254,6 @@ public class LobTurret : MonoBehaviour
         return horizontalDist / horizontalSpeed;
     }
 
-    // ── Aiming ────────────────────────────────────────────────────────────
 
     private void RotateTowardPoint(Vector3 point)
     {
@@ -311,7 +304,6 @@ public class LobTurret : MonoBehaviour
         return angle <= aimTolerance;
     }
 
-    // ── Firing ────────────────────────────────────────────────────────────
 
     private void Fire(Vector3 aimPoint)
     {
@@ -377,7 +369,6 @@ public class LobTurret : MonoBehaviour
         return horizontalDir * v * cosA + Vector3.up * v * Mathf.Sin(angleRad);
     }
 
-    // ── Gizmos ────────────────────────────────────────────────────────────
 
     private void OnDrawGizmosSelected()
     {

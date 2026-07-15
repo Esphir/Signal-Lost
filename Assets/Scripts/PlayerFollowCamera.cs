@@ -32,7 +32,6 @@ public class PlayerFollowCamera : MonoBehaviour
     [Tooltip("How fast the camera swings to frame a locked target.")]
     public float lockOnLerpSpeed = 6f;
 
-    // ── Private ───────────────────────────────────────────────────────────
     private PlayerInputHandler _input;
     private CinemachineOrbitalFollow _orbital;
     private bool _lockOnActive;
@@ -42,7 +41,6 @@ public class PlayerFollowCamera : MonoBehaviour
     private float _targetYaw;
     private float _targetPitch;
 
-    // ──────────────────────────────────────────────────────────────────────
 
     private void Start()
     {
@@ -82,15 +80,14 @@ public class PlayerFollowCamera : MonoBehaviour
         HandleZoom();
     }
 
-    // ── Free orbit ────────────────────────────────────────────────────────
 
     private void ApplyMouseOrbit()
     {
         Vector2 look = _input.LookInput;
 
-        // Accumulate raw mouse delta into target angles
-        _targetYaw   += look.x * mouseSensitivity;
-        _targetPitch  = Mathf.Clamp(_targetPitch - look.y * mouseSensitivity, minPitch, maxPitch);
+        float sensitivity = mouseSensitivity * Signal.UI.SettingsStore.MouseSensitivity;
+        _targetYaw   += look.x * sensitivity;
+        _targetPitch  = Mathf.Clamp(_targetPitch - look.y * sensitivity, minPitch, maxPitch);
 
         // Smoothly drive Cinemachine axes toward the targets each frame
         float t = 1f - Mathf.Exp(-cameraSmoothing * Time.deltaTime);
@@ -98,7 +95,6 @@ public class PlayerFollowCamera : MonoBehaviour
         _orbital.VerticalAxis.Value   = Mathf.Lerp(_orbital.VerticalAxis.Value, _targetPitch, t);
     }
 
-    // ── Lock-on orbit ─────────────────────────────────────────────────────
 
     private void ApplyLockOnRotation()
     {
@@ -122,7 +118,6 @@ public class PlayerFollowCamera : MonoBehaviour
         _orbital.VerticalAxis.Value   = _targetPitch;
     }
 
-    // ── Zoom ──────────────────────────────────────────────────────────────
 
     private void HandleZoom()
     {
@@ -134,7 +129,6 @@ public class PlayerFollowCamera : MonoBehaviour
             minRadius, maxRadius);
     }
 
-    // ── Public API ────────────────────────────────────────────────────────
 
     public void SetLockOnTarget(Vector3 worldPoint)
     {

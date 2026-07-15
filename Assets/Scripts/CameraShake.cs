@@ -14,14 +14,12 @@ public class CameraShake : MonoBehaviour
     [Tooltip("Speed of noise scrolling — higher = more jittery.")]
     public float noiseSpeed = 25f;
 
-    // ── Private ───────────────────────────────────────────────────────────
     private Vector3 _originLocalPos;
     private float   _shakeAmount;
     private float   _shakeTimer;
     private float   _shakeDuration;
     private float   _noiseOffset;
 
-    // ──────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -48,7 +46,6 @@ public class CameraShake : MonoBehaviour
         transform.localPosition = _originLocalPos + new Vector3(nx, ny, 0f) * strength;
     }
 
-    // ── Public API ────────────────────────────────────────────────────────
 
     /// <summary>Trigger a shake. Safe to call mid-shake — picks the stronger value.</summary>
     public void Shake(float amount, float duration)

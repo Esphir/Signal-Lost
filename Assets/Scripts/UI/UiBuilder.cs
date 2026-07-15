@@ -118,6 +118,68 @@ namespace Signal.UI
             return button;
         }
 
+        public static Slider CreateSlider(Transform parent, string name, float min, float max, float value)
+        {
+            Slider slider = NewChild<Slider>(parent, name);
+
+            Image background = NewChild<Image>(slider.transform, "Background");
+            background.color = new Color(0f, 0f, 0f, 0.5f);
+            var bgRect = background.rectTransform;
+            bgRect.anchorMin = new Vector2(0f, 0.4f);
+            bgRect.anchorMax = new Vector2(1f, 0.6f);
+            bgRect.offsetMin = Vector2.zero;
+            bgRect.offsetMax = Vector2.zero;
+
+            RectTransform fillArea = NewRect(slider.transform, "Fill Area");
+            fillArea.anchorMin = new Vector2(0f, 0.4f);
+            fillArea.anchorMax = new Vector2(1f, 0.6f);
+            fillArea.offsetMin = new Vector2(10f, 0f);
+            fillArea.offsetMax = new Vector2(-10f, 0f);
+            Image fill = NewChild<Image>(fillArea, "Fill");
+            fill.color = new Color(0.35f, 0.5f, 0.85f);
+            fill.rectTransform.anchorMin = Vector2.zero;
+            fill.rectTransform.anchorMax = Vector2.one;
+            fill.rectTransform.offsetMin = Vector2.zero;
+            fill.rectTransform.offsetMax = Vector2.zero;
+
+            RectTransform handleArea = NewRect(slider.transform, "Handle Slide Area");
+            handleArea.anchorMin = Vector2.zero;
+            handleArea.anchorMax = Vector2.one;
+            handleArea.offsetMin = new Vector2(10f, 0f);
+            handleArea.offsetMax = new Vector2(-10f, 0f);
+            Image handle = NewChild<Image>(handleArea, "Handle");
+            handle.color = Color.white;
+            handle.rectTransform.sizeDelta = new Vector2(18f, 0f);
+
+            slider.fillRect = fill.rectTransform;
+            slider.handleRect = handle.rectTransform;
+            slider.targetGraphic = handle;
+            slider.direction = Slider.Direction.LeftToRight;
+            slider.minValue = min;
+            slider.maxValue = max;
+            slider.value = value;
+            return slider;
+        }
+
+        public static InputField CreateInputField(Transform parent, string name, string value)
+        {
+            Image bg = NewChild<Image>(parent, name);
+            bg.color = new Color(0f, 0f, 0f, 0.5f);
+
+            InputField field = bg.gameObject.AddComponent<InputField>();
+            Text text = CreateText(bg.transform, "Text", value, 18, FontStyle.Normal, TextAnchor.MiddleCenter);
+            text.supportRichText = false;
+            Stretch(text.rectTransform);
+            text.rectTransform.offsetMin = new Vector2(6f, 0f);
+            text.rectTransform.offsetMax = new Vector2(-6f, 0f);
+
+            field.textComponent = text;
+            field.targetGraphic = bg;
+            field.contentType = InputField.ContentType.DecimalNumber;
+            field.text = value;
+            return field;
+        }
+
         public static void Stretch(RectTransform rect)
         {
             rect.anchorMin = Vector2.zero;

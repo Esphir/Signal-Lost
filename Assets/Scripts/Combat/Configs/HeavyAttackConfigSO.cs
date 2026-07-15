@@ -27,5 +27,10 @@ namespace Signal.Combat.Configs
         [Range(0f, 1f)]
         [Tooltip("Hit radius multiplier at zero charge. At full charge the multiplier is always 1 (i.e. 'hitRadius').")]
         public float minChargeRangeMultiplier = 0.75f;
+
+        [Header("Cooldown")]
+        [Range(1f, 2f)]
+        [Tooltip("Real-time seconds before Heavy Attack can fire again. Starts when the attack executes and is independent of attack-speed upgrades.")]
+        public float cooldown = 1.5f;
     }
 }

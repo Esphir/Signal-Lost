@@ -26,7 +26,6 @@ public class LobProjectile : MonoBehaviour
 
     public ProjectileConfigSO Config => config;
 
-    // ── Private ───────────────────────────────────────────────────────────
     private Rigidbody _rb;
     private OverlapSphereHitDetector _detector;
     private readonly CombatHitResolver _resolver = new CombatHitResolver();
@@ -38,8 +37,6 @@ public class LobProjectile : MonoBehaviour
     private bool _despawned;
     private float _launchTime;
     private float _despawnAt;
-
-    // ──────────────────────────────────────────────────────────────────────
 
     private void Awake()
     {
@@ -58,8 +55,6 @@ public class LobProjectile : MonoBehaviour
 
         _detector = new OverlapSphereHitDetector(config.maxExplosionTargets);
     }
-
-    // ── Public API ────────────────────────────────────────────────────────
 
     /// <summary>Set by ProjectilePool so despawning releases instead of destroying. Optional.</summary>
     public void SetDespawnHandler(Action<LobProjectile> handler) => _despawnHandler = handler;
@@ -128,8 +123,6 @@ public class LobProjectile : MonoBehaviour
         });
     }
 
-    // ── Flight ────────────────────────────────────────────────────────────
-
     private void FixedUpdate()
     {
         if (!_launched || _exploded) return;
@@ -145,8 +138,6 @@ public class LobProjectile : MonoBehaviour
         if (_launched && !_exploded && Time.time >= _despawnAt)
             Despawn(); // timed out mid-air — vanish without exploding
     }
-
-    // ── Explosion ─────────────────────────────────────────────────────────
 
     private void OnCollisionEnter(Collision collision)
     {
@@ -197,8 +188,6 @@ public class LobProjectile : MonoBehaviour
     {
         if (_indicator != null) Destroy(_indicator.gameObject);
     }
-
-    // ── Gizmos ────────────────────────────────────────────────────────────
 
     private void OnDrawGizmosSelected()
     {

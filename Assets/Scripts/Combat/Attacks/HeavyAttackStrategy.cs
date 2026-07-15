@@ -16,18 +16,24 @@ namespace Signal.Combat.Attacks
     public sealed class HeavyAttackStrategy : IAttackStrategy
     {
         private readonly HeavyAttackConfigSO _config;
+        private float _cooldownRemaining;
 
         public HeavyAttackStrategy(HeavyAttackConfigSO config)
         {
             _config = config;
         }
 
-        public void Tick(float deltaTime) { /* no persistent state between swings */ }
+        public void Tick(float deltaTime)
+        {
+            if (_cooldownRemaining > 0f) _cooldownRemaining -= deltaTime;
+        }
 
-        public bool CanExecute(ICombatInputSource input) => input.HeavyAttackPressedThisFrame;
+        public bool CanExecute(ICombatInputSource input)
+            => _cooldownRemaining <= 0f && input.HeavyAttackPressedThisFrame;
 
         public IEnumerator Execute(AttackExecutionContext ctx, ICombatInputSource input)
         {
+            _cooldownRemaining = _config.cooldown;
             float chargeRatio = 1f;
 
             if (_config.mode == HeavyAttackMode.HoldToCharge)

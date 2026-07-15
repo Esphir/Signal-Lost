@@ -68,6 +68,7 @@ namespace Signal.Run.Upgrades
             Cursor.visible = true;
             if (pauseDuringChoice) Time.timeScale = 0f;
 
+            Signal.UI.UiModalState.Push();
             BuildOverlay(rarity, accent);
         }
 
@@ -79,19 +80,19 @@ namespace Signal.Run.Upgrades
 
         private void Close()
         {
+            bool wasOpen = _overlay != null;
             if (_overlay != null) Destroy(_overlay);
             _overlay = null;
             Cursor.lockState = _previousLock;
             Cursor.visible = _previousCursorVisible;
             if (pauseDuringChoice) Time.timeScale = 1f;
+            if (wasOpen) Signal.UI.UiModalState.Pop();
         }
 
         private void OnDestroy()
         {
             if (IsOpen) Close();
         }
-
-        // ── Runtime UI construction ───────────────────────────────────────────
 
         private static void EnsureEventSystem()
         {
