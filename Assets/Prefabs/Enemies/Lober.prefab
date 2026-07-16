@@ -163,6 +163,7 @@ GameObject:
   - component: {fileID: 3353941715628646004}
   - component: {fileID: 4644212239799148001}
   - component: {fileID: 4644212239799149001}
+  - component: {fileID: 7412000000000000001}
   m_Layer: 3
   m_Name: Lober
   m_TagString: Enemy
@@ -269,7 +270,7 @@ Rigidbody:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9171620467850103300}
   serializedVersion: 4
-  m_Mass: 1
+  m_Mass: 2
   m_Drag: 0
   m_AngularDrag: 0.05
   m_CenterOfMass: {x: 0, y: 0, z: 0}
@@ -365,7 +366,7 @@ MonoBehaviour:
   minImpactSpeed: 3
   solidCollisionMask:
     serializedVersion: 2
-    m_Bits: 192
+    m_Bits: 128
 --- !u!114 &5316653858241794030
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -451,6 +452,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 4737176b639b1a90932b3cc0f13cf214, type: 2}
+  guaranteedDrop: 0
 --- !u!114 &4644212239799149001
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -465,4 +467,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   barPrefab: {fileID: 8300000000000000013, guid: 18847d41619a12a6dd1b1fcb06f0669d, type: 3}
   heightOffset: 2
+  billboardCamera: {fileID: 0}
+--- !u!114 &7412000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9171620467850103300}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a804dbd68dc744b4a421cd49e0ff9a9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stunVfxPrefab: {fileID: 7300000000000000001, guid: eabc5da648354b30ba485473918f31ac, type: 3}
+  vfxOffset: {x: 0, y: 1.1, z: 0}
+  indicatorOffset: {x: 0, y: 1.5, z: 0}
+  indicatorGlyph: "\u2605"
+  indicatorColor: {r: 1, g: 0.86, b: 0.2, a: 1}
   billboardCamera: {fileID: 0}

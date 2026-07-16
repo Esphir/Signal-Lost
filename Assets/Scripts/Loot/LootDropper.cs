@@ -11,6 +11,12 @@ namespace Signal.Loot
     public class LootDropper : MonoBehaviour
     {
         [SerializeField] private LootSettingsSO settings;
+        [SerializeField]
+        [Tooltip("When true this enemy always drops exactly one item, ignoring the settings' drop chance. Off for normal enemies; used by the tutorial's guaranteed loot.")]
+        private bool guaranteedDrop = false;
+
+        /// <summary>True when this dropper bypasses the random roll and always drops (tutorial loot).</summary>
+        public bool IsGuaranteed => guaranteedDrop;
 
         private IHealth _health;
 
@@ -26,6 +32,23 @@ namespace Signal.Loot
             _health.Died += OnDied;
         }
 
+        /// <summary>
+        /// Wires a dropper added at runtime (e.g. the tutorial's guaranteed-loot dummy): assigns its
+        /// settings and drop guarantee and (re)subscribes to death, re-enabling if Awake had bailed
+        /// because settings weren't set yet. Leaves the normal loot flow untouched.
+        /// </summary>
+        public void Configure(LootSettingsSO lootSettings, bool guaranteed)
+        {
+            if (_health == null) _health = GetComponent<IHealth>();
+            settings = lootSettings;
+            guaranteedDrop = guaranteed;
+
+            if (_health == null || settings == null) return;
+            enabled = true;
+            _health.Died -= OnDied; // avoid a double subscribe if already wired
+            _health.Died += OnDied;
+        }
+
         private void OnDestroy()
         {
             if (_health != null) _health.Died -= OnDied;
@@ -35,7 +58,8 @@ namespace Signal.Loot
         {
             if (RunManager.HasInstance) RunManager.Instance.ReportEnemyKilled();
 
-            if (Random.value > settings.dropChance) return;
+            // Guaranteed droppers skip the chance roll and always drop exactly one.
+            if (!guaranteedDrop && Random.value > settings.dropChance) return;
 
             ItemRarity rarity = settings.RollRarity();
             LootPickup loot = LootPool.Spawn(settings.lootPrefab, transform.position + Vector3.up * 0.5f, Quaternion.identity);

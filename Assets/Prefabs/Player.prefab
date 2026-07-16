@@ -175,6 +175,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 5204963719286151807}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 8752168024553228200}
     - targetCorrespondingSourceObject: {fileID: -3858638838303969124, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3177004419089853517}
@@ -435,6 +438,27 @@ MonoBehaviour:
   choiceCount: 3
   pauseDuringChoice: 1
   debugHotkey: 1
+--- !u!114 &8752168024553228200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3910153233642186742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb1c53d8c4700ac8e1dbe170def01c8, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  database: {fileID: 11400000, guid: 10d5a7478411a07a0fde2a79a9fe49ec, type: 2}
+  feet: {fileID: 0}
+  body: {fileID: 0}
+  weapon: {fileID: 0}
+  shield: {fileID: 0}
+  head: {fileID: 0}
+  landingVelocityThreshold: 4
+  scaleMultiplier: 1
+  parentToSpawnPoint: 0
 --- !u!4 &4397895924016627020 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}

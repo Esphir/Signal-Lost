@@ -38,6 +38,9 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
     public bool IsRolling    { get; private set; }
     public bool IsInvincible { get; private set; }
 
+    /// <summary>Raised once when a dodge roll begins.</summary>
+    public event System.Action DodgeStarted;
+
     bool IInvulnerabilityGate.IsInvulnerable => IsInvincible;
 
     private PlayerController      _controller;
@@ -80,6 +83,7 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
         IsRolling      = true;
         _rollTimer     = 0f;
         _easedProgress = 0f;
+        DodgeStarted?.Invoke();
 
         // Facing is intentionally preserved (no rotation snap) so the directional roll
         // animations — chosen relative to current facing — read correctly, e.g. strafing

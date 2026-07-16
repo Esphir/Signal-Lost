@@ -50,6 +50,12 @@ namespace Signal.Combat.Data
         /// <summary>Reports damage dealt per sweep. Life steal and similar hook in here.</summary>
         public Action<float> OnDamageDealt;
 
+        /// <summary>
+        /// Fires at the attack's impact frame (after <see cref="WaitForImpactPhase"/>), whether or
+        /// not anything is hit. Impact VFX/SFX hook here so they stay synced to the clip.
+        /// </summary>
+        public Action OnImpact;
+
         /// <summary>Rolls the attacker's crit chance (a 0–100 stat) and scales the damage on success.</summary>
         public float RollCritical(float damage, out bool isCritical)
         {

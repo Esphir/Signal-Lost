@@ -13,18 +13,28 @@ namespace Signal.Combat.Attacks
     public sealed class BashStrategy : IAttackStrategy
     {
         private readonly BashConfigSO _config;
+        private float _cooldownRemaining;
 
         public BashStrategy(BashConfigSO config)
         {
             _config = config;
         }
 
-        public void Tick(float deltaTime) { }
+        // Real-time countdown (unaffected by attack-speed upgrades), matching the heavy attack's cooldown.
+        public void Tick(float deltaTime)
+        {
+            if (_cooldownRemaining > 0f) _cooldownRemaining -= deltaTime;
+        }
 
-        public bool CanExecute(ICombatInputSource input) => input.BashPressedThisFrame;
+        // While cooling down this returns false, so PlayerCombat neither fires NOR buffers a bash —
+        // no animation and no knockback trigger until the cooldown elapses.
+        public bool CanExecute(ICombatInputSource input)
+            => _cooldownRemaining <= 0f && input.BashPressedThisFrame;
 
         public IEnumerator Execute(AttackExecutionContext ctx, ICombatInputSource input)
         {
+            _cooldownRemaining = _config.cooldown; // begins the instant the bash executes
+
             // Latch once for the whole swing so a mid-bash stick wiggle can't flip states.
             bool moving = input.MoveInput.magnitude > _config.movingInputThreshold
                           || (ctx.GetPlanarSpeed?.Invoke() ?? 0f) > _config.movingSpeedThreshold;
@@ -35,6 +45,7 @@ namespace Signal.Combat.Attacks
             ctx.SetAttackTrigger(_config);
 
             yield return ctx.WaitForImpactPhase(_config);
+            ctx.OnImpact?.Invoke();
 
             int totalHits = 0;
             bool feedbackFired = false;

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using Signal.Combat.Interfaces;
 
@@ -30,11 +31,17 @@ namespace Signal.Combat.Enemies
         [SerializeField, Min(0.1f)]
         [Tooltip("Don't reposition for corrections smaller than this (prevents jittering).")]
         private float repositionThreshold = 0.75f;
+        [SerializeField, Min(0.5f)]
+        [Tooltip("Spacing kept from allies so the support never overlaps or shoves them — also leaves room to Bash it clear of the group.")]
+        private float supportDistance = 2.5f;
 
         private EnemyMotor _motor;
         private IStunnable _stunnable; // optional
         private Transform _threat;
         private Collider[] _allyBuffer;
+        private int _allyCount;
+        private Collider[] _myColliders;
+        private readonly HashSet<Collider> _ignoredAllies = new HashSet<Collider>();
         private float _nextThreatSearch;
 
         private void Awake()
@@ -42,6 +49,7 @@ namespace Signal.Combat.Enemies
             _motor = GetComponent<EnemyMotor>();
             _stunnable = GetComponent<IStunnable>();
             _allyBuffer = new Collider[16];
+            _myColliders = GetComponentsInChildren<Collider>();
         }
 
         private void Update()
@@ -53,6 +61,7 @@ namespace Signal.Combat.Enemies
             Vector3 desired = cover != null
                 ? CoverPositionBehind(cover)
                 : RetreatPosition();
+            desired = ApplySeparation(desired);
 
             if ((desired - transform.position).sqrMagnitude > repositionThreshold * repositionThreshold)
                 _motor.MoveTowards(desired);
@@ -79,20 +88,43 @@ namespace Signal.Combat.Enemies
             return _threat.position + fromThreat.normalized * retreatDistance;
         }
 
+        /// <summary>
+        /// Pushes a desired position out of any ally within <see cref="supportDistance"/>, so the
+        /// support settles just clear of the group instead of inside it.
+        /// </summary>
+        private Vector3 ApplySeparation(Vector3 desired)
+        {
+            for (int i = 0; i < _allyCount; i++)
+            {
+                Collider ally = _allyBuffer[i];
+                if (ally == null || ally.transform.root == transform.root) continue;
+
+                Vector3 away = desired - ally.transform.position;
+                away.y = 0f;
+                float dist = away.magnitude;
+                if (dist > 0.001f && dist < supportDistance)
+                    desired += away.normalized * (supportDistance - dist);
+            }
+            return desired;
+        }
+
         /// <summary>Nearest ally that isn't this object and isn't another support (prefer front-liners).</summary>
         private Transform FindBestCoverAlly()
         {
-            int count = Physics.OverlapSphereNonAlloc(
+            _allyCount = Physics.OverlapSphereNonAlloc(
                 transform.position, allySearchRadius, _allyBuffer, allyMask, QueryTriggerInteraction.Collide);
 
             Transform best = null, bestSupport = null;
             float bestDist = float.MaxValue, bestSupportDist = float.MaxValue;
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < _allyCount; i++)
             {
                 Transform root = _allyBuffer[i].transform.root;
                 if (root == transform.root) continue;
                 if (!root.CompareTag(allyTag)) continue;
+
+                // Stop shoving allies around: never physically collide with them.
+                IgnoreAlly(_allyBuffer[i]);
 
                 float dist = (root.position - transform.position).sqrMagnitude;
                 if (root.GetComponentInChildren<SupportAI>() != null)
@@ -107,6 +139,13 @@ namespace Signal.Combat.Enemies
             }
 
             return best != null ? best : bestSupport; // hide behind another support only as a last resort
+        }
+
+        private void IgnoreAlly(Collider allyCollider)
+        {
+            if (allyCollider == null || !_ignoredAllies.Add(allyCollider) || _myColliders == null) return;
+            foreach (Collider mine in _myColliders)
+                if (mine != null) Physics.IgnoreCollision(mine, allyCollider, true);
         }
 
         private bool TryAcquireThreat()

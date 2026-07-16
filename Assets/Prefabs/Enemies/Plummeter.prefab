@@ -25,6 +25,7 @@ GameObject:
   - component: {fileID: 5152042692491368005}
   - component: {fileID: 4644212239799148002}
   - component: {fileID: 4644212239799149002}
+  - component: {fileID: 7413000000000000001}
   m_Layer: 3
   m_Name: Plummeter
   m_TagString: Enemy
@@ -258,7 +259,7 @@ MonoBehaviour:
   minImpactSpeed: 3
   solidCollisionMask:
     serializedVersion: 2
-    m_Bits: 193
+    m_Bits: 128
 --- !u!114 &5152042692491368003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -313,6 +314,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 4737176b639b1a90932b3cc0f13cf214, type: 2}
+  guaranteedDrop: 0
 --- !u!114 &4644212239799149002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -327,4 +329,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   barPrefab: {fileID: 8300000000000000013, guid: 18847d41619a12a6dd1b1fcb06f0669d, type: 3}
   heightOffset: 2.6
+  billboardCamera: {fileID: 0}
+--- !u!114 &7413000000000000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8111276562493136826}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a804dbd68dc744b4a421cd49e0ff9a9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  stunVfxPrefab: {fileID: 7300000000000000001, guid: eabc5da648354b30ba485473918f31ac, type: 3}
+  vfxOffset: {x: 0, y: 1.1, z: 0}
+  indicatorOffset: {x: 0, y: 1.5, z: 0}
+  indicatorGlyph: "\u2605"
+  indicatorColor: {r: 1, g: 0.86, b: 0.2, a: 1}
   billboardCamera: {fileID: 0}

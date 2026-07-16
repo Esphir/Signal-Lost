@@ -17,9 +17,9 @@ MonoBehaviour:
   animatorStateName: HeavyAttack
   impactNormalizedTime: 0.4
   activeEndNormalizedTime: 0.55
-  exitNormalizedTime: 0.9
+  exitNormalizedTime: 0.6
   startupTime: 0.15
-  recoveryTime: 0.35
+  recoveryTime: 0.12
   hitOffset: 1
   hitRadius: 1.2
   lungeDistance: 0.5

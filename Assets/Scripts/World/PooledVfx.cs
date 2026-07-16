@@ -20,12 +20,7 @@ namespace Signal.World
 
         public void Play()
         {
-            // Lazily gathered so effects whose particle systems are built at runtime are still found.
-            if (_systems == null)
-            {
-                _systems = GetComponentsInChildren<ParticleSystem>(true);
-                _lifetime = ComputeLifetime();
-            }
+            EnsureSystems();
 
             CancelInvoke();
             foreach (ParticleSystem ps in _systems)
@@ -34,6 +29,42 @@ namespace Signal.World
                 ps.Play(true);
             }
             Invoke(nameof(ReturnToPool), _lifetime);
+        }
+
+        /// <summary>
+        /// Plays looping/sustained with NO automatic return — the effect runs until the caller calls
+        /// <see cref="StopAndRelease"/>. Used for duration-driven effects (e.g. a stun aura that must
+        /// last exactly as long as the stun and stop the instant it ends).
+        /// </summary>
+        public void PlaySustained()
+        {
+            EnsureSystems();
+
+            CancelInvoke(); // cancel any auto-return scheduled by a prior Play()
+            foreach (ParticleSystem ps in _systems)
+            {
+                ps.Clear(true);
+                ps.Play(true);
+            }
+        }
+
+        /// <summary>Stops emission immediately and returns to the pool. Pairs with <see cref="PlaySustained"/>.</summary>
+        public void StopAndRelease()
+        {
+            CancelInvoke();
+            if (_systems != null)
+                foreach (ParticleSystem ps in _systems)
+                    ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
+            VfxPool.Release(this);
+        }
+
+        // Lazily gathered so effects whose particle systems are built at runtime are still found.
+        private void EnsureSystems()
+        {
+            if (_systems != null) return;
+            _systems = GetComponentsInChildren<ParticleSystem>(true);
+            _lifetime = ComputeLifetime();
         }
 
         private void ReturnToPool() => VfxPool.Release(this);

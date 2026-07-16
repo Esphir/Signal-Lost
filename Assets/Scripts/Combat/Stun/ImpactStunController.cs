@@ -71,7 +71,11 @@ namespace Signal.Combat.Stun
             if (IsStunned) return;
             if (Time.time > _knockbackActiveUntil) return;
             if ((solidCollisionMask.value & (1 << collision.gameObject.layer)) == 0) return;
-            if (_rigidbody.linearVelocity.magnitude < minImpactSpeed) return;
+
+            // Use the collision's closing speed, NOT the rigidbody's current velocity: by the time
+            // this callback fires the solver has already killed the body's velocity against the wall,
+            // so reading rb.velocity almost always fell below the threshold and no stun happened.
+            if (collision.relativeVelocity.magnitude < minImpactSpeed) return;
 
             Stun(stunDuration);
         }

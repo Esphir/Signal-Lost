@@ -67,6 +67,7 @@ namespace Signal.Combat.Attacks
             ctx.ApplyRootMotion?.Invoke(ctx.Origin.forward * _config.lungeDistance);
 
             yield return ctx.WaitForImpactPhase(_config);
+            ctx.OnImpact?.Invoke();
 
             int totalHits = 0;
             bool feedbackFired = false;

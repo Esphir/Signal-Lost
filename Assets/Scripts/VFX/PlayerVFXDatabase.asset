@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e73a289a04397f839f1f5b39ab1ce69, type: 3}
+  m_Name: PlayerVFXDatabase
+  m_EditorClassIdentifier:
+  entries:
+  - cue: 0
+    prefab: {fileID: 78100000000000001, guid: 4460ad53e21101908569adc1c785e771, type: 3}
+    spawnPoint: 1
+    localOffset: {x: 0, y: 0, z: 0}
+    scaleMultiplier: 1
+    directional: 0
+  - cue: 1
+    prefab: {fileID: 78200000000000001, guid: 9594183db4f31a22419dd18e289cc7cd, type: 3}
+    spawnPoint: 1
+    localOffset: {x: 0, y: 0, z: 0}
+    scaleMultiplier: 1.3
+    directional: 0
+  - cue: 2
+    prefab: {fileID: 78300000000000001, guid: cc4a5dd77e4e4d16199126753a7687ba, type: 3}
+    spawnPoint: 1
+    localOffset: {x: 0, y: 0, z: 0}
+    scaleMultiplier: 1
+    directional: 0
+  - cue: 3
+    prefab: {fileID: 78400000000000001, guid: 43f569c4d0883d6163ebcf505f0ec68f, type: 3}
+    spawnPoint: 2
+    localOffset: {x: 0, y: 0, z: 0}
+    scaleMultiplier: 1
+    directional: 1
+  - cue: 4
+    prefab: {fileID: 78500000000000001, guid: f0bf6fc744a5297978a4ee9ffa223c2a, type: 3}
+    spawnPoint: 3
+    localOffset: {x: 0, y: 1, z: 0.5}
+    scaleMultiplier: 1
+    directional: 1
+  - cue: 5
+    prefab: {fileID: 78600000000000001, guid: 214034f8e5b95c6dabc2f58e577cba70, type: 3}
+    spawnPoint: 3
+    localOffset: {x: 0, y: 1, z: 0.5}
+    scaleMultiplier: 1.4
+    directional: 1
+  - cue: 6
+    prefab: {fileID: 78700000000000001, guid: eed189d14a50943890d57fe22ff5504b, type: 3}
+    spawnPoint: 4
+    localOffset: {x: 0, y: 1, z: 0.5}
+    scaleMultiplier: 1
+    directional: 1
+  - cue: 7
+    prefab: {fileID: 78800000000000001, guid: d16a71e20cb2d5bc62d2bfc6ace6a5d9, type: 3}
+    spawnPoint: 2
+    localOffset: {x: 0, y: 0, z: 0}
+    scaleMultiplier: 1
+    directional: 0
+  - cue: 8
+    prefab: {fileID: 78900000000000001, guid: 075a3a67064cb47bd4cb2913c33e1f25, type: 3}
+    spawnPoint: 2
+    localOffset: {x: 0, y: 0, z: 0}
+    scaleMultiplier: 1.5
+    directional: 0
+  - cue: 9
+    prefab: {fileID: 7700000000000000001, guid: 1aa1adc75ae7a53b3ac1304ce847c4d6, type: 3}
+    spawnPoint: 0
+    localOffset: {x: 0, y: 0, z: 0}
+    scaleMultiplier: 1
+    directional: 0

@@ -46,5 +46,5 @@ MonoBehaviour:
   defaultSpawnPoint: {fileID: 0}
   preserveFacing: 1
   cameraReset: 1
-  playRespawnVfx: 1
+  playRespawnVfx: 0
   respawnVfxPrefab: {fileID: 7700000000000000001, guid: 1aa1adc75ae7a53b3ac1304ce847c4d6, type: 3}

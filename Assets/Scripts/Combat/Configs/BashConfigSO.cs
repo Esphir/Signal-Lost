@@ -16,6 +16,11 @@ namespace Signal.Combat.Configs
         public float upwardForce = 5f;
         public ForceMode forceMode = ForceMode.Impulse;
 
+        [Header("Cooldown")]
+        [Min(0f)]
+        [Tooltip("Real-time seconds before Bash can fire again. Starts when the bash executes and is independent of attack-speed upgrades — so Bash can't be spammed.")]
+        public float cooldown = 1.0f;
+
         [Header("Animation Variants")]
         [Tooltip("Upper-body animator state (on the masked Upper Body layer) used while the player is moving, so locomotion keeps driving the legs. The 'Animator State Name' above is the full-body standing variant.")]
         public string movingStateName = "Bash_Moving";

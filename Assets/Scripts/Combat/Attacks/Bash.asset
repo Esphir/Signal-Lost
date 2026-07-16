@@ -29,6 +29,7 @@ MonoBehaviour:
   forwardForce: 9
   upwardForce: 5
   forceMode: 1
+  cooldown: 1
   movingStateName: Bash_Moving
   standingBoolParameter: BashStanding
   movingInputThreshold: 0.1

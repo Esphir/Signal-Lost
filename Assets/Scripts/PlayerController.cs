@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Signal.Run;
@@ -49,6 +50,13 @@ public class PlayerController : MonoBehaviour
     public float CurrentSpeed { get; private set; }
     public Vector3 Velocity => _velocity;
 
+    /// <summary>Raised when a ground jump leaves the ground.</summary>
+    public event Action Jumped;
+    /// <summary>Raised when an air (double) jump fires.</summary>
+    public event Action DoubleJumped;
+    /// <summary>Raised on touchdown, with the downward speed (m/s) at impact.</summary>
+    public event Action<float> Landed;
+
     private CharacterController _cc;
     private PlayerDodge _dodge;
     private PlayerLockOn _lockOn;
@@ -64,6 +72,7 @@ public class PlayerController : MonoBehaviour
     private float _jumpBufferTimer;
     private int _airJumpsRemaining;
     private float _jumpGraceTimer;
+    private bool _wasGrounded;
 
 
     private void Awake()
@@ -100,12 +109,20 @@ public class PlayerController : MonoBehaviour
         {
             _jumpGraceTimer -= Time.deltaTime;
             IsGrounded = false;
+            _wasGrounded = false;
             return;
         }
 
         Vector3 origin = transform.position + Vector3.up * groundCheckOffset;
-        IsGrounded = Physics.CheckSphere(origin, groundCheckRadius, groundMask,
-                                          QueryTriggerInteraction.Ignore);
+        bool grounded = Physics.CheckSphere(origin, groundCheckRadius, groundMask,
+                                            QueryTriggerInteraction.Ignore);
+
+        // Fire once on the airborne → grounded transition, with the impact speed.
+        if (grounded && !_wasGrounded && _velocity.y < -0.1f)
+            Landed?.Invoke(-_velocity.y);
+
+        _wasGrounded = grounded;
+        IsGrounded = grounded;
         if (IsGrounded && _velocity.y < 0f)
             _velocity.y = -2f;
     }
@@ -174,6 +191,9 @@ public class PlayerController : MonoBehaviour
         _jumpBufferTimer = 0f;
         _coyoteTimer = 0f;
         _jumpGraceTimer = jumpGroundIgnoreTime;
+
+        if (groundJump) Jumped?.Invoke();
+        else DoubleJumped?.Invoke();
     }
 
     private void ApplyGravity()
@@ -249,6 +269,7 @@ public class PlayerController : MonoBehaviour
 
         Vector3 origin = transform.position + Vector3.up * groundCheckOffset;
         IsGrounded = Physics.CheckSphere(origin, groundCheckRadius, groundMask, QueryTriggerInteraction.Ignore);
+        _wasGrounded = IsGrounded; // suppress a phantom Landed on the frame control resumes
         if (IsGrounded) _velocity.y = -2f;
 
         if (_animator != null) _animator.SetFloat(HashSpeed, 0f);

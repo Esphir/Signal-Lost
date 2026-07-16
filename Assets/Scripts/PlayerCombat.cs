@@ -71,6 +71,14 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     /// <summary>Raised with the damage dealt each time an attack sweep connects (life steal hooks in here).</summary>
     public event Action<float> DamageDealt;
 
+    /// <summary>Raised when an attack begins, with its kind, so VFX/audio can react without touching combat internals.</summary>
+    public event Action<Signal.VFX.PlayerAttackKind> AttackStarted;
+
+    /// <summary>Raised at the attack's impact frame (animation-synced), with its kind. Impact VFX hook here.</summary>
+    public event Action<Signal.VFX.PlayerAttackKind> AttackImpact;
+
+    private Signal.VFX.PlayerAttackKind _currentAttackKind;
+
     private PlayerController _controller;
     private PlayerDodge _dodge;
     private ICombatInputSource _input;
@@ -125,6 +133,7 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             CriticalMultiplier = critDamageMultiplier,
             OnCriticalHit = position => CombatLog.Info("Critical hit!", this),
             OnDamageDealt = amount => DamageDealt?.Invoke(amount),
+            OnImpact = () => AttackImpact?.Invoke(_currentAttackKind),
             TriggerHitStop = duration => StartCoroutine(HitStopRoutine(duration)),
             TriggerCameraShake = (amount, duration) => cameraShake?.Shake(amount, duration),
             OnAttackLanded = hits => AttackLanded?.Invoke(hits)
@@ -217,9 +226,16 @@ public class PlayerCombat : MonoBehaviour, IAttacker
         }
     }
 
+    private static Signal.VFX.PlayerAttackKind KindOf(IAttackStrategy strategy)
+        => strategy is HeavyAttackStrategy ? Signal.VFX.PlayerAttackKind.Heavy
+         : strategy is BashStrategy ? Signal.VFX.PlayerAttackKind.Bash
+         : Signal.VFX.PlayerAttackKind.Light;
+
     private IEnumerator RunAttack(IAttackStrategy strategy)
     {
         IsAttacking = true;
+        _currentAttackKind = KindOf(strategy);
+        AttackStarted?.Invoke(_currentAttackKind);
         CombatLog.Info($"Attack started: {strategy.GetType().Name}", this);
         try
         {

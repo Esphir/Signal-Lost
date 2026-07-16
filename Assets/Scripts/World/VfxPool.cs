@@ -13,9 +13,10 @@ namespace Signal.World
         private static readonly Dictionary<GameObject, Stack<PooledVfx>> Pools =
             new Dictionary<GameObject, Stack<PooledVfx>>();
 
-        public static void Play(GameObject prefab, Vector3 position, Quaternion rotation)
+        /// <summary>Spawns (or reuses) a pooled instance at the pose and plays it. Returns it so callers can scale/parent.</summary>
+        public static PooledVfx Play(GameObject prefab, Vector3 position, Quaternion rotation)
         {
-            if (prefab == null) return;
+            if (prefab == null) return null;
 
             if (!Pools.TryGetValue(prefab, out Stack<PooledVfx> pool))
                 Pools[prefab] = pool = new Stack<PooledVfx>();
@@ -37,11 +38,15 @@ namespace Signal.World
             }
 
             vfx.Play();
+            return vfx;
         }
 
         public static void Release(PooledVfx vfx)
         {
             if (vfx == null) return;
+            // Detach in case a caller parented it to a moving spawn point, so it can't drag a reused
+            // instance around later.
+            vfx.transform.SetParent(null, worldPositionStays: true);
             vfx.gameObject.SetActive(false);
 
             if (vfx.PoolPrefab != null && Pools.TryGetValue(vfx.PoolPrefab, out Stack<PooledVfx> pool))

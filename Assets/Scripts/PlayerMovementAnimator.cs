@@ -29,6 +29,7 @@ public class PlayerMovementAnimator : MonoBehaviour
     private static readonly int HashVerticalVelocity = Animator.StringToHash("VerticalVelocity");
     private static readonly int HashRollDirection = Animator.StringToHash("RollDirection");
     private static readonly int HashRollTrigger = Animator.StringToHash("RollTrigger");
+    private static readonly int HashJump = Animator.StringToHash("Jump");
 
     // RollDirection values — must match the Movement layer's AnyState transitions.
     private const int RollForward = 0, RollBackward = 1, RollLeft = 2, RollRight = 3;
@@ -75,10 +76,35 @@ public class PlayerMovementAnimator : MonoBehaviour
         CacheRollClipLengths();
     }
 
+    private void OnEnable()
+    {
+        // Fire the Jump trigger for BOTH the ground jump and the air (double) jump.
+        if (_controller == null) return;
+        _controller.Jumped += ReplayJump;
+        _controller.DoubleJumped += ReplayJump;
+    }
+
     private void OnDisable()
     {
+        if (_controller != null)
+        {
+            _controller.Jumped -= ReplayJump;
+            _controller.DoubleJumped -= ReplayJump;
+        }
         // Never leave the proxy suspended if this component is torn down while airborne/rolling.
         SpineProxyGate.SetSuspended(_spineProxy, this, false);
+    }
+
+    /// <summary>
+    /// (Re-)enters the shared Jump state from frame one via the Movement layer's AnyState -> Jump
+    /// transition — so a double jump replays the Jump clip even while already airborne (in Fall),
+    /// instead of being stuck in Falling. Reset first so a stale, unconsumed trigger can't double-fire.
+    /// </summary>
+    private void ReplayJump()
+    {
+        if (_animator == null) return;
+        _animator.ResetTrigger(HashJump);
+        _animator.SetTrigger(HashJump);
     }
 
     private void Update()
