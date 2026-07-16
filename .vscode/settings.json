@@ -60,13 +60,13 @@
         "*.asset": "yaml",
         "*.meta": "yaml",
         "*.prefab": "yaml",
-        "*.unity": "yaml",
+        "*.unity": "yaml"
     },
     "explorer.fileNesting.enabled": true,
     "explorer.fileNesting.patterns": {
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "Signal-Lost.slnx",
+    "dotnet.defaultSolution": "GAM-604-Signal-Lost.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }

@@ -1,3 +1,4 @@
+using System.Collections;
 using Signal.VFX;
 using UnityEngine;
 
@@ -13,15 +14,18 @@ namespace Signal.Tutorial
         [SerializeField] private TutorialEnemySpawner spawner;
         [SerializeField] private bool requireLight = true;
         [SerializeField] private bool requireHeavy = true;
+        [SerializeField] private float completeDelay = 1f;
 
         private PlayerCombat _combat;
         private bool _didLight;
         private bool _didHeavy;
+        private bool _completing;
 
         protected override void OnBegin()
         {
             _didLight = false;
             _didHeavy = false;
+            _completing = false;
             if (spawner != null) spawner.SpawnAll();
 
             GameObject player = GameObject.FindWithTag("Player");
@@ -35,8 +39,17 @@ namespace Signal.Tutorial
             if (kind == PlayerAttackKind.Light) _didLight = true;
             else if (kind == PlayerAttackKind.Heavy) _didHeavy = true;
 
-            if ((!requireLight || _didLight) && (!requireHeavy || _didHeavy))
-                Complete();
+            if (!_completing && (!requireLight || _didLight) && (!requireHeavy || _didHeavy))
+            {
+                _completing = true;
+                StartCoroutine(CompleteAfterDelay());
+            }
+        }
+
+        private IEnumerator CompleteAfterDelay()
+        {
+            yield return new WaitForSeconds(completeDelay);
+            Complete();
         }
 
         protected override void OnEnd()

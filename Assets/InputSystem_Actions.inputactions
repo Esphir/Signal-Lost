@@ -368,7 +368,7 @@
                     "path": "<Keyboard>/f",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";Keyboard&Mouse",
                     "action": "Bash",
                     "isComposite": false,
                     "isPartOfComposite": false
@@ -401,7 +401,7 @@
                     "path": "<Keyboard>/q",
                     "interactions": "",
                     "processors": "",
-                    "groups": "",
+                    "groups": ";Keyboard&Mouse",
                     "action": "LockOn",
                     "isComposite": false,
                     "isPartOfComposite": false

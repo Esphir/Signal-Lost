@@ -44,7 +44,7 @@ namespace Signal.Tutorial
 
         private IEnumerator CompleteAfterDelay()
         {
-            yield return new WaitForSeconds(4f);
+            yield return new WaitForSeconds(2f);
             Complete();
         }
 

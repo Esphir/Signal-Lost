@@ -32,8 +32,16 @@ public class PlayerFollowCamera : MonoBehaviour
     [Tooltip("How fast the camera swings to frame a locked target.")]
     public float lockOnLerpSpeed = 6f;
 
+    [Header("Shoulder")]
+    [Tooltip("How far to the side the camera sits. The settings menu picks the sign: right = +, left = -.")]
+    public float shoulderOffset = 1f;
+    [Tooltip("How fast the camera slides across when the player switches shoulders. 0 = instant snap.")]
+    public float shoulderSwitchSpeed = 8f;
+
     private PlayerInputHandler _input;
     private CinemachineOrbitalFollow _orbital;
+    private CinemachineCameraOffset _cameraOffset;
+    private float _currentShoulder;
     private bool _lockOnActive;
     private Vector3 _lockOnWorldPoint;
 
@@ -53,6 +61,19 @@ public class PlayerFollowCamera : MonoBehaviour
         if (_orbital == null)
             Debug.LogWarning("PlayerFollowCamera: No CinemachineOrbitalFollow found.");
 
+        // Camera-space offset (applied after Aim) rather than the orbital's TargetOffset, which is
+        // in the *player's* local space and would swing the shoulder around as the character turns.
+        if (vcam != null)
+        {
+            _cameraOffset = vcam.GetComponent<CinemachineCameraOffset>();
+            if (_cameraOffset == null) _cameraOffset = vcam.gameObject.AddComponent<CinemachineCameraOffset>();
+            _cameraOffset.ApplyAfter = CinemachineCore.Stage.Aim;
+        }
+
+        // Start already on the chosen shoulder — no slide across on spawn/respawn.
+        _currentShoulder = shoulderOffset * Signal.UI.SettingsStore.CameraSide;
+        ApplyShoulderOffset();
+
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         if (player != null)
             _input = player.GetComponent<PlayerInputHandler>();
@@ -70,6 +91,8 @@ public class PlayerFollowCamera : MonoBehaviour
 
     private void LateUpdate()
     {
+        UpdateShoulder(); // independent of look input — keep it live even without a player
+
         if (_orbital == null || _input == null) return;
 
         if (_lockOnActive)
@@ -78,6 +101,37 @@ public class PlayerFollowCamera : MonoBehaviour
             ApplyMouseOrbit();
 
         HandleZoom();
+    }
+
+
+    private void UpdateShoulder()
+    {
+        if (_cameraOffset == null) return;
+
+        float target = shoulderOffset * Signal.UI.SettingsStore.CameraSide;
+        if (Mathf.Approximately(_currentShoulder, target)) return;
+
+        if (shoulderSwitchSpeed <= 0f)
+        {
+            _currentShoulder = target;
+        }
+        else
+        {
+            // Unscaled: the switch happens from the settings menu, which pauses the game.
+            float t = 1f - Mathf.Exp(-shoulderSwitchSpeed * Time.unscaledDeltaTime);
+            _currentShoulder = Mathf.Lerp(_currentShoulder, target, t);
+            if (Mathf.Abs(target - _currentShoulder) < 0.001f) _currentShoulder = target;
+        }
+
+        ApplyShoulderOffset();
+    }
+
+    private void ApplyShoulderOffset()
+    {
+        if (_cameraOffset == null) return;
+        Vector3 offset = _cameraOffset.Offset;
+        offset.x = _currentShoulder;
+        _cameraOffset.Offset = offset;
     }
 
 

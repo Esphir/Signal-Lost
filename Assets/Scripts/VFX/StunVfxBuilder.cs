@@ -26,6 +26,11 @@ namespace Signal.VFX
 
         private void Build(ParticleSystem ps)
         {
+            // A fresh ParticleSystem defaults to playOnAwake and is already playing by the time we
+            // get here, and main.duration cannot be assigned on a playing system. Stop and clear
+            // first; setting playOnAwake = false below does not stop an already-running system.
+            ps.Stop(withChildren: true, ParticleSystemStopBehavior.StopEmittingAndClear);
+
             // A looping ring of small "stars" that orbit the head; sits still until Play()'d and
             // stops the instant it's Stop()'d, so the stun system controls its exact duration.
             ParticleSystem.MainModule main = ps.main;

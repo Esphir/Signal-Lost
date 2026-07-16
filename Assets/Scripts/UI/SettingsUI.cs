@@ -16,6 +16,10 @@ namespace Signal.UI
         [SerializeField, Min(0.01f)] private float minSensitivity = 0.1f;
         [SerializeField, Min(0.02f)] private float maxSensitivity = 5f;
 
+        private const float RowHeight = 64f;
+        private const float RowSpacing = 6f;
+        private const float GeneralHeight = RowHeight * 2f + RowSpacing; // sensitivity + camera side
+
         private static readonly Color WindowColor = new Color(0.11f, 0.11f, 0.15f, 0.98f);
         private static readonly Color ButtonColor = new Color(0.16f, 0.16f, 0.22f);
         private static readonly Color RowColor = new Color(1f, 1f, 1f, 0.04f);
@@ -70,24 +74,34 @@ namespace Signal.UI
             general.anchorMin = new Vector2(0f, 1f);
             general.anchorMax = new Vector2(1f, 1f);
             general.pivot = new Vector2(0.5f, 1f);
-            general.sizeDelta = new Vector2(0f, 64f);
+            general.sizeDelta = new Vector2(0f, GeneralHeight);
             general.anchoredPosition = Vector2.zero;
-            BuildMouseSensitivity(general);
+            BuildMouseSensitivity(NewGeneralRow(general, "MouseSensitivityRow", 0));
+            BuildCameraSide(NewGeneralRow(general, "CameraSideRow", 1));
 
             RectTransform controls = UiBuilder.NewRect(content, "Controls");
             controls.anchorMin = new Vector2(0f, 0f);
             controls.anchorMax = new Vector2(1f, 1f);
             controls.offsetMin = Vector2.zero;
-            controls.offsetMax = new Vector2(0f, -76f);
+            controls.offsetMax = new Vector2(0f, -(GeneralHeight + 12f));
             if (rebindUI != null) rebindUI.BuildSection(controls);
         }
 
-        private void BuildMouseSensitivity(Transform parent)
+        // One full-width row in the General block, stacked top-down by index.
+        private static Image NewGeneralRow(Transform parent, string name, int index)
         {
-            Image row = UiBuilder.NewChild<Image>(parent, "MouseSensitivityRow");
+            Image row = UiBuilder.NewChild<Image>(parent, name);
             row.color = RowColor;
-            UiBuilder.Stretch(row.rectTransform);
+            row.rectTransform.anchorMin = new Vector2(0f, 1f);
+            row.rectTransform.anchorMax = new Vector2(1f, 1f);
+            row.rectTransform.pivot = new Vector2(0.5f, 1f);
+            row.rectTransform.sizeDelta = new Vector2(0f, RowHeight);
+            row.rectTransform.anchoredPosition = new Vector2(0f, -index * (RowHeight + RowSpacing));
+            return row;
+        }
 
+        private void BuildMouseSensitivity(Image row)
+        {
             Text label = UiBuilder.CreateText(row.transform, "Label", "Mouse Sensitivity", 22, FontStyle.Normal, TextAnchor.MiddleLeft);
             label.rectTransform.anchorMin = new Vector2(0f, 0f);
             label.rectTransform.anchorMax = new Vector2(0.4f, 1f);
@@ -112,6 +126,29 @@ namespace Signal.UI
                 value.text = FormatSensitivity(v);
             });
         }
+
+        private static void BuildCameraSide(Image row)
+        {
+            Text label = UiBuilder.CreateText(row.transform, "Label", "Camera Side", 22, FontStyle.Normal, TextAnchor.MiddleLeft);
+            label.rectTransform.anchorMin = new Vector2(0f, 0f);
+            label.rectTransform.anchorMax = new Vector2(0.4f, 1f);
+            label.rectTransform.offsetMin = new Vector2(14f, 0f);
+            label.rectTransform.offsetMax = Vector2.zero;
+
+            Button toggle = UiBuilder.CreateButton(row.transform, "Toggle", FormatCameraSide(SettingsStore.CameraSide), ButtonColor, 22, out Text toggleText);
+            var toggleRect = (RectTransform)toggle.transform;
+            toggleRect.anchorMin = new Vector2(0.42f, 0.18f);
+            toggleRect.anchorMax = new Vector2(0.84f, 0.82f);
+            toggleRect.offsetMin = Vector2.zero;
+            toggleRect.offsetMax = Vector2.zero;
+            toggle.onClick.AddListener(() =>
+            {
+                SettingsStore.CameraSide = -SettingsStore.CameraSide;
+                toggleText.text = FormatCameraSide(SettingsStore.CameraSide);
+            });
+        }
+
+        private static string FormatCameraSide(int side) => side < 0 ? "Left" : "Right";
 
         private static string FormatSensitivity(float value) => value.ToString("0.0");
 
