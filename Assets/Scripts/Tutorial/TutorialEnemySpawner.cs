@@ -19,6 +19,8 @@ namespace Signal.Tutorial
             public GameObject prefab;
             [Tooltip("Where to spawn. Empty = this spawner's transform.")]
             public Transform point;
+            [Tooltip("Name used in the objective checklist (e.g. \"Lobber\"). Empty = derived from the prefab name.")]
+            public string displayName;
         }
 
         [SerializeField] private Entry[] enemies;
@@ -29,9 +31,13 @@ namespace Signal.Tutorial
         public event Action AllCleared;
 
         private readonly List<GameObject> _instances = new List<GameObject>();
+        private readonly List<string> _instanceNames = new List<string>();
         private int _alive;
 
         public IReadOnlyList<GameObject> Instances => _instances;
+
+        /// <summary>Display name per spawned instance, index-aligned with <see cref="Instances"/> (for objective text).</summary>
+        public IReadOnlyList<string> InstanceNames => _instanceNames;
 
         public void SpawnAll()
         {
@@ -46,6 +52,7 @@ namespace Signal.Tutorial
 
                 GameObject go = Instantiate(e.prefab, pos, rot);
                 _instances.Add(go);
+                _instanceNames.Add(string.IsNullOrWhiteSpace(e.displayName) ? e.prefab.name : e.displayName);
 
                 if (suppressLoot) DisableLoot(go);
 
@@ -65,6 +72,7 @@ namespace Signal.Tutorial
             foreach (GameObject go in _instances)
                 if (go != null) Destroy(go);
             _instances.Clear();
+            _instanceNames.Clear();
             _alive = 0;
         }
 

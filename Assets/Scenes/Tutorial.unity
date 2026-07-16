@@ -339,8 +339,9 @@ MonoBehaviour:
   title: Double Jump
   description: While airborne, press <Jump> again to perform a second jump and reach
     higher platforms or clear larger gaps.
-  promptActionName: 
+  promptActionName:
   zone: {fileID: 1737788697}
+  objectiveText: Reach the platform using Double Jump
 --- !u!1 &342475765
 GameObject:
   m_ObjectHideFlags: 0
@@ -3446,6 +3447,7 @@ MonoBehaviour:
   description: Press <Jump> to jump over obstacles.
   promptActionName: Jump
   zone: {fileID: 1354621660}
+  objectiveText: Jump over the gap
 --- !u!1 &740736465 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 8000000000000000001, guid: 56e2c9c308ddb48b7a6be331edb664d7, type: 3}
@@ -3531,8 +3533,10 @@ MonoBehaviour:
   enemies:
   - prefab: {fileID: 9171620467850103300, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
     point: {fileID: 0}
+    displayName: Lobber
   - prefab: {fileID: 1513119564538955794, guid: 3bdaec7a99280a04caa90f55b6793885, type: 3}
     point: {fileID: 1711081844}
+    displayName: Support Enemy
   suppressLoot: 1
 --- !u!1 &830000010
 GameObject:
@@ -13525,6 +13529,7 @@ MonoBehaviour:
   description: Wait for the slam indicator, then <Dodge> clear before it lands.
   promptActionName: Dodge
   spawner: {fileID: 1780221086}
+  dodgeObjectiveText: Dodge the Plummeter slam
 --- !u!114 &1780221086
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13591,6 +13596,7 @@ MonoBehaviour:
     your invulnerability frames.
   promptActionName: Dodge
   spawner: {fileID: 1814727605}
+  dodgeObjectiveText: Dodge a Lobber projectile
 --- !u!114 &1814727605
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13601,11 +13607,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6d2c1362a9d17f7d62cd7946144c38c7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   enemies:
   - prefab: {fileID: 9171620467850103300, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
     point: {fileID: 0}
+    displayName: Lobber
   suppressLoot: 1
 --- !u!1001 &1840960362
 PrefabInstance:
@@ -13924,9 +13931,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 66e44f6f6b9ec10100db9b8be218a8eb, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
+  m_Name:
+  m_EditorClassIdentifier:
   hazardsDealDamage: 0
+  disablePlayerDeath: 1
 --- !u!1001 &2061016352
 PrefabInstance:
   m_ObjectHideFlags: 0

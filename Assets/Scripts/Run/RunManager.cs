@@ -76,6 +76,9 @@ namespace Signal.Run
         /// <summary>Raised when the player picks an upgrade.</summary>
         public event Action<RunUpgrade> UpgradeAcquired;
 
+        /// <summary>Raised when the player walks over a loot drop and collects it.</summary>
+        public event Action<ItemRarity> LootCollected;
+
         /// <summary>Raised when a run ends, with a snapshot of its statistics and the reason.</summary>
         public event Action<RunStats, RunEndReason> RunEnded;
 
@@ -149,6 +152,7 @@ namespace Signal.Run
             if (!_stats.HasCollectedLoot || (int)rarity > (int)_stats.HighestRarity)
                 _stats.HighestRarity = rarity;
             _stats.HasCollectedLoot = true;
+            LootCollected?.Invoke(rarity);
         }
 
         public float GetStatValue(StatType stat, float baseValue) => Data.Stats.GetValue(stat, baseValue);

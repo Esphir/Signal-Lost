@@ -7,11 +7,17 @@ namespace Signal.Tutorial
     {
         [SerializeField, Min(0.5f)] private float minDistance = 4f;
 
+        [Header("Objective")]
+        [SerializeField] private string objectiveText = "Move around the environment";
+
+        private TutorialObjective _moveObjective;
         private Transform _player;
         private Vector3 _start;
 
         protected override void OnBegin()
         {
+            _moveObjective = AddObjective(objectiveText);
+
             GameObject player = GameObject.FindWithTag("Player");
             _player = player != null ? player.transform : null;
             if (_player != null) _start = _player.position;
@@ -23,7 +29,8 @@ namespace Signal.Tutorial
 
             Vector3 delta = _player.position - _start;
             delta.y = 0f;
-            if (delta.magnitude >= minDistance) Complete();
+            // Ticking the objective is what finishes the step (TutorialStep auto-completes).
+            if (delta.magnitude >= minDistance) _moveObjective.Complete();
         }
     }
 }

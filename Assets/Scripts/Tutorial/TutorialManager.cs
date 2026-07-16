@@ -16,6 +16,9 @@ namespace Signal.Tutorial
     {
         [SerializeField] private TutorialStep[] steps;
         [SerializeField] private TutorialPromptUI promptUI;
+        [SerializeField]
+        [Tooltip("Optional on-screen checklist for the active step's objectives.")]
+        private TutorialObjectiveUI objectiveUI;
 
         [Header("Flow")]
         [SerializeField]
@@ -37,6 +40,7 @@ namespace Signal.Tutorial
             if (TutorialState.Completed && !replayIfCompleted)
             {
                 promptUI?.Hide();
+                objectiveUI?.Hide();
                 enabled = false;
                 return;
             }
@@ -63,9 +67,21 @@ namespace Signal.Tutorial
             // — spawning enemies, watching input — once the player presses Continue and gameplay has
             // resumed. This keeps every step on one path and guarantees nothing acts while reading.
             if (promptUI != null)
-                promptUI.Show(step.Title, step.Description, step.Begin);
+                promptUI.Show(step.Title, step.Description, () => BeginStepGameplay(step));
             else
-                step.Begin();
+                BeginStepGameplay(step);
+        }
+
+        /// <summary>
+        /// Starts the step's watchers/spawns, then shows its checklist. Order matters: the step
+        /// declares its objectives in Begin, so the UI must read them after.
+        /// </summary>
+        private void BeginStepGameplay(TutorialStep step)
+        {
+            step.Begin();
+            // A step that finished inside Begin (misconfigured/nothing to do) has already handed off
+            // to the next one — don't paint its stale checklist over that.
+            if (step.IsActive) objectiveUI?.Show(step);
         }
 
         private void OnStepCompleted() => BeginStep(_index + 1);
@@ -88,6 +104,7 @@ namespace Signal.Tutorial
         private void Finish()
         {
             promptUI?.Hide();
+            objectiveUI?.Hide();
             TutorialState.Completed = true;
             ShowCompletionUI();
         }

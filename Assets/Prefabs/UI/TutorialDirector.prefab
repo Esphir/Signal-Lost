@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8000000000000000002}
   - component: {fileID: 8000000000000000004}
+  - component: {fileID: 8000000000000000005}
   - component: {fileID: 8000000000000000003}
   m_Layer: 0
   m_Name: TutorialDirector
@@ -47,6 +48,24 @@ MonoBehaviour:
   actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   keyboardScheme: Keyboard&Mouse
   gamepadScheme: Gamepad
+--- !u!114 &8000000000000000005
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8000000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 97052fb4f433468da1b762f5495f01e5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  incompleteGlyph: "☐"
+  completeGlyph: "☑"
+  incompleteColor: {r: 0.94, g: 0.94, b: 0.97, a: 1}
+  completeColor: {r: 0.45, g: 0.82, b: 0.5, a: 0.65}
+  completePopDuration: 0.22
+  completePopScale: 1.12
 --- !u!114 &8000000000000000003
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -61,6 +80,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   steps: []
   promptUI: {fileID: 8000000000000000004}
+  objectiveUI: {fileID: 8000000000000000005}
   replayIfCompleted: 1
   debugStepKeys: 1
   continueSceneName: Test

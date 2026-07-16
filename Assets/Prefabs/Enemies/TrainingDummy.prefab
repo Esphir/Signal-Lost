@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 8100000000000000005}
   - component: {fileID: 8100000000000000006}
   - component: {fileID: -4354538029377666066}
+  - component: {fileID: -8883699922116303440}
   - component: {fileID: -1975322751816397782}
   m_Layer: 3
   m_Name: TrainingDummy
@@ -155,6 +156,21 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 122
   m_CollisionDetection: 0
+--- !u!114 &-8883699922116303440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8100000000000000001}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f88d5bdf418a47edae962bba464e891e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  flashDuration: 0.07
+  flashColor: {r: 1, g: 0, b: 0, a: 1}
+  renderers: []
 --- !u!114 &-1975322751816397782
 MonoBehaviour:
   m_ObjectHideFlags: 0
