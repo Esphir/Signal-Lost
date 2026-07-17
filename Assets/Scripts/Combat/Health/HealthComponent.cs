@@ -119,6 +119,28 @@ namespace Signal.Combat.Health
             HealthChanged?.Invoke(CurrentHealth, maxHealth);
         }
 
+        /// <summary>
+        /// Kills this object outright through the normal death path — the very same <see cref="Die"/>
+        /// that a fatal <see cref="TakeDamage(DamageInfo)"/> reaches. Every Died listener
+        /// (DeathHandler, LootDropper and its kill reporting, health bars, VFX) therefore runs exactly
+        /// as it would for any other kill; nothing here destroys or pools the object itself.
+        ///
+        /// Deliberately skips the damage-modifier pipeline and the invulnerability gate: this is for
+        /// instant-death hazards (sewage, pits, kill volumes), which a shield or an i-frame window
+        /// should not let you survive. Use <see cref="TakeDamage(DamageInfo)"/> for anything that is
+        /// conceptually damage.
+        /// </summary>
+        /// <param name="source">Optional instigator, for the combat log only.</param>
+        public void Kill(GameObject source = null)
+        {
+            if (IsDead) return;
+
+            CurrentHealth = 0f;
+            CombatLog.Info($"'{name}' was killed outright by '{(source != null ? source.name : "unknown")}'.", this);
+            HealthChanged?.Invoke(CurrentHealth, maxHealth);
+            Die();
+        }
+
         private void Die()
         {
             IsDead = true;

@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5608770fce592394d8638864b665004a, type: 3}
+  m_Name: AudioDatabase
+  m_EditorClassIdentifier: 
+  categories:
+  - name: Player
+    cues:
+    - {fileID: 11400000, guid: 476006f439ce54c448150907381650ad, type: 2}
+    - {fileID: 11400000, guid: 6e4fd3288341744439e0c2903e86bfcd, type: 2}
+    - {fileID: 11400000, guid: dc365dce742c7164eba9625f3d2ff26f, type: 2}
+    - {fileID: 11400000, guid: a57ad7921f87c4446a9e094e2bbcc644, type: 2}
+    - {fileID: 11400000, guid: 6a8e57e81b08a294b9e6593a46e6d6a2, type: 2}
+    - {fileID: 11400000, guid: 2b6e57105f311f04bbb96cc38d29f7ab, type: 2}
+    - {fileID: 11400000, guid: 94c259aade45eb543b4e97496a274d4e, type: 2}
+    - {fileID: 11400000, guid: 9383aca953f2f6148a48b52930a9dcbe, type: 2}
+    - {fileID: 11400000, guid: 3673612fc9a49134985d470eba605496, type: 2}
+    - {fileID: 11400000, guid: 2ce57c6324c1ba046a4307efb7d11141, type: 2}
+    - {fileID: 11400000, guid: b9e0f7b41893325459a30da3748770a9, type: 2}
+    - {fileID: 11400000, guid: 573758319c6f35e49ace195193d9ba4e, type: 2}
+    - {fileID: 11400000, guid: e41ed17885a0c904fa10b76eab5b4084, type: 2}
+  - name: Enemy
+    cues:
+    - {fileID: 11400000, guid: 95408ce8f44f7844c83f08eeee2b8891, type: 2}
+    - {fileID: 11400000, guid: 0568d9c00b276ad46b3aab0650a4956f, type: 2}
+    - {fileID: 11400000, guid: 469474168a350874498df9c296d6b0c4, type: 2}
+    - {fileID: 11400000, guid: ded849ab30314ae4e8b10e38c6073ea7, type: 2}
+    - {fileID: 11400000, guid: cb47a4bc3743e884c8210cedd122c78b, type: 2}
+  - name: Lobber
+    cues:
+    - {fileID: 11400000, guid: d8c3882b11b78b749af0b91c99f1b6c6, type: 2}
+    - {fileID: 11400000, guid: 54ebb291319c06743903c0ad31341f4a, type: 2}
+  - name: Plummeter
+    cues:
+    - {fileID: 11400000, guid: 2ebc36387cc866b4fa0a1f4f6e5cb1de, type: 2}
+    - {fileID: 11400000, guid: 1b5bb76913b08504aa9da2dc106181f3, type: 2}
+    - {fileID: 11400000, guid: 59530d8ecd9db634cadbae3843ad4cbf, type: 2}
+  - name: Support
+    cues:
+    - {fileID: 11400000, guid: 80e5ac6c5ad6e874089d70a3cdc1d82e, type: 2}
+    - {fileID: 11400000, guid: efaf432f434a6f1428456e2ac0243214, type: 2}
+  - name: Hazard
+    cues:
+    - {fileID: 11400000, guid: e8103383c3439e64f8bbac50b2aa83b8, type: 2}
+    - {fileID: 11400000, guid: ba905945fb285ec459858ca2f76316af, type: 2}
+  - name: Loot
+    cues:
+    - {fileID: 11400000, guid: 1b2d2203eb9b8cc4b989be87644ded7e, type: 2}
+    - {fileID: 11400000, guid: 30df7ef796d995e4fac8514b9cd16d85, type: 2}
+    - {fileID: 11400000, guid: 3c0f0e0a23f508448b7b84938d82863a, type: 2}
+  - name: Tutorial
+    cues:
+    - {fileID: 11400000, guid: e1f6f87ecac10204586887e9bbe39425, type: 2}
+    - {fileID: 11400000, guid: 27e9342992f157147ba3f60d05884cf6, type: 2}
+    - {fileID: 11400000, guid: 7de227d5bb55aa54da69b025b8d50009, type: 2}
+    - {fileID: 11400000, guid: 8106fb2ecd1ca7544bc3c267ed4ad697, type: 2}
+  - name: UI
+    cues:
+    - {fileID: 11400000, guid: c70fc3b8093633b4ea844557b67ad140, type: 2}
+    - {fileID: 11400000, guid: 2b9cc5d9f277e154eabdc6201a73cfa8, type: 2}
+    - {fileID: 11400000, guid: a78a8f3759d1c364fbc717bbf0151d9d, type: 2}
+    - {fileID: 11400000, guid: 6a9b02cec4dc542489268dff06ad6705, type: 2}
+    - {fileID: 11400000, guid: 0ba094e615888cf4e84db2bbf63a11da, type: 2}
+    - {fileID: 11400000, guid: fc55d00ab5f569846805356c73631215, type: 2}
+    - {fileID: 11400000, guid: ca96c4e3d4a6bd04bbf3a805e76e380d, type: 2}
+    - {fileID: 11400000, guid: 34dcdf1f62a09c844b18df45f3e11842, type: 2}
+    - {fileID: 11400000, guid: 72f4afad263b27843b5deb5fab1011b0, type: 2}
+  - name: Environment
+    cues:
+    - {fileID: 11400000, guid: d8dc25f6043ff724dabf722a602fb341, type: 2}
+    - {fileID: 11400000, guid: 2ad1e42d6f722f9409d32a8066df4e45, type: 2}
+    - {fileID: 11400000, guid: 4fd3e662607a12b4999326900e4a1f12, type: 2}

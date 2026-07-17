@@ -148,9 +148,16 @@ public class LobProjectile : MonoBehaviour
         Explode(collision.GetContact(0).point);
     }
 
+    /// <summary>
+    /// Raised at the detonation point, once per flight. Audio/VFX listen; this projectile stays
+    /// unaware of both.
+    /// </summary>
+    public event Action<Vector3> Exploded;
+
     private void Explode(Vector3 point)
     {
         _exploded = true; // hard guard: one explosion per flight
+        Exploded?.Invoke(point);
 
         int count = _detector.Detect(point, config.explosionRadius, config.damageMask);
         _resolver.BeginSwing();

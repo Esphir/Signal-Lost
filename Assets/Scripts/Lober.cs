@@ -12,6 +12,12 @@ using Signal.Combat.Projectiles;
 /// </summary>
 public class LobTurret : MonoBehaviour
 {
+    /// <summary>
+    /// Raised the moment a projectile leaves the barrel, with the muzzle position. Lets audio/VFX
+    /// react without this turret depending on either of them.
+    /// </summary>
+    public event System.Action<Vector3> Fired;
+
     [Header("References")]
     [Tooltip("The point from which projectiles are spawned.")]
     public Transform barrelTip;
@@ -341,6 +347,8 @@ public class LobTurret : MonoBehaviour
         // so the projectile's landing indicator matches the real impact without duplicated math.
         float flightTime = EstimateFlightTime(velocity.Value, origin, aimPoint);
         proj.Launch(velocity.Value, aimPoint, flightTime);
+
+        Fired?.Invoke(origin); // notification only — this turret knows nothing about audio or VFX
     }
 
     /// <summary>

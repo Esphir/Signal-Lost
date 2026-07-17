@@ -233,6 +233,8 @@ MonoBehaviour:
   minRadius: 2
   maxRadius: 10
   lockOnLerpSpeed: 50
+  shoulderOffset: 0.2
+  shoulderSwitchSpeed: 8
 --- !u!114 &4551867089067966097
 MonoBehaviour:
   m_ObjectHideFlags: 0

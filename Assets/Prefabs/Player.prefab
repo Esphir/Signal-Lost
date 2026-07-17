@@ -178,6 +178,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8752168024553228200}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2548908890527528158}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1120546532316185612}
     - targetCorrespondingSourceObject: {fileID: -3858638838303969124, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3177004419089853517}
@@ -263,6 +269,8 @@ MonoBehaviour:
   coyoteTime: 0.15
   jumpBufferTime: 0.5
   maxAirJumps: 1
+  airJumpHeightMultiplier: 1.25
+  jumpGroundIgnoreTime: 0.1
   groundCheckRadius: 0.3
   groundCheckOffset: 0.05
   groundMask:
@@ -448,8 +456,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dbb1c53d8c4700ac8e1dbe170def01c8, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   database: {fileID: 11400000, guid: 10d5a7478411a07a0fde2a79a9fe49ec, type: 2}
   feet: {fileID: 0}
   body: {fileID: 0}
@@ -459,6 +467,46 @@ MonoBehaviour:
   landingVelocityThreshold: 4
   scaleMultiplier: 1
   parentToSpawnPoint: 0
+--- !u!114 &2548908890527528158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3910153233642186742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea106c8ae7e8d334bac2f5bd84e728ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  channel: {fileID: 11400000, guid: 31611c860bbc755449dcd5b56cafc626, type: 2}
+  origin: {fileID: 0}
+--- !u!114 &1120546532316185612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3910153233642186742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d8b282dd9e7c281479b9265cecbd8ebb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  footstep: {fileID: 11400000, guid: 476006f439ce54c448150907381650ad, type: 2}
+  jump: {fileID: 11400000, guid: 6e4fd3288341744439e0c2903e86bfcd, type: 2}
+  doubleJump: {fileID: 11400000, guid: dc365dce742c7164eba9625f3d2ff26f, type: 2}
+  land: {fileID: 11400000, guid: a57ad7921f87c4446a9e094e2bbcc644, type: 2}
+  dodge: {fileID: 11400000, guid: 6a8e57e81b08a294b9e6593a46e6d6a2, type: 2}
+  lightAttack: {fileID: 11400000, guid: 2b6e57105f311f04bbb96cc38d29f7ab, type: 2}
+  heavyAttack: {fileID: 11400000, guid: 94c259aade45eb543b4e97496a274d4e, type: 2}
+  bash: {fileID: 11400000, guid: 9383aca953f2f6148a48b52930a9dcbe, type: 2}
+  attackHit: {fileID: 11400000, guid: 3673612fc9a49134985d470eba605496, type: 2}
+  hit: {fileID: 11400000, guid: 2ce57c6324c1ba046a4307efb7d11141, type: 2}
+  death: {fileID: 11400000, guid: b9e0f7b41893325459a30da3748770a9, type: 2}
+  respawn: {fileID: 11400000, guid: 573758319c6f35e49ace195193d9ba4e, type: 2}
+  heal: {fileID: 11400000, guid: e41ed17885a0c904fa10b76eab5b4084, type: 2}
+  landingSpeedThreshold: 4
 --- !u!4 &4397895924016627020 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: d9cd8eb4a074cd84ab2686c58bcf21d9, type: 3}

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2aa993ec1ce7eb2449e1bd6e2a68f4de, type: 3}
+  m_Name: CheckpointActivated
+  m_EditorClassIdentifier: 
+  clips: []
+  volumeRange: {x: 1, y: 1}
+  pitchRange: {x: 0.95, y: 1.05}
+  spatialBlend: 1
+  rolloffMode: 0
+  minDistance: 2
+  maxDistance: 30
+  mixerGroup: {fileID: -3208265564590559275, guid: 04d98628acc5e124782521a51d49a295, type: 2}
+  priority: 128
+  maxSimultaneous: 2
+  loop: 0

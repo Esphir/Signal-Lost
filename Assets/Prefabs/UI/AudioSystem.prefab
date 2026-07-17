@@ -1,0 +1,126 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &605322816226657153
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6612070323524948599}
+  - component: {fileID: 8326834419819111218}
+  m_Layer: 0
+  m_Name: AudioSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6612070323524948599
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 605322816226657153}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5602606662492505706}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8326834419819111218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 605322816226657153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9241d4872c012d44aa24b654a0342609, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  channels:
+  - {fileID: 11400000, guid: 31611c860bbc755449dcd5b56cafc626, type: 2}
+  database: {fileID: 11400000, guid: 0b20a05dc5e649a4fab1bd83a762832d, type: 2}
+  defaultSfxGroup: {fileID: -3208265564590559275, guid: 04d98628acc5e124782521a51d49a295, type: 2}
+  masterVolume: 1
+  sfxVolume: 1
+  poolSize: 24
+  maxSimultaneousSounds: 48
+  logCues: 0
+--- !u!1 &6703685454754332507
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5602606662492505706}
+  - component: {fileID: 4737233410655000763}
+  - component: {fileID: 7643340584269622269}
+  m_Layer: 0
+  m_Name: UIAudio
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5602606662492505706
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6703685454754332507}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6612070323524948599}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &4737233410655000763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6703685454754332507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea106c8ae7e8d334bac2f5bd84e728ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  channel: {fileID: 11400000, guid: 31611c860bbc755449dcd5b56cafc626, type: 2}
+  origin: {fileID: 0}
+--- !u!114 &7643340584269622269
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6703685454754332507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 29007517608f3b345b5f8850956f3410, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  hover: {fileID: 11400000, guid: c70fc3b8093633b4ea844557b67ad140, type: 2}
+  click: {fileID: 11400000, guid: 2b9cc5d9f277e154eabdc6201a73cfa8, type: 2}
+  confirm: {fileID: 11400000, guid: a78a8f3759d1c364fbc717bbf0151d9d, type: 2}
+  cancel: {fileID: 11400000, guid: 6a9b02cec4dc542489268dff06ad6705, type: 2}
+  error: {fileID: 11400000, guid: 0ba094e615888cf4e84db2bbf63a11da, type: 2}
+  pause: {fileID: 11400000, guid: fc55d00ab5f569846805356c73631215, type: 2}
+  resume: {fileID: 11400000, guid: ca96c4e3d4a6bd04bbf3a805e76e380d, type: 2}
+  menuOpen: {fileID: 11400000, guid: 34dcdf1f62a09c844b18df45f3e11842, type: 2}
+  menuClose: {fileID: 11400000, guid: 72f4afad263b27843b5deb5fab1011b0, type: 2}
+  lootPickup: {fileID: 11400000, guid: 30df7ef796d995e4fac8514b9cd16d85, type: 2}
+  statSelected: {fileID: 11400000, guid: 3c0f0e0a23f508448b7b84938d82863a, type: 2}

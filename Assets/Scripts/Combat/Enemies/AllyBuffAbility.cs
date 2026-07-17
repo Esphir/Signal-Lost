@@ -12,6 +12,12 @@ namespace Signal.Combat.Enemies
     /// </summary>
     public class AllyBuffAbility : MonoBehaviour
     {
+        /// <summary>
+        /// Raised when a cast actually lands on at least one ally, with how many were buffed.
+        /// Audio/VFX listen; this ability depends on neither.
+        /// </summary>
+        public event System.Action<int> BuffCast;
+
         [Header("Buff")]
         [SerializeField]
         [Tooltip("The buff cast on allies. Any BuffSO subclass works (shield, damage reduction, future types).")]
@@ -49,7 +55,10 @@ namespace Signal.Combat.Enemies
             _nextCastTime = Time.time + (buffedCount > 0 ? cooldown : 0.5f);
 
             if (buffedCount > 0)
+            {
                 CombatLog.Info($"'{name}' buffed {buffedCount} ally(ies) with '{buff.name}'.", this);
+                BuffCast?.Invoke(buffedCount); // notification only — no audio/VFX knowledge here
+            }
         }
 
         private int CastOnNearbyAllies()

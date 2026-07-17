@@ -15,6 +15,8 @@ GameObject:
   - component: {fileID: 4859021281017570712}
   - component: {fileID: 4566139534252428626}
   - component: {fileID: 4566139534252428700}
+  - component: {fileID: 7850010224358163306}
+  - component: {fileID: 5972973249400418273}
   m_Layer: 0
   m_Name: Sewage
   m_TagString: Untagged
@@ -218,6 +220,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ed80eb88c8e7a1c4962f61ff15cca84, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  affectsPlayer: 1
+  affectsEnemies: 1
+  enemyTag: Enemy
   damageAmount: 50
   respawnDelay: 0.2
   invulnerabilityTimeAfterRespawn: 1
@@ -225,3 +230,31 @@ MonoBehaviour:
   splashVfxPrefab: {fileID: 7600000000000000001, guid: 9977ada8608d77d14126e0023e24ff49, type: 3}
   triggerCenter: {x: 0, y: 1, z: 0}
   triggerSize: {x: 8, y: 3, z: 8}
+--- !u!114 &7850010224358163306
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5260769451786426019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea106c8ae7e8d334bac2f5bd84e728ee, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  channel: {fileID: 11400000, guid: 31611c860bbc755449dcd5b56cafc626, type: 2}
+  origin: {fileID: 0}
+--- !u!114 &5972973249400418273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5260769451786426019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 00becb59f4a11f7499df7eb22fb0b1e3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  splash: {fileID: 11400000, guid: e8103383c3439e64f8bbac50b2aa83b8, type: 2}
+  respawn: {fileID: 11400000, guid: ba905945fb285ec459858ca2f76316af, type: 2}
