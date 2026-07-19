@@ -41,7 +41,21 @@ namespace Signal.Generation
         /// <summary>The seed the last run actually used — copy it to reproduce a layout you liked.</summary>
         public int LastSeed { get; private set; }
 
+        /// <summary>
+        /// When set, the next Generate() uses this seed instead of rolling one, then clears it. The
+        /// save/resume flow sets this before loading the level so a continued run rebuilds the exact
+        /// same layout. Static so it survives the scene load that carries the resume across.
+        /// </summary>
+        public static int? PendingSeed;
+
         public GenerationReport LastReport { get; private set; }
+
+        /// <summary>
+        /// Raised at the end of every Generate(), once rooms are placed and each has a grid cell. The
+        /// minimap — and anything else that visualises the layout — rebuilds from this, so a fresh run
+        /// (including the End room's reroll) updates it automatically with no manual wiring.
+        /// </summary>
+        public event System.Action MapGenerated;
 
         private readonly List<RoomDefinition> _rooms = new List<RoomDefinition>();
         private readonly List<RoomConnector> _frontierBuffer = new List<RoomConnector>();
@@ -94,7 +108,8 @@ namespace Signal.Generation
 
             Clear();
 
-            LastSeed = settings.UseRandomSeed ? settings.RandomSeed : System.Environment.TickCount;
+            LastSeed = PendingSeed ?? (settings.UseRandomSeed ? settings.RandomSeed : System.Environment.TickCount);
+            PendingSeed = null; // consumed once — a later Generate rolls fresh unless set again
             _random = new System.Random(LastSeed);
             _selector = new RoomSelector(database, settings, _random);
             _validator = new RoomValidator(settings.OverlapTolerance);
@@ -117,7 +132,49 @@ namespace Signal.Generation
             Debug.Log($"[Gen] Seed {LastSeed}: {LastReport}", this);
             foreach (string problem in LastReport.Problems) Debug.LogWarning($"[Gen] {problem}", this);
 
+            AssignGridCoordinates();
+
             if (movePlayerToStart) MovePlayerToStart();
+
+            MapGenerated?.Invoke();
+        }
+
+        /// <summary>
+        /// Walks the connector graph from the Start room, giving every room a grid cell: a North door
+        /// steps +1 in Y, an East door +1 in X, and so on. The world uses variable-size rooms mated at
+        /// connectors; this collapses that into the clean one-cell-per-room grid the minimap draws.
+        /// </summary>
+        private void AssignGridCoordinates()
+        {
+            if (_rooms.Count == 0) return;
+
+            var occupied = new Dictionary<Vector2Int, RoomDefinition>();
+            var seen = new HashSet<RoomDefinition>();
+            var queue = new Queue<RoomDefinition>();
+
+            _rooms[0].GridPosition = Vector2Int.zero;
+            occupied[Vector2Int.zero] = _rooms[0];
+            seen.Add(_rooms[0]);
+            queue.Enqueue(_rooms[0]);
+
+            while (queue.Count > 0)
+            {
+                RoomDefinition room = queue.Dequeue();
+                foreach (RoomConnector connector in room.Connectors)
+                {
+                    if (connector == null || !connector.IsOccupied) continue;
+                    RoomDefinition neighbour = connector.ConnectedTo?.Owner;
+                    if (neighbour == null || !seen.Add(neighbour)) continue;
+
+                    Vector2Int cell = room.GridPosition + connector.WorldDirection.ToGridOffset();
+                    if (occupied.TryGetValue(cell, out RoomDefinition clash) && clash != neighbour)
+                        Debug.LogWarning($"[Gen] Grid cell {cell} is contested by '{clash.name}' and '{neighbour.name}'; the minimap may overlap there.", this);
+
+                    neighbour.GridPosition = cell;
+                    occupied[cell] = neighbour;
+                    queue.Enqueue(neighbour);
+                }
+            }
         }
 
         /// <summary>Removes the generated level. Safe from the editor and at runtime.</summary>
@@ -152,20 +209,27 @@ namespace Signal.Generation
             if (!PlaceFirstRoom()) return;
 
             int consecutiveCombat = 0;
+            RoomType lastType = RoomType.Start;
 
             // Slots between Start and End.
             for (int index = 1; index < target - 1; index++)
             {
-                RoomType type = ChooseType(index, target, ref consecutiveCombat);
-                if (!PlaceNext(type, index, target))
+                RoomType type = ChooseType(index, target, ref consecutiveCombat, lastType);
+                if (PlaceNext(type, index, target))
                 {
-                    // Couldn't fit the ideal type — try a Transition, which is usually the smallest.
-                    if (type == RoomType.Transition || !PlaceNext(RoomType.Transition, index, target))
-                    {
-                        Debug.LogWarning($"[Gen] Ran out of space at room #{index}; ending the level early.", this);
-                        break;
-                    }
+                    lastType = type;
+                    continue;
                 }
+
+                // Couldn't fit the ideal type — try the separator (a hallway is usually the smallest).
+                if (type != settings.SeparatorType && PlaceNext(settings.SeparatorType, index, target))
+                {
+                    lastType = settings.SeparatorType;
+                    continue;
+                }
+
+                Debug.LogWarning($"[Gen] Ran out of space at room #{index}; ending the level early.", this);
+                break;
             }
 
             if (database.HasAny(RoomType.End)) PlaceNext(RoomType.End, _rooms.Count, target);
@@ -179,12 +243,17 @@ namespace Signal.Generation
         /// extending the newest room. Even at 0 it picks at random among the newest room's doors, so a
         /// level still turns corners — it just never doubles back to open a side path.
         /// </summary>
-        private RoomConnector PickOpening(List<RoomConnector> openings)
+        private RoomConnector PickOpening(List<RoomConnector> openings, out bool branched)
         {
+            branched = false;
             if (openings.Count == 0) return null;
 
             bool branch = _random.NextDouble() * 100d < settings.BranchChance;
-            if (branch) return openings[_random.Next(openings.Count)];
+            if (branch)
+            {
+                branched = true;
+                return openings[_random.Next(openings.Count)];
+            }
 
             // Openings arrive newest-room-first, so the frontier is whatever shares the first owner.
             RoomDefinition frontier = openings[0].Owner;
@@ -195,14 +264,28 @@ namespace Signal.Generation
             return _frontierBuffer[_random.Next(_frontierBuffer.Count)];
         }
 
-        /// <summary>Checkpoint cadence wins, then the combat-streak cap, then a weighted mix.</summary>
-        private RoomType ChooseType(int index, int total, ref int consecutiveCombat)
+        /// <summary>
+        /// Checkpoint cadence wins, then a hallway may separate two major rooms, then the combat-streak
+        /// cap, then a weighted mix. <paramref name="lastType"/> is what actually landed in the previous
+        /// slot, which is how the hallway rule avoids stacking two hallways back to back.
+        /// </summary>
+        private RoomType ChooseType(int index, int total, ref int consecutiveCombat, RoomType lastType)
         {
             if (settings.CheckpointFrequency > 0 && index % settings.CheckpointFrequency == 0
                 && database.HasAny(RoomType.Checkpoint))
             {
                 consecutiveCombat = 0;
                 return RoomType.Checkpoint;
+            }
+
+            // Hallway separation: drop a connecting hallway after a real room, sometimes — never after
+            // another hallway (that would chain corridors) and never after a checkpoint (already a beat).
+            bool canSeparate = lastType != settings.SeparatorType && lastType != RoomType.Checkpoint;
+            if (canSeparate && database.HasAny(settings.SeparatorType)
+                && _random.NextDouble() * 100d < settings.HallwaySeparationChance)
+            {
+                consecutiveCombat = 0;
+                return settings.SeparatorType;
             }
 
             bool combatBlocked = consecutiveCombat >= settings.MaxConsecutiveCombatRooms;
@@ -214,11 +297,13 @@ namespace Signal.Generation
 
             consecutiveCombat = 0;
 
-            // Non-combat breather. Fall back through what the database actually has.
+            // Non-combat breather. The separator (hallway) is deliberately excluded — hallways are placed
+            // only by the separation rule above, so they always sit between real rooms rather than being
+            // picked as content in their own right.
             RoomType[] options = { RoomType.Platforming, RoomType.Treasure, RoomType.Transition };
             var available = new List<RoomType>();
             foreach (RoomType option in options)
-                if (database.HasAny(option)) available.Add(option);
+                if (option != settings.SeparatorType && database.HasAny(option)) available.Add(option);
 
             if (available.Count == 0) return RoomType.Combat;
             return available[_random.Next(available.Count)];
@@ -287,11 +372,31 @@ namespace Signal.Generation
             for (int attempt = 0; attempt < settings.PlacementAttempts; attempt++)
             {
                 List<RoomConnector> openings = CollectOpenConnectors();
+
+                // A hallway bridges two real rooms — it may never attach to another hallway's doorway, so
+                // corridors can't chain into each other.
+                if (type == settings.SeparatorType)
+                    openings.RemoveAll(c => c.Owner != null && c.Owner.RoomType == settings.SeparatorType);
+
                 if (openings.Count == 0) return false;
 
-                RoomConnector opening = PickOpening(openings);
-                RoomDatabase.Entry entry = _selector.Pick(type, index, total);
-                if (opening == null || entry == null) return false;
+                RoomConnector opening = PickOpening(openings, out bool branched);
+                if (opening == null) return false;
+
+                // A branch reaching off an older doorway is the natural spot for a reward room, so it
+                // sometimes opens with Treasure. Treasure rooms tend to be leaves, so the branch then
+                // dead-ends on it — the "treasure down the side passage" shape.
+                RoomType pickType = type;
+                if (branched && type != RoomType.End && type != RoomType.Checkpoint
+                    && database.HasAny(RoomType.Treasure)
+                    && _random.NextDouble() * 100d < settings.BranchTreasureChance)
+                {
+                    pickType = RoomType.Treasure;
+                }
+
+                RoomDatabase.Entry entry = _selector.Pick(pickType, index, total);
+                if (entry == null && pickType != type) entry = _selector.Pick(type, index, total);
+                if (entry == null) return false;
 
                 if (!TryAttach(entry, opening, out RoomDefinition placed)) continue;
 
@@ -442,14 +547,29 @@ namespace Signal.Generation
             GameObject player = GameObject.FindWithTag("Player");
             if (player == null) return;
 
-            // The start room's first connector-free anchor: its own transform is close enough, and
-            // authors can shift it by moving the prefab's root.
-            Transform start = _rooms[0].transform;
-            Vector3 position = start.position + Vector3.up * 1f;
+            RoomDefinition start = _rooms[0];
+
+            // A prefab's pivot can sit anywhere (a corner, off in space), so spawning on the raw pivot can
+            // drop the player outside the room. Prefer an explicit "PlayerSpawn" child; otherwise stand in
+            // the middle of the room's floor, which is always inside it whatever the pivot does.
+            Transform marker = FindChild(start.transform, "PlayerSpawn");
+            Vector3 position;
+            Quaternion rotation;
+            if (marker != null)
+            {
+                position = marker.position;
+                rotation = marker.rotation;
+            }
+            else
+            {
+                Bounds b = start.WorldBounds;
+                position = new Vector3(b.center.x, b.min.y + 1f, b.center.z);
+                rotation = start.transform.rotation;
+            }
 
             var controller = player.GetComponent<CharacterController>();
             if (controller != null) controller.enabled = false;
-            player.transform.SetPositionAndRotation(position, start.rotation);
+            player.transform.SetPositionAndRotation(position, rotation);
             if (controller != null) controller.enabled = true;
         }
 
@@ -459,11 +579,34 @@ namespace Signal.Generation
             else DestroyImmediate(instance);
         }
 
+        private static Transform FindChild(Transform root, string name)
+        {
+            foreach (Transform t in root.GetComponentsInChildren<Transform>(true))
+                if (t.name == name) return t;
+            return null;
+        }
+
         private void OnDrawGizmos()
         {
             if (settings == null || !settings.DrawGizmos || _rooms.Count == 0) return;
 
-            // Generation order: a path through the level, so you can read how it unfolded.
+            // The real door graph: every mated connector pair, drawn room-centre to room-centre. A link
+            // here that ISN'T also on the pink order-path below is a branch — this is what makes side
+            // passages visible at a glance.
+            Gizmos.color = new Color(0.25f, 0.9f, 1f, 0.55f);
+            foreach (RoomDefinition room in _rooms)
+            {
+                if (room == null) continue;
+                foreach (RoomConnector connector in room.Connectors)
+                {
+                    if (connector == null || !connector.IsOccupied || connector.ConnectedTo?.Owner == null) continue;
+                    // Draw each undirected edge once.
+                    if (room.RoomIndex < connector.ConnectedTo.Owner.RoomIndex)
+                        Gizmos.DrawLine(room.WorldBounds.center, connector.ConnectedTo.Owner.WorldBounds.center);
+                }
+            }
+
+            // Generation order: the path the generator actually walked, so you can read how it unfolded.
             Gizmos.color = new Color(1f, 0.4f, 0.9f, 0.9f);
             for (int i = 1; i < _rooms.Count; i++)
             {

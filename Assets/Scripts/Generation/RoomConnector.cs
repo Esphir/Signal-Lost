@@ -126,6 +126,12 @@ namespace Signal.Generation
                 Gizmos.color = new Color(0.2f, 1f, 0.35f, 0.5f);
                 Gizmos.DrawLine(transform.position, ConnectedTo.transform.position);
             }
+
+#if UNITY_EDITOR
+            // Facing + state at the door, so an open dead-end reads instantly in the Scene view.
+            UnityEditor.Handles.color = Gizmos.color;
+            UnityEditor.Handles.Label(tip, $"{WorldDirection}{(IsOccupied ? "" : "  (open)")}");
+#endif
         }
     }
 }

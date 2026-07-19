@@ -13,39 +13,27 @@ MonoBehaviour:
   m_Name: RoomDatabase
   m_EditorClassIdentifier: 
   rooms:
-  - prefab: {fileID: 1739694921268714097, guid: d7aecf4b20fcee948993aa38db9d9e40, type: 3}
+  - prefab: {fileID: 192246073589006133, guid: 291f8683a9d28c7459a09416a6cbf46c, type: 3}
     weight: 1
     minRoomIndex: 0
     maxRoomIndex: 0
-  - prefab: {fileID: 5152706519723987228, guid: 469c2028cd277a045bb5e92399ca56db, type: 3}
+  - prefab: {fileID: 2188151138777851792, guid: 3f0f622f08885854ea6d8128d653a29f, type: 3}
     weight: 1
-    minRoomIndex: 1
+    minRoomIndex: 0
     maxRoomIndex: 0
-  - prefab: {fileID: 3883130924632064671, guid: 27ddae2ecd7dd254da7d3d7241f1b95a, type: 3}
+  - prefab: {fileID: 961368169701555237, guid: c3c5e41186d4a6944b33316d6856906a, type: 3}
     weight: 1
-    minRoomIndex: 1
+    minRoomIndex: 0
     maxRoomIndex: 0
-  - prefab: {fileID: 5496976391361690392, guid: 1ae33e8ba74436640a7ce276e1da1573, type: 3}
+  - prefab: {fileID: 192246073589006133, guid: 76cedfc813c9b35438688f00f4cf9e5f, type: 3}
     weight: 1
-    minRoomIndex: 1
+    minRoomIndex: 0
     maxRoomIndex: 0
-  - prefab: {fileID: 6187623469680806530, guid: 3d76636c96c8bdd4d88cd8569c667a4d, type: 3}
+  - prefab: {fileID: 192246073589006133, guid: 4db56bada27583b4a91c017ce3c48ec4, type: 3}
     weight: 1
-    minRoomIndex: 1
+    minRoomIndex: 0
     maxRoomIndex: 0
-  - prefab: {fileID: 2718320310237462697, guid: 81e508a6687d993458edcd61cf940849, type: 3}
-    weight: 1
-    minRoomIndex: 1
-    maxRoomIndex: 0
-  - prefab: {fileID: 3033671833982940251, guid: 626feab8a8e500b40a90f5ad47f2733d, type: 3}
-    weight: 1
-    minRoomIndex: 1
-    maxRoomIndex: 0
-  - prefab: {fileID: 605026291829259429, guid: f6ddb8d2593b3f14eb22b082d4caad1d, type: 3}
-    weight: 1
-    minRoomIndex: 1
-    maxRoomIndex: 0
-  - prefab: {fileID: 3741797172561274792, guid: 620c592f3409b4c469f93bc622cfba22, type: 3}
+  - prefab: {fileID: 192246073589006133, guid: 00d8b26504b4dcb499aafdcc635534b7, type: 3}
     weight: 1
     minRoomIndex: 0
     maxRoomIndex: 0

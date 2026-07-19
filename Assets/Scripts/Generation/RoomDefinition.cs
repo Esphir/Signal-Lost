@@ -53,6 +53,13 @@ namespace Signal.Generation
         /// <summary>Order this room was generated in. -1 until placed. Shown in the Scene view.</summary>
         public int RoomIndex { get; internal set; } = -1;
 
+        /// <summary>
+        /// This room's cell on the dungeon grid, derived from the connector graph (Start = 0,0). It is
+        /// what the minimap lays out against — never world position — so a level of any shape maps to a
+        /// clean grid. Assigned by the generator after placement.
+        /// </summary>
+        public Vector2Int GridPosition { get; internal set; }
+
         /// <summary>Spawn sections inside this room. Found on the prefab — no manual registration.</summary>
         public EnemySpawnSection[] SpawnSections { get; private set; }
 
@@ -139,6 +146,7 @@ namespace Signal.Generation
             string label = RoomIndex >= 0
                 ? $"#{RoomIndex}  {roomType}  T{difficultyTier}"
                 : $"{roomType}  T{difficultyTier}";
+            label += $"\n{name}";
             if (SpawnSections is { Length: > 0 }) label += $"\nSpawns: {SpawnSections.Length}";
             if (Checkpoints is { Length: > 0 }) label += "  ★checkpoint";
             UnityEditor.Handles.Label(b.center + Vector3.up * (b.extents.y + 1f), label);

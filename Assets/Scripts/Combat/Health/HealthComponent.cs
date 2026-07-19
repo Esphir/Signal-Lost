@@ -101,6 +101,16 @@ namespace Signal.Combat.Health
         }
 
         /// <summary>
+        /// Sets current health directly, clamped into range — for save/restore. Doesn't run the death
+        /// path (a restored run is alive by definition) nor the damage/heal events; just notifies UI.
+        /// </summary>
+        public void SetCurrentHealth(float value)
+        {
+            CurrentHealth = Mathf.Clamp(value, 0f, maxHealth);
+            HealthChanged?.Invoke(CurrentHealth, maxHealth);
+        }
+
+        /// <summary>
         /// Changes max health at runtime (run upgrades, level scaling). Increases can optionally
         /// heal by the same amount; current health is always clamped into the new range.
         /// </summary>

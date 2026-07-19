@@ -67,6 +67,22 @@ namespace Signal.Generation
         [Tooltip("Cap on back-to-back combat rooms, so a run can breathe.")]
         private int maxConsecutiveCombatRooms = 2;
 
+        [Header("Hallways")]
+        [SerializeField]
+        [Tooltip("The RoomType used as a connecting hallway between major rooms. Transition by default.")]
+        private RoomType separatorType = RoomType.Transition;
+
+        [SerializeField, Range(0f, 100f)]
+        [Tooltip("Odds of dropping a hallway between two major rooms. 0 = never (rooms butt straight together); " +
+                 "100 = a hallway before every major room. Two hallways never land in a row regardless.")]
+        private float hallwaySeparationChance = 60f;
+
+        [Header("Branches")]
+        [SerializeField, Range(0f, 100f)]
+        [Tooltip("When the generator branches off an older doorway (see Branch Chance), the odds that branch " +
+                 "opens with a Treasure room — the 'reward down the side passage' pattern. Needs a Treasure room in the database.")]
+        private float branchTreasureChance = 50f;
+
         [Header("Difficulty")]
         [SerializeField]
         [Tooltip("Maps progress through the run (0-1) to difficulty tier (0-1, scaled by Max Difficulty Tier). Rising = harder later.")]
@@ -124,6 +140,9 @@ namespace Signal.Generation
         }
         public int CheckpointFrequency => checkpointFrequency;
         public int MaxConsecutiveCombatRooms => maxConsecutiveCombatRooms;
+        public RoomType SeparatorType => separatorType;
+        public float HallwaySeparationChance => hallwaySeparationChance;
+        public float BranchTreasureChance => branchTreasureChance;
         public AnimationCurve DifficultyCurve => difficultyCurve;
         public int MaxDifficultyTier => maxDifficultyTier;
         public float DifficultyWeighting => difficultyWeighting;

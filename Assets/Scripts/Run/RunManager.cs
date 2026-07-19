@@ -142,6 +142,23 @@ namespace Signal.Run
             StatsChanged?.Invoke();
         }
 
+        /// <summary>
+        /// Rehydrates a run from a save: re-applies its upgrades (and their stat modifiers) and stats,
+        /// without the wipe <see cref="StartRun"/> does. Used by the continue/resume flow.
+        /// </summary>
+        public void RestoreRun(System.Collections.Generic.IReadOnlyList<RunUpgrade> upgrades, RunStats stats)
+        {
+            Data.Clear();
+            if (upgrades != null)
+                foreach (RunUpgrade upgrade in upgrades) Data.Add(upgrade);
+
+            _stats = stats;
+            _runStartTime = Time.time - stats.Duration; // so live Duration keeps counting from the saved total
+            RunActive = true;
+            Debug.Log($"[Run] Run restored — {Data.Upgrades.Count} upgrade(s), {stats.EnemiesKilled} kill(s).");
+            StatsChanged?.Invoke();
+        }
+
         public void ReportEnemyKilled() => _stats.EnemiesKilled++;
 
         public void ReportLootDropped() => _stats.LootDropped++;
@@ -170,6 +187,14 @@ namespace Signal.Run
             // Entering a gameplay scene with no run active (e.g. a new game from the menu) starts a
             // fresh run; an already-active run carries across level transitions untouched.
             if (!RunActive) StartRun();
+
+            // A run resumed from the menu is poured in here — after StartRun and after the scene's
+            // objects (player, generated level) have awoken — so it overwrites the fresh start cleanly.
+            if (RunSaveSystem.PendingResume != null)
+            {
+                RunSaveSystem.Apply(RunSaveSystem.PendingResume);
+                RunSaveSystem.PendingResume = null;
+            }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

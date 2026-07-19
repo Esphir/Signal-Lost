@@ -1,4 +1,7 @@
 using Signal.Dev;
+using Signal.Generation;
+using Signal.Run;
+using Signal.Tutorial;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -13,8 +16,11 @@ namespace Signal.UI
     {
         [SerializeField] private string gameTitle = "SIGNAL LOST";
         [SerializeField]
-        [Tooltip("Scene loaded by the Start button. Must be in Build Settings.")]
+        [Tooltip("First-time-play scene (the tutorial). Must be in Build Settings.")]
         private string gameplaySceneName = "Tutorial";
+        [SerializeField]
+        [Tooltip("The generated gameplay level. Loaded when resuming a save or once the tutorial is done. Must be in Build Settings.")]
+        private string levelSceneName = "Level 1";
         [SerializeField] private SettingsUI settingsUI;
 
         private static readonly Color BackgroundColor = new Color(0.07f, 0.07f, 0.1f);
@@ -68,7 +74,24 @@ namespace Signal.UI
         private void OnStart()
         {
             DeveloperModeManager.DeveloperMode = false;
-            SceneManager.LoadScene(gameplaySceneName);
+
+            // A saved run resumes straight into the level with its exact layout — no tutorial. Otherwise
+            // the tutorial plays only until it's been completed once; after that, Play goes to the level.
+            RunSaveData save = RunSaveSystem.HasSave ? RunSaveSystem.Load() : null;
+            if (save != null)
+            {
+                RunSaveSystem.PendingResume = save;
+                LevelGenerator.PendingSeed = save.seed;
+                SceneManager.LoadScene(levelSceneName);
+            }
+            else if (!TutorialState.Completed)
+            {
+                SceneManager.LoadScene(gameplaySceneName);
+            }
+            else
+            {
+                SceneManager.LoadScene(levelSceneName);
+            }
         }
 
         private void OnDeveloperMenu()

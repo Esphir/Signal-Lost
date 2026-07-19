@@ -26,6 +26,9 @@ namespace Signal.GenerationEditor
                 if (GUILayout.Button("Clear")) generator.Clear();
             }
 
+            if (GUILayout.Button("Validate Rooms"))
+                RoomAuthoringTools.Validate();
+
             if (generator.Rooms.Count == 0)
             {
                 EditorGUILayout.HelpBox("No level generated. Press Regenerate, or press Play.", MessageType.Info);

@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace Signal.Generation
 {
     /// <summary>
@@ -67,5 +69,18 @@ namespace Signal.Generation
 
         public static bool IsVertical(this ConnectorDirection direction)
             => direction is ConnectorDirection.Up or ConnectorDirection.Down;
+
+        /// <summary>
+        /// This direction as a step on a 2D room grid (North = +Y, East = +X). Vertical connectors have
+        /// no place on a single floor's grid, so they map to zero — a hook for multi-floor maps later.
+        /// </summary>
+        public static Vector2Int ToGridOffset(this ConnectorDirection direction) => direction switch
+        {
+            ConnectorDirection.North => new Vector2Int(0, 1),
+            ConnectorDirection.South => new Vector2Int(0, -1),
+            ConnectorDirection.East => new Vector2Int(1, 0),
+            ConnectorDirection.West => new Vector2Int(-1, 0),
+            _ => Vector2Int.zero,
+        };
     }
 }

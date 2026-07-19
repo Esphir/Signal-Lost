@@ -44,7 +44,11 @@ namespace Signal.Run
 
         private void OnRunEnded(RunStats stats, RunEndReason reason)
         {
-            if (reason == RunEndReason.ReturnedToMenu) return;
+            // Victory runs through the End room's completion screen; a menu return needs no screen here.
+            if (reason != RunEndReason.PlayerDied) return;
+
+            // Permadeath: dying clears the continue save, so the next Play starts fresh.
+            RunSaveSystem.Delete();
 
             Time.timeScale = 0f;
             Cursor.lockState = CursorLockMode.None;
