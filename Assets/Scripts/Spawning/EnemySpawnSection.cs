@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Signal.Combat.Interfaces;
 using UnityEngine;
 
 namespace Signal.Spawning
@@ -61,6 +62,29 @@ namespace Signal.Spawning
         /// <summary>True once this section has fired. Guards against spawning twice.</summary>
         public bool HasSpawned { get; private set; }
 
+        /// <summary>Raised the moment this section spawns its enemies — the cue for a combat lockdown.</summary>
+        public event System.Action Activated;
+
+        /// <summary>
+        /// Enemies from this section still alive right now. Counts by <see cref="IHealth.IsDead"/> so a
+        /// corpse lingering before it's destroyed doesn't read as alive — combat ends the instant the
+        /// last one's health hits zero.
+        /// </summary>
+        public int AliveCount
+        {
+            get
+            {
+                int alive = 0;
+                foreach (GameObject enemy in _spawned)
+                {
+                    if (enemy == null) continue;
+                    if (enemy.TryGetComponent(out IHealth health) && health.IsDead) continue;
+                    alive++;
+                }
+                return alive;
+            }
+        }
+
         /// <summary>Reserved: seconds to wait before spawning. Configurable but not applied yet.</summary>
         public float SpawnDelay => spawnDelay;
 
@@ -111,6 +135,7 @@ namespace Signal.Spawning
             if (HasSpawned) return;
             HasSpawned = true;
             SpawnEnemies();
+            Activated?.Invoke();
         }
 
         /// <summary>

@@ -232,8 +232,72 @@ namespace Signal.Generation
                 break;
             }
 
-            if (database.HasAny(RoomType.End)) PlaceNext(RoomType.End, _rooms.Count, target);
+            PlaceEndRoom(target);
         }
+
+        /// <summary>
+        /// Places the End room as deep as possible — at the open doorway farthest from Start by graph
+        /// distance, and never closer than Min End Distance. This stops the exit hanging directly off the
+        /// spawn room; there's always real level (combat) between spawn and finish.
+        /// </summary>
+        private void PlaceEndRoom(int target)
+        {
+            if (!database.HasAny(RoomType.End)) return;
+
+            int index = _rooms.Count;
+            Dictionary<RoomDefinition, int> distance = GraphDistancesFromStart();
+
+            RoomDatabase.Entry entry = _selector.Pick(RoomType.End, index, target);
+            if (entry == null) return;
+
+            List<RoomConnector> openings = CollectOpenConnectors();
+            openings.RemoveAll(c => OwnerDistance(c, distance) + 1 < settings.MinEndDistanceFromStart);
+            openings.Sort((a, b) => OwnerDistance(b, distance).CompareTo(OwnerDistance(a, distance))); // farthest first
+
+            foreach (RoomConnector opening in openings)
+            {
+                if (!TryAttach(entry, opening, out RoomDefinition placed)) continue;
+                Accept(placed, entry, index);
+                opening.Open();
+                placed.OpenConnectorTo(opening);
+                if (settings.LogGeneration)
+                    Debug.Log($"[Gen] End room placed {OwnerDistance(opening, distance) + 1} rooms from Start.", placed);
+                return;
+            }
+
+            // Nothing at the minimum distance fit (short/awkward level) — fall back so the run still ends.
+            Debug.LogWarning("[Gen] Couldn't place the End room at the minimum distance; placing it wherever it fits.", this);
+            PlaceNext(RoomType.End, index, target);
+        }
+
+        /// <summary>Breadth-first hop count from the Start room to every reachable room.</summary>
+        private Dictionary<RoomDefinition, int> GraphDistancesFromStart()
+        {
+            var distance = new Dictionary<RoomDefinition, int>();
+            if (_rooms.Count == 0) return distance;
+
+            var queue = new Queue<RoomDefinition>();
+            distance[_rooms[0]] = 0;
+            queue.Enqueue(_rooms[0]);
+
+            while (queue.Count > 0)
+            {
+                RoomDefinition room = queue.Dequeue();
+                int here = distance[room];
+                foreach (RoomConnector connector in room.Connectors)
+                {
+                    if (connector == null || !connector.IsOccupied) continue;
+                    RoomDefinition neighbour = connector.ConnectedTo?.Owner;
+                    if (neighbour == null || distance.ContainsKey(neighbour)) continue;
+                    distance[neighbour] = here + 1;
+                    queue.Enqueue(neighbour);
+                }
+            }
+            return distance;
+        }
+
+        private static int OwnerDistance(RoomConnector connector, Dictionary<RoomDefinition, int> distance)
+            => connector.Owner != null && distance.TryGetValue(connector.Owner, out int d) ? d : 0;
 
         /// <summary>
         /// Chooses which doorway to build from. This one method decides whether a level reads as a
@@ -532,6 +596,11 @@ namespace Signal.Generation
         private void Register(RoomDefinition room)
         {
             room.Collect();
+
+            // Any room that fights the player locks its doors until cleared — give it the controller,
+            // once, at placement. Rooms with no spawn sections (hallways, treasure) never get one.
+            if (room.SpawnSections is { Length: > 0 } && room.GetComponent<CombatLockController>() == null)
+                room.gameObject.AddComponent<CombatLockController>();
 
             if (EnemySpawnManager.Instance != null)
                 foreach (EnemySpawnSection section in room.SpawnSections)

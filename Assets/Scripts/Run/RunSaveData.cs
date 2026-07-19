@@ -12,6 +12,7 @@ namespace Signal.Run
     public class RunSaveData
     {
         public int seed;
+        public int runNumber = 1;
         public float playerHealth;
         public float playerMaxHealth;
 

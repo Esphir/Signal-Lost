@@ -59,6 +59,10 @@ namespace Signal.Run
         public RunData Data { get; } = new RunData();
         public bool RunActive { get; private set; }
 
+        /// <summary>Which level of the current run the player is on — 1 at the start, +1 per Next Run.
+        /// Reset by <see cref="StartRun"/>, carried by the save so a resumed run shows the right number.</summary>
+        public int CurrentRun { get; private set; } = 1;
+
         /// <summary>Live statistics for the current run (duration is filled to the moment of access).</summary>
         public RunStats Statistics
         {
@@ -109,8 +113,17 @@ namespace Signal.Run
             Data.Clear();
             _stats = default;
             _runStartTime = Time.time;
+            CurrentRun = 1;
             RunActive = true;
             Debug.Log("[Run] Run started.");
+            StatsChanged?.Invoke();
+        }
+
+        /// <summary>Advances to the next level of the run (the End room's Next Run). Bumps the counter.</summary>
+        public void AdvanceRun()
+        {
+            CurrentRun++;
+            Debug.Log($"[Run] Advanced to run {CurrentRun}.");
             StatsChanged?.Invoke();
         }
 
@@ -146,7 +159,7 @@ namespace Signal.Run
         /// Rehydrates a run from a save: re-applies its upgrades (and their stat modifiers) and stats,
         /// without the wipe <see cref="StartRun"/> does. Used by the continue/resume flow.
         /// </summary>
-        public void RestoreRun(System.Collections.Generic.IReadOnlyList<RunUpgrade> upgrades, RunStats stats)
+        public void RestoreRun(System.Collections.Generic.IReadOnlyList<RunUpgrade> upgrades, RunStats stats, int runNumber)
         {
             Data.Clear();
             if (upgrades != null)
@@ -154,8 +167,9 @@ namespace Signal.Run
 
             _stats = stats;
             _runStartTime = Time.time - stats.Duration; // so live Duration keeps counting from the saved total
+            CurrentRun = Mathf.Max(1, runNumber);
             RunActive = true;
-            Debug.Log($"[Run] Run restored — {Data.Upgrades.Count} upgrade(s), {stats.EnemiesKilled} kill(s).");
+            Debug.Log($"[Run] Run restored — run {CurrentRun}, {Data.Upgrades.Count} upgrade(s), {stats.EnemiesKilled} kill(s).");
             StatsChanged?.Invoke();
         }
 

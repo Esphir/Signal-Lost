@@ -102,6 +102,21 @@ namespace Signal.Generation
             Object.Instantiate(capPrefab, point.position + point.TransformVector(spawnOffset), point.rotation, transform);
         }
 
+        /// <summary>
+        /// Slams a used doorway shut for a combat lockdown — the blocking wall goes back in, without
+        /// touching whether the connector counts as occupied. Pairs with <see cref="Unlock"/>.
+        /// </summary>
+        public void LockShut()
+        {
+            if (blockingWall != null) blockingWall.SetActive(true);
+        }
+
+        /// <summary>Reopens a used doorway after a lockdown. No-op on an unused connector (stays sealed).</summary>
+        public void Unlock()
+        {
+            if (IsOccupied && blockingWall != null) blockingWall.SetActive(false);
+        }
+
         internal void ResetLinks() => ConnectedTo = null;
 
         private void OnDrawGizmos()

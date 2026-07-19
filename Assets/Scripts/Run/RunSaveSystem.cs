@@ -52,7 +52,10 @@ namespace Signal.Run
                 : new RunSaveData { seed = seed };
 
             if (RunManager.HasInstance)
+            {
                 data.upgrades.AddRange(RunManager.Instance.Data.Upgrades);
+                data.runNumber = RunManager.Instance.CurrentRun;
+            }
 
             HealthComponent health = FindPlayerHealth();
             if (health != null)
@@ -67,7 +70,7 @@ namespace Signal.Run
         public static void Apply(RunSaveData data)
         {
             if (data == null) return;
-            if (RunManager.HasInstance) RunManager.Instance.RestoreRun(data.upgrades, data.ToStats());
+            if (RunManager.HasInstance) RunManager.Instance.RestoreRun(data.upgrades, data.ToStats(), data.runNumber);
 
             HealthComponent health = FindPlayerHealth();
             if (health != null && data.playerMaxHealth > 0f) health.SetCurrentHealth(data.playerHealth);

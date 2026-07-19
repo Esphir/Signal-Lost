@@ -13,11 +13,19 @@ MonoBehaviour:
   m_Name: GenerationSettings
   m_EditorClassIdentifier: 
   minimumRooms: 8
-  maximumRooms: 15
+  maximumRooms: 20
   useRandomSeed: 0
   randomSeed: 12345
+  branchChance: 25
+  allowRotation: 1
+  deadEndType: 0
+  deadEndCaps: []
   checkpointFrequency: 4
   maxConsecutiveCombatRooms: 2
+  minEndDistanceFromStart: 2
+  separatorType: 5
+  hallwaySeparationChance: 60
+  branchTreasureChance: 50
   difficultyCurve:
     serializedVersion: 2
     m_Curve:
@@ -42,7 +50,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  maxDifficultyTier: 3
+  maxDifficultyTier: 4
   difficultyWeighting: 2
   repeatPenalty: 8
   repeatMemory: 3

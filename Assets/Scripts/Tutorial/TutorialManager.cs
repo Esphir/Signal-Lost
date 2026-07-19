@@ -34,6 +34,7 @@ namespace Signal.Tutorial
 
         private int _index = -1;
         private GameObject _completeUI;
+        private GameObject _startUI;
 
         private void Start()
         {
@@ -44,7 +45,74 @@ namespace Signal.Tutorial
                 enabled = false;
                 return;
             }
+            ShowStartPrompt();
+        }
+
+        /// <summary>
+        /// Asks up front whether to play the tutorial or skip to the first level. Skipping marks the
+        /// tutorial done, so it isn't asked again — a later Play goes straight to the level.
+        /// </summary>
+        private void ShowStartPrompt()
+        {
+            UiBuilder.EnsureEventSystem();
+            Time.timeScale = 0f;
+            Cursor.lockState = CursorLockMode.None;
+            Cursor.visible = true;
+
+            Canvas canvas = UiBuilder.CreateOverlayCanvas("TutorialStartCanvas", 60);
+            _startUI = canvas.gameObject;
+
+            Image dim = UiBuilder.NewChild<Image>(canvas.transform, "Dim");
+            dim.color = new Color(0f, 0f, 0f, 0.8f);
+            UiBuilder.Stretch(dim.rectTransform);
+
+            Text title = UiBuilder.CreateText(canvas.transform, "Title", "TUTORIAL", 52, FontStyle.Bold, TextAnchor.MiddleCenter);
+            title.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            title.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            title.rectTransform.anchoredPosition = new Vector2(0f, 150f);
+            title.rectTransform.sizeDelta = new Vector2(900f, 90f);
+
+            Text sub = UiBuilder.CreateText(canvas.transform, "Subtitle",
+                "Play the tutorial, or skip straight to the first level?", 26, FontStyle.Normal, TextAnchor.MiddleCenter);
+            sub.color = new Color(0.8f, 0.8f, 0.85f);
+            sub.rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            sub.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            sub.rectTransform.anchoredPosition = new Vector2(0f, 74f);
+            sub.rectTransform.sizeDelta = new Vector2(1000f, 60f);
+
+            var buttons = UiBuilder.NewChild<VerticalLayoutGroup>(canvas.transform, "Buttons");
+            buttons.spacing = 18f;
+            buttons.childAlignment = TextAnchor.MiddleCenter;
+            buttons.childControlWidth = false;
+            buttons.childControlHeight = false;
+            var br = (RectTransform)buttons.transform;
+            br.anchorMin = new Vector2(0.5f, 0.5f);
+            br.anchorMax = new Vector2(0.5f, 0.5f);
+            br.anchoredPosition = new Vector2(0f, -60f);
+            br.sizeDelta = new Vector2(360f, 160f);
+
+            AddButton(buttons.transform, "Play Tutorial", OnPlayTutorial);
+            AddButton(buttons.transform, "Skip to Level", OnSkipTutorial);
+        }
+
+        private void OnPlayTutorial()
+        {
+            if (_startUI != null) Destroy(_startUI);
+            _startUI = null;
+            Time.timeScale = 1f;
+
+            // Hand back the locked gameplay cursor; each step's prompt frees and re-locks it from here.
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
             BeginStep(0);
+        }
+
+        private void OnSkipTutorial()
+        {
+            TutorialState.Completed = true;
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(continueSceneName);
         }
 
         private void BeginStep(int index)

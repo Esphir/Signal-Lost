@@ -67,6 +67,12 @@ namespace Signal.Generation
         [Tooltip("Cap on back-to-back combat rooms, so a run can breathe.")]
         private int maxConsecutiveCombatRooms = 2;
 
+        [SerializeField, Min(2)]
+        [Tooltip("Fewest rooms (doorway hops) between the Start room and the End room, so the exit never " +
+                 "hangs right off spawn. 2 = at least one room in between; the End is otherwise placed as " +
+                 "deep as the layout allows.")]
+        private int minEndDistanceFromStart = 2;
+
         [Header("Hallways")]
         [SerializeField]
         [Tooltip("The RoomType used as a connecting hallway between major rooms. Transition by default.")]
@@ -140,6 +146,7 @@ namespace Signal.Generation
         }
         public int CheckpointFrequency => checkpointFrequency;
         public int MaxConsecutiveCombatRooms => maxConsecutiveCombatRooms;
+        public int MinEndDistanceFromStart => minEndDistanceFromStart;
         public RoomType SeparatorType => separatorType;
         public float HallwaySeparationChance => hallwaySeparationChance;
         public float BranchTreasureChance => branchTreasureChance;

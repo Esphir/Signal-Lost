@@ -20,6 +20,8 @@ namespace Signal.UI
         private static readonly Color ButtonColor = new Color(0.16f, 0.16f, 0.22f);
 
         private static bool _open;
+        private CursorLockMode _prevLock;
+        private bool _prevVisible;
 
         /// <summary>Builds and shows a fresh completion screen, freezing the game. No-op if already open.</summary>
         public static void ShowNew()
@@ -32,6 +34,10 @@ namespace Signal.UI
         {
             _open = true;
             UiBuilder.EnsureEventSystem();
+
+            // Remember the gameplay cursor state so Next Run hands control straight back to it locked.
+            _prevLock = Cursor.lockState;
+            _prevVisible = Cursor.visible;
 
             Time.timeScale = 0f;
             Cursor.lockState = CursorLockMode.None;
@@ -82,6 +88,7 @@ namespace Signal.UI
             if (generator == null) { Debug.LogError("[Run] No LevelGenerator to start the next run."); return; }
 
             generator.Generate();                          // fresh layout + seed, progress untouched
+            if (RunManager.HasInstance) RunManager.Instance.AdvanceRun(); // bump the run counter
             RunSaveSystem.SaveCurrent(generator.LastSeed);  // checkpoint the new floor
         }
 
@@ -97,6 +104,8 @@ namespace Signal.UI
         {
             _open = false;
             Time.timeScale = 1f;
+            Cursor.lockState = _prevLock;
+            Cursor.visible = _prevVisible;
             UiModalState.Pop();
             Destroy(gameObject);
         }
