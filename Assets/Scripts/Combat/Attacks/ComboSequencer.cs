@@ -29,10 +29,21 @@ namespace Signal.Combat.Attacks
             if (_resetTimer <= 0f) Reset();
         }
 
-        /// <summary>Advance to the next combo step (or loop back to the first if there isn't one) and arm the reset window.</summary>
-        public void Advance()
+        /// <summary>
+        /// Advance to the step after the one that just ran (or loop back to the first if there isn't one)
+        /// and arm the reset window.
+        ///
+        /// It advances from <paramref name="executedStep"/> — the step the swing actually used — rather
+        /// than the live <see cref="CurrentStep"/>. That matters because a swing can outlast its own reset
+        /// window: <see cref="Tick"/> then fires <see cref="Reset"/> mid-swing and flips CurrentStep back
+        /// to the first step. Advancing from the live value there would land the chain back on the same
+        /// step every time (spam-clicking would repeat one swing forever); advancing from the executed
+        /// step keeps the chain honest.
+        /// </summary>
+        public void Advance(LightAttackConfigSO executedStep)
         {
-            CurrentStep = CurrentStep.nextComboStep != null ? CurrentStep.nextComboStep : _firstStep;
+            LightAttackConfigSO from = executedStep != null ? executedStep : CurrentStep;
+            CurrentStep = from.nextComboStep != null ? from.nextComboStep : _firstStep;
             _resetTimer = CurrentStep.comboResetWindow;
         }
 

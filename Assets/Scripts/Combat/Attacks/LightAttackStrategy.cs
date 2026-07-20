@@ -72,7 +72,7 @@ namespace Signal.Combat.Attacks
 
             yield return ctx.WaitForAttackExit(step);
 
-            _combo.Advance();
+            _combo.Advance(step);
         }
     }
 }
