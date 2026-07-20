@@ -1,5 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
 using Signal.Spawning;
+using Signal.UI;
 using UnityEngine;
 
 namespace Signal.Generation
@@ -60,6 +62,8 @@ namespace Signal.Generation
         private readonly List<RoomDefinition> _rooms = new List<RoomDefinition>();
         private readonly List<RoomConnector> _frontierBuffer = new List<RoomConnector>();
         private readonly List<RoomConnector> _connectorBuffer = new List<RoomConnector>();
+        private readonly List<RoomDatabase.Entry> _endBuffer = new List<RoomDatabase.Entry>();
+        private readonly List<double> _weightBuffer = new List<double>();
         private RoomSelector _selector;
         private RoomValidator _validator;
         private System.Random _random;
@@ -94,10 +98,25 @@ namespace Signal.Generation
 
         private void Awake()
         {
-            if (generateOnAwake) Generate();
+            if (!generateOnAwake) return;
+
+            // In play mode the level pops in behind a loading overlay; in the editor (Regenerate button)
+            // it's synchronous so the designer sees the result immediately.
+            if (Application.isPlaying && settings != null && settings.ShowLoadingScreen)
+                GenerateWithLoadingScreen();
+            else
+                Generate();
         }
 
-        /// <summary>Builds a level, replacing any previous one. The single entry point.</summary>
+        /// <summary>
+        /// Builds a level, replacing any previous one. The single synchronous entry point — used by the
+        /// editor buttons and by <see cref="GenerateWithLoadingScreen"/>.
+        ///
+        /// A fresh run may reroll the seed until the layout is valid (the exit exists, sits at least Min
+        /// End Distance from spawn, and nothing overlaps), so a broken floor never loads. A resumed or
+        /// explicitly-chosen seed (<see cref="PendingSeed"/> / Use Random Seed) gets exactly one attempt,
+        /// so it reproduces that layout precisely.
+        /// </summary>
         public void Generate()
         {
             if (database == null || settings == null)
@@ -106,11 +125,79 @@ namespace Signal.Generation
                 return;
             }
 
+            bool fixedSeed = PendingSeed.HasValue || settings.UseRandomSeed;
+            int attempts = fixedSeed ? 1 : Mathf.Max(1, settings.MaxGenerationAttempts);
+            int baseSeed = PendingSeed ?? (settings.UseRandomSeed ? settings.RandomSeed : System.Environment.TickCount);
+            PendingSeed = null; // consumed once — a later Generate rolls fresh unless set again
+
+            bool valid = false;
+            for (int attempt = 0; attempt < attempts && !valid; attempt++)
+            {
+                int seed = fixedSeed ? baseSeed : baseSeed + attempt * 7919; // distinct seed per reroll
+                valid = GenerateAttempt(seed);
+            }
+
+            if (!valid && !fixedSeed)
+                Debug.LogWarning($"[Gen] Couldn't roll a fully valid layout in {attempts} attempts; " +
+                                 $"keeping seed {LastSeed} as the best effort.", this);
+
+            // The grid + minimap + player placement only matter for the layout we actually keep.
+            AssignGridCoordinates();
+            if (movePlayerToStart) MovePlayerToStart();
+            MapGenerated?.Invoke();
+        }
+
+        /// <summary>
+        /// Generates behind the loading overlay (play mode). The overlay is raised, the main thread yields
+        /// once so it actually paints, generation (with any rerolls) runs, and the overlay is held a beat
+        /// so a fast build doesn't flash. <paramref name="onDone"/> runs after the overlay comes down —
+        /// the Next Run flow uses it to checkpoint the save once the new seed is settled.
+        /// </summary>
+        public void GenerateWithLoadingScreen(System.Action onDone = null)
+        {
+            if (!Application.isPlaying)
+            {
+                Generate();
+                onDone?.Invoke();
+                return;
+            }
+            StartCoroutine(GenerateBehindScreenRoutine(onDone));
+        }
+
+        private IEnumerator GenerateBehindScreenRoutine(System.Action onDone)
+        {
+            LevelLoadingScreen.Show();
+            try
+            {
+                yield return null;                 // let the overlay paint before we hitch the main thread
+                yield return new WaitForEndOfFrame();
+
+                float start = Time.realtimeSinceStartup;
+                Generate();
+
+                // Hold the overlay a beat so a fast build doesn't flash. Realtime, so it's timescale-proof.
+                const float minDisplaySeconds = 0.4f;
+                while (Time.realtimeSinceStartup - start < minDisplaySeconds) yield return null;
+            }
+            finally
+            {
+                LevelLoadingScreen.Hide(); // always comes down, even if generation threw
+            }
+
+            onDone?.Invoke();
+        }
+
+        /// <summary>
+        /// One build attempt with a given seed: clears the previous level, lays out a new one, seals dead
+        /// ends and audits it. Returns whether the result is valid (see <see cref="IsLevelValid"/>), which
+        /// is how <see cref="Generate"/> decides whether to keep it or reroll.
+        /// </summary>
+        private bool GenerateAttempt(int seed)
+        {
             Clear();
 
-            LastSeed = PendingSeed ?? (settings.UseRandomSeed ? settings.RandomSeed : System.Environment.TickCount);
-            PendingSeed = null; // consumed once — a later Generate rolls fresh unless set again
-            _random = new System.Random(LastSeed);
+            LastSeed = seed;
+            _random = new System.Random(seed);
             _selector = new RoomSelector(database, settings, _random);
             _validator = new RoomValidator(settings.OverlapTolerance);
 
@@ -129,14 +216,33 @@ namespace Signal.Generation
 
             LastReport = _validator.Audit(_rooms, allowOpenEnds: true);
             LastReport.SealedConnectors = sealedCount;
-            Debug.Log($"[Gen] Seed {LastSeed}: {LastReport}", this);
+
+            bool valid = IsLevelValid(out string reason);
+            Debug.Log($"[Gen] Seed {seed}: {LastReport}{(valid ? "" : $"  — REJECTED ({reason})")}", this);
             foreach (string problem in LastReport.Problems) Debug.LogWarning($"[Gen] {problem}", this);
+            return valid;
+        }
 
-            AssignGridCoordinates();
+        /// <summary>
+        /// A layout is shippable only if it has an exit, that exit doesn't overlap anything, and it sits at
+        /// least Min End Distance hops from spawn (never hung straight off the Start room). Anything else is
+        /// rerolled by <see cref="Generate"/>.
+        /// </summary>
+        private bool IsLevelValid(out string reason)
+        {
+            RoomDefinition end = null;
+            foreach (RoomDefinition room in _rooms)
+                if (room != null && room.RoomType == RoomType.End) { end = room; break; }
 
-            if (movePlayerToStart) MovePlayerToStart();
+            if (end == null) { reason = "no exit"; return false; }
+            if (LastReport != null && LastReport.Overlaps > 0) { reason = "rooms overlap"; return false; }
 
-            MapGenerated?.Invoke();
+            Dictionary<RoomDefinition, int> distance = GraphDistancesFromStart();
+            if (!distance.TryGetValue(end, out int hops)) { reason = "exit unreachable"; return false; }
+            if (hops < settings.MinEndDistanceFromStart) { reason = $"exit only {hops} hop(s) from spawn"; return false; }
+
+            reason = null;
+            return true;
         }
 
         /// <summary>
@@ -201,8 +307,13 @@ namespace Signal.Generation
         // ── Plan ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Start → body → End. The body's shape is decided per slot rather than up front, so a room
-        /// that won't fit can be swapped without unwinding the whole plan.
+        /// Start → path → exit → branches.
+        ///
+        /// The exit is placed the moment a straight path has grown deep enough — into the open space just
+        /// past the path's tip, before any branch can fill that space. That's the fix for both failure
+        /// modes we hit: the exit can never be boxed out (it's placed while there's still room), and it
+        /// can never be forced to overlap (it only ever takes a clean spot). Everything after the exit is
+        /// a branch, and the overlap check keeps branches off the exit's cell.
         /// </summary>
         private void BuildPlan(int target)
         {
@@ -210,64 +321,153 @@ namespace Signal.Generation
 
             int consecutiveCombat = 0;
             RoomType lastType = RoomType.Start;
+            bool endReserved = false;
 
-            // Slots between Start and End.
+            // How many rooms deep the straight path runs before the exit caps it. Deep enough to sit a
+            // real distance from spawn, but short of the full budget so there's room left for branches.
+            int pathTip = Mathf.Clamp(Mathf.RoundToInt((target - 2) * 0.6f),
+                                      settings.MinEndDistanceFromStart, Mathf.Max(1, target - 2));
+
             for (int index = 1; index < target - 1; index++)
             {
+                // Cap the path with the exit once it's deep enough — while the space past the tip is
+                // still empty, so the exit always lands clean and deep.
+                if (!endReserved && _rooms.Count - 1 >= pathTip)
+                    endReserved = TryPlaceEnd(target, settings.MinEndDistanceFromStart);
+
+                bool allowBranch = endReserved; // grow a straight path first, then branch out around it
                 RoomType type = ChooseType(index, target, ref consecutiveCombat, lastType);
-                if (PlaceNext(type, index, target))
-                {
-                    lastType = type;
-                    continue;
-                }
+                if (PlaceNext(type, index, target, allowBranch)) { lastType = type; continue; }
 
                 // Couldn't fit the ideal type — try the separator (a hallway is usually the smallest).
-                if (type != settings.SeparatorType && PlaceNext(settings.SeparatorType, index, target))
+                if (type != settings.SeparatorType && PlaceNext(settings.SeparatorType, index, target, allowBranch))
                 {
                     lastType = settings.SeparatorType;
                     continue;
                 }
 
+                // Nothing more fits. Cap the path with the exit here if we haven't already, then stop.
+                if (!endReserved) endReserved = TryPlaceEnd(target, settings.MinEndDistanceFromStart);
                 Debug.LogWarning($"[Gen] Ran out of space at room #{index}; ending the level early.", this);
                 break;
             }
 
-            PlaceEndRoom(target);
+            if (!endReserved) PlaceEndRoom(target);
         }
 
         /// <summary>
-        /// Places the End room as deep as possible — at the open doorway farthest from Start by graph
-        /// distance, and never closer than Min End Distance. This stops the exit hanging directly off the
-        /// spawn room; there's always real level (combat) between spawn and finish.
+        /// Places the End room as far from spawn as possible — at the open doorway farthest from Start in
+        /// world space, and no closer than Min End Distance hops, so the exit never hangs right off spawn.
+        ///
+        /// This is the fallback path, used only when the build didn't already reserve the exit (see
+        /// <see cref="BuildPlan"/>). It never overlaps: it takes a clean deep doorway, else grows a
+        /// corridor into open space to earn the distance, else any clean doorway. If nothing clean fits
+        /// anywhere, it leaves the level exit-less on purpose — <see cref="IsLevelValid"/> then rejects
+        /// it and <see cref="Generate"/> rerolls the seed, rather than shipping an overlapping exit.
         /// </summary>
         private void PlaceEndRoom(int target)
         {
             if (!database.HasAny(RoomType.End)) return;
 
-            int index = _rooms.Count;
+            if (TryPlaceEnd(target, settings.MinEndDistanceFromStart)) return;
+            if (ExtendForDepth(target)) return;
+            if (TryPlaceEnd(target, 0)) return;
+
+            Debug.LogWarning("[Gen] No clean spot for the exit in this layout; it will be rejected and the seed rerolled.", this);
+        }
+
+        /// <summary>
+        /// Attaches an End room at the deepest open doorway that clears <paramref name="minDistance"/>
+        /// hops from Start and physically fits without overlapping, trying every End prefab at each.
+        /// Re-reads the layout on every call so it sees rooms added since (the depth-grow fallback adds
+        /// some). Returns true once one lands.
+        /// </summary>
+        private bool TryPlaceEnd(int target, int minDistance)
+        {
             Dictionary<RoomDefinition, int> distance = GraphDistancesFromStart();
-
-            RoomDatabase.Entry entry = _selector.Pick(RoomType.End, index, target);
-            if (entry == null) return;
-
             List<RoomConnector> openings = CollectOpenConnectors();
-            openings.RemoveAll(c => OwnerDistance(c, distance) + 1 < settings.MinEndDistanceFromStart);
-            openings.Sort((a, b) => OwnerDistance(b, distance).CompareTo(OwnerDistance(a, distance))); // farthest first
+            // Farthest from spawn in the WORLD, not just by graph hops — a curled level can be many hops
+            // yet physically next to Start, which is exactly the "exit by spawn" case we're avoiding.
+            openings.Sort((a, b) => PhysicalDistFromStart(b).CompareTo(PhysicalDistFromStart(a)));
 
+            int index = _rooms.Count;
             foreach (RoomConnector opening in openings)
             {
-                if (!TryAttach(entry, opening, out RoomDefinition placed)) continue;
-                Accept(placed, entry, index);
-                opening.Open();
-                placed.OpenConnectorTo(opening);
-                if (settings.LogGeneration)
-                    Debug.Log($"[Gen] End room placed {OwnerDistance(opening, distance) + 1} rooms from Start.", placed);
-                return;
-            }
+                if (opening.IsOccupied) continue;
+                if (OwnerDistance(opening, distance) + 1 < minDistance) continue;
 
-            // Nothing at the minimum distance fit (short/awkward level) — fall back so the run still ends.
-            Debug.LogWarning("[Gen] Couldn't place the End room at the minimum distance; placing it wherever it fits.", this);
-            PlaceNext(RoomType.End, index, target);
+                foreach (RoomDatabase.Entry entry in EndCandidates(index))
+                {
+                    if (!TryAttach(entry, opening, out RoomDefinition placed)) continue;
+
+                    Accept(placed, entry, index);
+                    opening.Open();
+                    placed.OpenConnectorTo(opening);
+
+                    int hops = OwnerDistance(opening, distance) + 1;
+                    Debug.Log($"[Gen] Exit placed {hops} hop(s) from Start ({_rooms.Count} rooms total).", placed);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Grows a short corridor from the doorway farthest from spawn into free space, so the exit can
+        /// sit at Min End Distance even when the finished layout left no clean deep spot. Bridges with the
+        /// small separator room, which reaches gaps the full-size End can't, and is bounded so it can't run
+        /// away. Returns true once it manages to place the exit at depth; the rooms it adds are never
+        /// wasted — a doorway it opened becomes the exit's spot, or a later fallback pass uses it.
+        /// </summary>
+        private bool ExtendForDepth(int target)
+        {
+            RoomType bridge = settings.SeparatorType;
+            if (!database.HasAny(bridge)) return false;
+
+            for (int guard = settings.MinEndDistanceFromStart + 4; guard > 0; guard--)
+            {
+                List<RoomConnector> openings = CollectOpenConnectors();
+                // Grow from the doorway physically farthest from spawn, so the corridor heads outward
+                // into open space rather than back toward Start.
+                openings.Sort((a, b) => PhysicalDistFromStart(b).CompareTo(PhysicalDistFromStart(a)));
+
+                // Extend the farthest doorway that will take a bridge room.
+                bool grew = false;
+                foreach (RoomConnector opening in openings)
+                {
+                    RoomDatabase.Entry entry = _selector.Pick(bridge, _rooms.Count, target);
+                    if (entry == null) return false;
+                    if (!TryAttach(entry, opening, out RoomDefinition placed)) continue;
+
+                    Accept(placed, entry, _rooms.Count);
+                    opening.Open();
+                    placed.OpenConnectorTo(opening);
+                    grew = true;
+                    break;
+                }
+                if (!grew) return false; // nowhere left to grow
+
+                // A fresh doorway now reaches further out — can the exit sit deep and clean there?
+                if (TryPlaceEnd(target, settings.MinEndDistanceFromStart)) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Every End prefab valid at this slot, in a deterministic shuffled order so a database with
+        /// several End rooms varies which caps a run. If a room-index window would leave none, it falls
+        /// back to every End prefab regardless — the exit must never be filtered out of existence.
+        /// </summary>
+        private List<RoomDatabase.Entry> EndCandidates(int index)
+        {
+            database.Query(RoomType.End, index, _endBuffer);
+            if (_endBuffer.Count == 0)
+                foreach (RoomDatabase.Entry entry in database.Rooms)
+                    if (entry != null && entry.IsValid && entry.Definition.RoomType == RoomType.End)
+                        _endBuffer.Add(entry);
+
+            Shuffle(_endBuffer);
+            return _endBuffer;
         }
 
         /// <summary>Breadth-first hop count from the Start room to every reachable room.</summary>
@@ -299,6 +499,12 @@ namespace Signal.Generation
         private static int OwnerDistance(RoomConnector connector, Dictionary<RoomDefinition, int> distance)
             => connector.Owner != null && distance.TryGetValue(connector.Owner, out int d) ? d : 0;
 
+        /// <summary>Squared world distance from a doorway's owning room to the Start room. Cheap ranking key.</summary>
+        private float PhysicalDistFromStart(RoomConnector connector)
+            => _rooms.Count == 0 || connector.Owner == null
+                ? 0f
+                : (connector.Owner.WorldBounds.center - _rooms[0].WorldBounds.center).sqrMagnitude;
+
         /// <summary>
         /// Chooses which doorway to build from. This one method decides whether a level reads as a
         /// corridor or a sprawl.
@@ -306,17 +512,25 @@ namespace Signal.Generation
         /// Branch Chance is the odds of reaching back into the level for any open doorway rather than
         /// extending the newest room. Even at 0 it picks at random among the newest room's doors, so a
         /// level still turns corners — it just never doubles back to open a side path.
+        ///
+        /// Either way the pick is biased toward doorways that face away from Start, so the level expands
+        /// outward instead of curling into a packed blob around spawn. That blob was what stranded the
+        /// exit next to Start: a curled level leaves its deep rooms boxed in, so the only open space is
+        /// back by the entrance. Outward growth keeps the far frontier genuinely far, with room for the exit.
+        ///
+        /// <paramref name="allowBranch"/> is off while the build grows its straight path to the exit, so
+        /// that stretch never reaches back — it heads out in one line, and the exit caps its tip.
         /// </summary>
-        private RoomConnector PickOpening(List<RoomConnector> openings, out bool branched)
+        private RoomConnector PickOpening(List<RoomConnector> openings, out bool branched, bool allowBranch = true)
         {
             branched = false;
             if (openings.Count == 0) return null;
 
-            bool branch = _random.NextDouble() * 100d < settings.BranchChance;
+            bool branch = allowBranch && _random.NextDouble() * 100d < settings.BranchChance;
             if (branch)
             {
                 branched = true;
-                return openings[_random.Next(openings.Count)];
+                return PickOutward(openings);
             }
 
             // Openings arrive newest-room-first, so the frontier is whatever shares the first owner.
@@ -325,7 +539,39 @@ namespace Signal.Generation
             foreach (RoomConnector connector in openings)
                 if (connector.Owner == frontier) _frontierBuffer.Add(connector);
 
-            return _frontierBuffer[_random.Next(_frontierBuffer.Count)];
+            return PickOutward(_frontierBuffer);
+        }
+
+        /// <summary>
+        /// Weighted-random pick that favours doorways pointing away from Start — the further a doorway
+        /// faces from spawn, the likelier it's chosen, so the level tends to grow outward. A weight floor
+        /// keeps every doorway possible, so layouts still vary and can turn corners; it's a lean, not a rule.
+        /// </summary>
+        private RoomConnector PickOutward(List<RoomConnector> candidates)
+        {
+            if (candidates.Count <= 1) return candidates.Count == 1 ? candidates[0] : null;
+
+            Vector3 origin = _rooms[0].WorldBounds.center;
+            _weightBuffer.Clear();
+            double total = 0d;
+            foreach (RoomConnector c in candidates)
+            {
+                Vector3 outward = c.Owner.WorldBounds.center - origin;
+                double align = outward.sqrMagnitude < 0.01f
+                    ? 0d
+                    : Vector3.Dot(new Vector3(c.Facing.x, 0f, c.Facing.z).normalized, outward.normalized);
+                double weight = 0.15d + 0.85d * ((align + 1d) * 0.5d); // map facing alignment [-1,1] → [0.15,1]
+                _weightBuffer.Add(weight);
+                total += weight;
+            }
+
+            double roll = _random.NextDouble() * total;
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                roll -= _weightBuffer[i];
+                if (roll <= 0d) return candidates[i];
+            }
+            return candidates[candidates.Count - 1];
         }
 
         /// <summary>
@@ -429,9 +675,10 @@ namespace Signal.Generation
         ///
         /// Each attempt re-picks both the doorway (via Branch Chance) and the room, so a failure isn't
         /// a dead end — it just rolls a different corner of the level next time. Only if every attempt
-        /// fails do we report that nothing fits.
+        /// fails do we report that nothing fits. <paramref name="allowBranch"/> is threaded to the doorway
+        /// pick: off while the build grows its straight path to the exit.
         /// </summary>
-        private bool PlaceNext(RoomType type, int index, int total)
+        private bool PlaceNext(RoomType type, int index, int total, bool allowBranch = true)
         {
             for (int attempt = 0; attempt < settings.PlacementAttempts; attempt++)
             {
@@ -444,7 +691,7 @@ namespace Signal.Generation
 
                 if (openings.Count == 0) return false;
 
-                RoomConnector opening = PickOpening(openings, out bool branched);
+                RoomConnector opening = PickOpening(openings, out bool branched, allowBranch);
                 if (opening == null) return false;
 
                 // A branch reaching off an older doorway is the natural spot for a reward room, so it
@@ -479,7 +726,8 @@ namespace Signal.Generation
         /// <summary>
         /// Instantiates a candidate, mates one of its connectors to <paramref name="opening"/>, and
         /// keeps it only if it clears every placed room. Failed candidates are destroyed immediately,
-        /// so a rejected attempt leaves nothing behind.
+        /// so a rejected attempt leaves nothing behind. Placement always requires a clear fit — nothing
+        /// in the generator is allowed to overlap.
         /// </summary>
         private bool TryAttach(RoomDatabase.Entry entry, RoomConnector opening, out RoomDefinition placed)
         {

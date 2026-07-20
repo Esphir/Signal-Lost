@@ -120,6 +120,17 @@ namespace Signal.Generation
         [Tooltip("Rooms must clear each other by this much. Small negative values let neighbours share a wall.")]
         private float overlapTolerance = 0.05f;
 
+        [SerializeField, Min(1)]
+        [Tooltip("How many times a fresh run may reroll the seed to get a valid layout (an exit that exists, " +
+                 "sits at least Min End Distance from spawn, and doesn't overlap anything). A resumed or fixed " +
+                 "seed always gets exactly one attempt so it reproduces exactly.")]
+        private int maxGenerationAttempts = 25;
+
+        [Header("Presentation")]
+        [SerializeField]
+        [Tooltip("Show a full-screen loading overlay while the level generates (including any rerolls), so rooms never pop in on screen. Play mode only.")]
+        private bool showLoadingScreen = true;
+
         [Header("Debug")]
         [SerializeField] private bool drawGizmos = true;
         [SerializeField]
@@ -157,6 +168,8 @@ namespace Signal.Generation
         public int RepeatMemory => repeatMemory;
         public int PlacementAttempts => placementAttempts;
         public float OverlapTolerance => overlapTolerance;
+        public int MaxGenerationAttempts => maxGenerationAttempts;
+        public bool ShowLoadingScreen => showLoadingScreen;
         public bool DrawGizmos => drawGizmos;
         public bool LogGeneration => logGeneration;
 

@@ -76,7 +76,10 @@ namespace Signal.Generation
                 {
                     if (placed[j] == null) continue;
                     if (Shrink(room.WorldBounds).Intersects(Shrink(placed[j].WorldBounds)))
+                    {
+                        report.Overlaps++;
                         report.Problems.Add($"Rooms #{i} ({room.name}) and #{j} ({placed[j].name}) overlap.");
+                    }
                 }
 
                 // Connectivity: every room past the start must be mated to something.
@@ -95,6 +98,7 @@ namespace Signal.Generation
                     report.Problems.Add($"Room #{i} ({room.name}) has no connectors at all.");
 
                 if (open > 0) report.OpenConnectors += open;
+                if (room.RoomType == RoomType.End) report.EndRooms++;
                 if (room.Checkpoints is { Length: > 0 }) report.CheckpointRooms++;
                 if (room.SpawnSections is { Length: > 0 }) report.SpawnSectionRooms++;
             }
@@ -158,6 +162,8 @@ namespace Signal.Generation
         public int OpenConnectors;
         public int SealedConnectors;
         public int UnreachableRooms;
+        public int Overlaps;
+        public int EndRooms;
         public int CheckpointRooms;
         public int SpawnSectionRooms;
         public readonly List<string> Problems = new List<string>();
@@ -165,7 +171,7 @@ namespace Signal.Generation
         public bool IsValid => Problems.Count == 0;
 
         public override string ToString()
-            => $"{RoomCount} rooms, {CheckpointRooms} with checkpoints, {SpawnSectionRooms} with spawns, " +
+            => $"{RoomCount} rooms, {EndRooms} exit(s), {CheckpointRooms} with checkpoints, {SpawnSectionRooms} with spawns, " +
                $"{SealedConnectors} sealed dead ends, {UnreachableRooms} unreachable, {Problems.Count} problem(s)";
     }
 }

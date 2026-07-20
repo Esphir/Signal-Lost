@@ -11,6 +11,8 @@ namespace Signal.GenerationEditor
     [CustomEditor(typeof(LevelGenerator))]
     public class LevelGeneratorEditor : Editor
     {
+        private const string SeedPrefKey = "SignalLost.LevelGenerator.ReproSeed";
+
         public override void OnInspectorGUI()
         {
             DrawDefaultInspector();
@@ -24,6 +26,20 @@ namespace Signal.GenerationEditor
             {
                 if (GUILayout.Button("Regenerate")) generator.Generate();
                 if (GUILayout.Button("Clear")) generator.Clear();
+            }
+
+            // Reproduce a specific layout by seed — the fast way to re-check a seed that misbehaved.
+            // Feeds LevelGenerator.PendingSeed, which Generate() consumes exactly like the save/resume flow.
+            int seed = EditorPrefs.GetInt(SeedPrefKey, 12345);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                int edited = EditorGUILayout.IntField("Seed", seed);
+                if (edited != seed) EditorPrefs.SetInt(SeedPrefKey, edited);
+                if (GUILayout.Button("Regenerate With Seed", GUILayout.MaxWidth(170f)))
+                {
+                    LevelGenerator.PendingSeed = edited;
+                    generator.Generate();
+                }
             }
 
             if (GUILayout.Button("Validate Rooms"))

@@ -87,9 +87,13 @@ namespace Signal.UI
             Close();
             if (generator == null) { Debug.LogError("[Run] No LevelGenerator to start the next run."); return; }
 
-            generator.Generate();                          // fresh layout + seed, progress untouched
-            if (RunManager.HasInstance) RunManager.Instance.AdvanceRun(); // bump the run counter
-            RunSaveSystem.SaveCurrent(generator.LastSeed);  // checkpoint the new floor
+            // Roll the next floor behind the loading screen (progress untouched), then checkpoint the
+            // save on the seed it actually settled on — after any rerolls for a valid layout.
+            generator.GenerateWithLoadingScreen(() =>
+            {
+                if (RunManager.HasInstance) RunManager.Instance.AdvanceRun(); // bump the run counter
+                RunSaveSystem.SaveCurrent(generator.LastSeed);                // checkpoint the new floor
+            });
         }
 
         private void OnSaveAndExit()
