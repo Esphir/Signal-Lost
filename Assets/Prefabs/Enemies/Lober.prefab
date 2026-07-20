@@ -311,7 +311,7 @@ MonoBehaviour:
   detectionRange: 20
   obstructionMask:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   fireRate: 2
   rotationSpeed: 90
   aimTolerance: 5
@@ -455,6 +455,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 4737176b639b1a90932b3cc0f13cf214, type: 2}
   guaranteedDrop: 0
+  enemyDifficultyBonus: 0
 --- !u!114 &4644212239799149001
 MonoBehaviour:
   m_ObjectHideFlags: 0

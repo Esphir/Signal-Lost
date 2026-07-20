@@ -99,8 +99,24 @@ namespace Signal.UI
         private void OnSaveAndExit()
         {
             LevelGenerator generator = FindFirstObjectByType<LevelGenerator>();
-            RunSaveSystem.SaveCurrent(generator != null ? generator.LastSeed : 0);
             Close();
+
+            // Cover the rebuild so the next floor never flashes on screen; this overlay is torn down with
+            // the gameplay scene when the menu loads, so it needs no explicit hide.
+            LevelLoadingScreen.Show("Saving…");
+
+            // The run is beaten, so this banks the NEXT floor — not the one just cleared. Roll the next
+            // layout and bump the run counter, exactly as Next Run does, then save that seed against the
+            // carried-over progress (upgrades, stats, health). Resuming from the menu drops the player
+            // straight into that next run, fully intact. Generation is synchronous so the save is written
+            // before we leave for the menu.
+            if (generator != null)
+            {
+                generator.Generate();                                         // next floor's layout + seed
+                if (RunManager.HasInstance) RunManager.Instance.AdvanceRun(); // bump the run counter
+            }
+
+            RunSaveSystem.SaveCurrent(generator != null ? generator.LastSeed : 0);
             SceneManager.LoadScene(MainMenuSceneName);
         }
 

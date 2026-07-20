@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e52276b09db926d428078e1165ab5024
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 358880
+  packageName: Sword and Shield
+  packageVersion: 1.0
+  assetPath: Assets/Danvil/Kit01SwordAndShield/MedievalShieldHandle/MedievalShieldHandleMaterial.mat
+  uploadId: 864406

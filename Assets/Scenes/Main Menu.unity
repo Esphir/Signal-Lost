@@ -356,6 +356,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gameTitle: SIGNAL LOST
   gameplaySceneName: Tutorial
+  levelSceneName: Level
   settingsUI: {fileID: 1900000104}
 --- !u!114 &1900000104
 MonoBehaviour:

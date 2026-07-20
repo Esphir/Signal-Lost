@@ -163,7 +163,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d275f617e3dac5d458a95b1466c39709, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  moveSpeed: 2
+  moveSpeed: 3
   turnSpeed: 10
   arrivalDistance: 0.2
   knockbackRecoveryTime: 1
@@ -327,6 +327,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 4737176b639b1a90932b3cc0f13cf214, type: 2}
   guaranteedDrop: 0
+  enemyDifficultyBonus: 0
 --- !u!114 &4644212239799149003
 MonoBehaviour:
   m_ObjectHideFlags: 0

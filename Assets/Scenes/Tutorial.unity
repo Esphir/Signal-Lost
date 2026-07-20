@@ -1709,6 +1709,10 @@ PrefabInstance:
       value: 9
       objectReference: {fileID: 0}
     - target: {fileID: 8000000000000000003, guid: 56e2c9c308ddb48b7a6be331edb664d7, type: 3}
+      propertyPath: continueSceneName
+      value: Level
+      objectReference: {fileID: 0}
+    - target: {fileID: 8000000000000000003, guid: 56e2c9c308ddb48b7a6be331edb664d7, type: 3}
       propertyPath: 'steps.Array.data[0]'
       value: 
       objectReference: {fileID: 342475767}
