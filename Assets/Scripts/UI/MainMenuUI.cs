@@ -9,8 +9,8 @@ using UnityEngine.UI;
 namespace Signal.UI
 {
     /// <summary>
-    /// Main menu screen: title + Start / Settings / Quit, built from code so restyling later is a
-    /// single-file change. Lives in the Main Menu scene.
+    /// Main menu screen: title + Start / Settings / Credits / Quit, built from code so restyling later
+    /// is a single-file change. Lives in the Main Menu scene.
     /// </summary>
     public class MainMenuUI : MonoBehaviour
     {
@@ -60,6 +60,7 @@ namespace Signal.UI
 
             Button start = AddButton(buttons.transform, "Start", OnStart);
             AddButton(buttons.transform, "Settings", OnSettings);
+            AddButton(buttons.transform, "Credits", CreditsUI.Show);
             AddButton(buttons.transform, "Quit", OnQuit);
 
             // Focus Start so a controller has somewhere to navigate from the moment the game opens.
