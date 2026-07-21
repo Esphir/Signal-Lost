@@ -99,10 +99,9 @@ namespace Signal.Combat.Boss
             go.tag = ctx.Boss.CompareTag("Enemy") ? "Enemy" : go.tag;
             go.layer = ctx.Boss.gameObject.layer; // so the player's attacks can hit it
 
-            // Summons get the same safety nets as spawned enemies — the guard works its own room out from
-            // where it landed, since the boss doesn't track which room it's fighting in.
-            if (go.GetComponent<EnemyBoundsGuard>() == null) go.AddComponent<EnemyBoundsGuard>();
-            if (go.GetComponent<EnemyStackBreaker>() == null) go.AddComponent<EnemyStackBreaker>();
+            // Summons get the same safety nets as spawned enemies. No room is passed because the boss
+            // doesn't track which one it's fighting in — the guard works it out from where the pepper landed.
+            EnemySafetyNets.Attach(go, position, null);
 
             var ai = go.GetComponent<GhostPepperAI>();
             if (ai == null) ai = go.AddComponent<GhostPepperAI>();

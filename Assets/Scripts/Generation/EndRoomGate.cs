@@ -165,10 +165,34 @@ namespace Signal.Generation
                 ? death
                 : (_doorPoint != null ? _doorPoint.position : transform.position);
 
+            // Drop it from above the floor under the kill, not from the kill itself: enemies die in mid-air
+            // often enough (a Plummeter's whole attack is airborne) that "where it died" is regularly out of
+            // reach, and an uncollectable key means an exit that can never open.
+            spot = GroundBelow(spot);
+
             // Parented to the End room so a reroll cleans it up if it's never collected.
             GameObject key = Instantiate(keyPrefab, spot + Vector3.up * 0.8f, Quaternion.identity, transform);
             if (key.GetComponent<KeySpinner>() == null) key.AddComponent<KeySpinner>();
             key.AddComponent<KeyPickup>().Configure(OnKeyCollected);
+        }
+
+        /// <summary>
+        /// The floor beneath a point. Corpses can't block it — their colliders are switched off on death,
+        /// and the key only drops once the floor is clear — but the player can be standing underneath, so
+        /// anything alive is skipped rather than landed on.
+        /// </summary>
+        private static Vector3 GroundBelow(Vector3 point)
+        {
+            RaycastHit[] hits = Physics.RaycastAll(point + Vector3.up * 0.5f, Vector3.down, 60f,
+                                                   ~0, QueryTriggerInteraction.Ignore);
+            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+
+            foreach (RaycastHit hit in hits)
+            {
+                if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("Enemy")) continue;
+                return hit.point;
+            }
+            return point; // nothing underneath — leave it where it fell rather than dropping it into the void
         }
     }
 }

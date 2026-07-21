@@ -68,6 +68,8 @@ namespace Signal.Tutorial
             Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
             Quaternion rot = spawnPoint != null ? spawnPoint.rotation : transform.rotation;
             _dummy = Instantiate(dummyPrefab, pos, rot);
+            // The step can't finish until this dies, so it must not be knockable out of reach.
+            Signal.Spawning.EnemySafetyNets.Attach(_dummy, pos, null);
 
             _dummyHealth = _dummy.GetComponent<HealthComponent>();
             if (_dummyHealth != null)

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Signal.Combat.Health;
 using Signal.Loot;
+using Signal.Spawning;
 using UnityEngine;
 
 namespace Signal.Tutorial
@@ -24,6 +25,12 @@ namespace Signal.Tutorial
         }
 
         [SerializeField] private Entry[] enemies;
+
+        [SerializeField]
+        [Tooltip("Optional arena, relative to this spawner, that enemies are returned into if physics throws " +
+                 "them out. There are no generated rooms in the tutorial to measure, so set this to the room " +
+                 "the fight happens in. Leave the size at zero to fall back to a plain distance leash.")]
+        private Bounds arena;
         [SerializeField]
         [Tooltip("Tutorial enemies shouldn't drop loot naturally. When on, any LootDropper on a spawned enemy is disabled (guaranteed-drop droppers are left alone). Does not affect enemies outside the tutorial.")]
         private bool suppressLoot = true;
@@ -54,6 +61,7 @@ namespace Signal.Tutorial
                 _instances.Add(go);
                 _instanceNames.Add(string.IsNullOrWhiteSpace(e.displayName) ? e.prefab.name : e.displayName);
 
+                EnemySafetyNets.Attach(go, pos, ArenaBounds);
                 if (suppressLoot) DisableLoot(go);
 
                 HealthComponent health = go.GetComponent<HealthComponent>();
@@ -80,6 +88,19 @@ namespace Signal.Tutorial
         {
             _alive--;
             if (_alive <= 0) AllCleared?.Invoke();
+        }
+
+        /// <summary>World-space arena, or a zero-size box when none was authored.</summary>
+        public Bounds ArenaBounds => arena.size.sqrMagnitude <= 0.001f
+            ? new Bounds(transform.position, Vector3.zero)
+            : new Bounds(transform.position + arena.center, arena.size);
+
+        private void OnDrawGizmosSelected()
+        {
+            if (arena.size.sqrMagnitude <= 0.001f) return;
+            Gizmos.color = new Color(0.3f, 0.8f, 1f, 0.6f);
+            Bounds b = ArenaBounds;
+            Gizmos.DrawWireCube(b.center, b.size);
         }
 
         /// <summary>

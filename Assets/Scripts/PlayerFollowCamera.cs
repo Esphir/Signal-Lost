@@ -10,8 +10,11 @@ public class PlayerFollowCamera : MonoBehaviour
     public CinemachineCamera vcam;
 
     [Header("Sensitivity")]
-    [Tooltip("Mouse look sensitivity. Try 0.15–0.4 for comfortable feel.")]
+    [Tooltip("Mouse look sensitivity, in degrees per unit of mouse movement. Try 0.15–0.4 for comfortable feel.")]
     public float mouseSensitivity = 0.25f;
+
+    [Tooltip("Controller look speed in degrees per second at full stick deflection. Different unit to the mouse on purpose: a stick is a rate, a mouse is a delta. Try 150–300.")]
+    public float gamepadSensitivity = 220f;
 
     [Header("Smoothing")]
     [Tooltip("How quickly the camera catches up to mouse input. Lower = more lag/weight, higher = snappier. 15–25 is a good range.")]
@@ -98,7 +101,7 @@ public class PlayerFollowCamera : MonoBehaviour
         if (_lockOnActive)
             ApplyLockOnRotation();
         else
-            ApplyMouseOrbit();
+            ApplyLookOrbit();
 
         HandleZoom();
     }
@@ -135,11 +138,18 @@ public class PlayerFollowCamera : MonoBehaviour
     }
 
 
-    private void ApplyMouseOrbit()
+    private void ApplyLookOrbit()
     {
         Vector2 look = _input.LookInput;
 
-        float sensitivity = mouseSensitivity * Signal.UI.SettingsStore.MouseSensitivity;
+        // A mouse delta is already "how far it moved this frame", so it converts straight to degrees. A
+        // stick is a held position — a turn *rate* — so it has to be integrated over the frame, or holding
+        // it steady contributes nothing at all.
+        float sensitivity = _input.LookIsAnalog
+            ? gamepadSensitivity * Time.deltaTime
+            : mouseSensitivity;
+        sensitivity *= Signal.UI.SettingsStore.MouseSensitivity;
+
         _targetYaw   += look.x * sensitivity;
         _targetPitch  = Mathf.Clamp(_targetPitch - look.y * sensitivity, minPitch, maxPitch);
 

@@ -56,6 +56,19 @@ namespace Signal.Spawning
             _hasBounds = true;
         }
 
+        /// <summary>
+        /// Same, against an explicit world-space area — for scenes with no rooms to ask, like the tutorial.
+        /// A zero-size area means "none given", and it falls back to the distance leash.
+        /// </summary>
+        public void Configure(Vector3 home, Bounds arena)
+        {
+            _home = home;
+            _configured = true;
+            if (arena.size.sqrMagnitude <= 0.001f) return;
+            _bounds = arena;
+            _hasBounds = true;
+        }
+
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();

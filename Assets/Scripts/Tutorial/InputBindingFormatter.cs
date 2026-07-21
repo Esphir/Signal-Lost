@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Text;
+using Signal.UI;
 using UnityEngine.InputSystem;
 
 namespace Signal.Tutorial
@@ -15,14 +16,14 @@ namespace Signal.Tutorial
         // Preferred reading order for a 2D-vector composite → "W, A, S and D" (up, left, down, right).
         private static readonly string[] CompositeOrder = { "up", "left", "down", "right" };
 
-        /// <summary>The scheme name for whichever device the player used most recently.</summary>
+        /// <summary>
+        /// The scheme name for whichever device the player is actually using. Delegates to
+        /// <see cref="InputSchemeTracker"/> so every prompt in the game agrees — and so this stops keying
+        /// off device update times, which an idle-but-connected gamepad ticks constantly enough to make
+        /// every hint read as controller for a player on a keyboard.
+        /// </summary>
         public static string ActiveScheme(string keyboardScheme, string gamepadScheme)
-        {
-            double gp = Gamepad.current != null ? Gamepad.current.lastUpdateTime : -1d;
-            double kb = Keyboard.current != null ? Keyboard.current.lastUpdateTime : -1d;
-            double ms = Mouse.current != null ? Mouse.current.lastUpdateTime : -1d;
-            return gp > System.Math.Max(kb, ms) ? gamepadScheme : keyboardScheme;
-        }
+            => InputSchemeTracker.UsingGamepad ? gamepadScheme : keyboardScheme;
 
         /// <summary>Readable binding for <paramref name="action"/> under <paramref name="scheme"/>.</summary>
         public static string Format(InputAction action, string scheme)

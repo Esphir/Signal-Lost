@@ -363,7 +363,7 @@
                 {
                     "name": "",
                     "id": "d2e3f4a5-b6c7-4d8e-9f0a-1b2c3d4e5f6a",
-                    "path": "<Gamepad>/buttonNorth",
+                    "path": "<Gamepad>/rightShoulder",
                     "interactions": "",
                     "processors": "",
                     "groups": "Gamepad",
@@ -406,6 +406,17 @@
                 },
                 {
                     "name": "",
+                    "id": "b1a7c3d2-5e64-4f18-9a20-7c6d8e4f10b3",
+                    "path": "<Gamepad>/leftShoulder",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
+                    "action": "Bash",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "3c6d8e1a-4f2b-4a9c-8d7e-1f3a5b6c7d8e",
                     "path": "<Mouse>/rightButton",
                     "interactions": "",
@@ -433,6 +444,17 @@
                     "interactions": "",
                     "processors": "",
                     "groups": ";Keyboard&Mouse",
+                    "action": "LockOn",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "d4f2e910-6b83-4c57-8e1d-2a9b5c7f30e6",
+                    "path": "<Gamepad>/rightStickPress",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Gamepad",
                     "action": "LockOn",
                     "isComposite": false,
                     "isPartOfComposite": false

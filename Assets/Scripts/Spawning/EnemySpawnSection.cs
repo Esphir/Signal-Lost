@@ -247,14 +247,7 @@ namespace Signal.Spawning
             GameObject enemy = Instantiate(prefab, position, rotation);
             _reserved.Add(position);
 
-            // Physics can punt an enemy through a wall, and a stranded one still counts as alive — which
-            // would leave a combat-lock room's doors shut forever. Every spawn gets a way home.
-            EnemyBoundsGuard guard = enemy.GetComponent<EnemyBoundsGuard>();
-            if (guard == null) guard = enemy.AddComponent<EnemyBoundsGuard>();
-            guard.Configure(position, Room);
-
-            // And a way off each other's heads, since landing on a neighbour otherwise sticks.
-            if (enemy.GetComponent<EnemyStackBreaker>() == null) enemy.AddComponent<EnemyStackBreaker>();
+            EnemySafetyNets.Attach(enemy, position, Room);
 
             // Push the new collider into the physics scene so the next candidate's overlap test sees it.
             Physics.SyncTransforms();

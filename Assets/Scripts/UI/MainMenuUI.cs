@@ -3,6 +3,7 @@ using Signal.Generation;
 using Signal.Run;
 using Signal.Tutorial;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -58,17 +59,21 @@ namespace Signal.UI
             buttonsRect.anchorMax = new Vector2(0.5f, 0.45f);
             buttonsRect.sizeDelta = new Vector2(360f, 300f);
 
-            AddButton(buttons.transform, "Start", OnStart);
+            Button start = AddButton(buttons.transform, "Start", OnStart);
             AddButton(buttons.transform, "Settings", OnSettings);
             AddButton(buttons.transform, "Developer Menu", OnDeveloperMenu);
             AddButton(buttons.transform, "Quit", OnQuit);
+
+            // Focus Start so a controller has somewhere to navigate from the moment the game opens.
+            EventSystem.current?.SetSelectedGameObject(start.gameObject);
         }
 
-        private void AddButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+        private Button AddButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
         {
             Button button = UiBuilder.CreateButton(parent, $"{label}Button", label, ButtonColor, 28, out _);
             ((RectTransform)button.transform).sizeDelta = new Vector2(340f, 60f);
             button.onClick.AddListener(onClick);
+            return button;
         }
 
         private void OnStart()

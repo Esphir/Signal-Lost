@@ -142,11 +142,19 @@ namespace Signal.Run.Upgrades
             rowRect.anchorMax = new Vector2(0.5f, 0.5f);
             rowRect.sizeDelta = new Vector2(1200f, 420f);
 
+            Button first = null;
             foreach (UpgradeOption option in _options)
-                BuildCard(row.transform, option, accent);
+            {
+                Button card = BuildCard(row.transform, option, accent);
+                if (first == null) first = card;
+            }
+
+            // Focus the first card so a controller can pick an upgrade — this overlay is unskippable, so
+            // without a selection a pad player would be stuck here.
+            if (first != null) EventSystem.current?.SetSelectedGameObject(first.gameObject);
         }
 
-        private void BuildCard(Transform parent, UpgradeOption option, Color accent)
+        private Button BuildCard(Transform parent, UpgradeOption option, Color accent)
         {
             Image card = NewChild<Image>(parent, $"Card_{option.DisplayName}");
             card.color = CardColor;
@@ -156,6 +164,10 @@ namespace Signal.Run.Upgrades
             button.targetGraphic = card;
             UpgradeOption captured = option;
             button.onClick.AddListener(() => Choose(captured));
+
+            // Thicker than a menu button's: these cards are large and sit side by side, so the border has
+            // to carry which one is picked from across the screen.
+            Signal.UI.SelectionHighlight.Attach(card.gameObject, 6f);
 
             var layout = card.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.padding = new RectOffset(20, 20, 24, 24);
@@ -186,6 +198,7 @@ namespace Signal.Run.Upgrades
             SetupText(statName, option.DisplayName, 20, FontStyle.Normal, TextAnchor.MiddleCenter);
             statName.color = new Color(0.7f, 0.7f, 0.75f);
             statName.gameObject.AddComponent<LayoutElement>().preferredHeight = 30f;
+            return button;
         }
 
         private static T NewChild<T>(Transform parent, string name) where T : Component
