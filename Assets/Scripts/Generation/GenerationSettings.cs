@@ -73,6 +73,11 @@ namespace Signal.Generation
                  "after every combat room is cleared, this bounds how much fighting a run demands.")]
         private int maxCombatRooms = 4;
 
+        [SerializeField, Min(0)]
+        [Tooltip("Every Nth run is a boss floor: spawn -> treasure -> hallway -> boss -> exit, instead of the " +
+                 "normal layout. 0 = never. Requires a Boss room in the database. Set to 1 to preview it every run.")]
+        private int bossFloorInterval = 5;
+
         [SerializeField, Min(2)]
         [Tooltip("Fewest rooms (doorway hops) between the Start room and the End room, so the exit never " +
                  "hangs right off spawn. 2 = at least one room in between; the End is otherwise placed as " +
@@ -172,6 +177,7 @@ namespace Signal.Generation
         public int CheckpointFrequency => checkpointFrequency;
         public int MaxConsecutiveCombatRooms => maxConsecutiveCombatRooms;
         public int MaxCombatRooms => maxCombatRooms;
+        public int BossFloorInterval => bossFloorInterval;
         public int MinEndDistanceFromStart => minEndDistanceFromStart;
         public RoomType SeparatorType => separatorType;
         public float HallwaySeparationChance => hallwaySeparationChance;

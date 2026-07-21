@@ -13,7 +13,10 @@ namespace Signal.Minimap
     public class MinimapRoom
     {
         public RoomDefinition Source { get; }
-        public Vector2Int GridPosition { get; }
+
+        /// <summary>Cell on the minimap grid. Seeded from the room's own cell, then re-packed by the
+        /// manager so hidden hallways collapse and the real rooms they bridge sit adjacent.</summary>
+        public Vector2Int GridPosition { get; set; }
         public RoomType RoomType { get; }
 
         /// <summary>Directions with a real connection, for drawing edges. No diagonals — always N/S/E/W.</summary>

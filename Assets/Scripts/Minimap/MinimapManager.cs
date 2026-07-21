@@ -104,14 +104,16 @@ namespace Signal.Minimap
             ApplyContainerSettings();
             Clear();
 
+            // Hallways aren't shown — they'd just clutter the map and confuse. Only real rooms get a tile.
             foreach (RoomDefinition def in generator.Rooms)
             {
-                if (def == null) continue;
+                if (def == null || IsHallway(def)) continue;
                 var room = new MinimapRoom(def);
                 _rooms.Add(room);
                 _byDefinition[def] = room;
             }
 
+            AssignCollapsedGrid();
             LinkRooms();
             BuildTiles();
             BuildConnections();
@@ -133,7 +135,8 @@ namespace Signal.Minimap
                     ConnectorDirection dir = connector.WorldDirection;
                     if (dir.IsVertical()) continue;   // one floor for now — vertical links wait for multi-floor
 
-                    RoomDefinition otherDef = connector.ConnectedTo?.Owner;
+                    // See through any hallway to the real room on its far side, so bridged rooms link directly.
+                    RoomDefinition otherDef = RealRoomThrough(connector);
                     if (otherDef == null || !_byDefinition.TryGetValue(otherDef, out MinimapRoom other)) continue;
 
                     room.Connections.Add(dir);
@@ -141,6 +144,68 @@ namespace Signal.Minimap
                 }
             }
         }
+
+        /// <summary>
+        /// Re-packs the real rooms onto a clean grid: a breadth-first walk from Start that steps through
+        /// hidden hallways as if they weren't there, so two rooms a hallway apart end up adjacent — the
+        /// map reads like Isaac's, with no hallway cells or gaps between them.
+        /// </summary>
+        private void AssignCollapsedGrid()
+        {
+            if (_rooms.Count == 0) return;
+
+            var placed = new HashSet<MinimapRoom>();
+            var queue = new Queue<MinimapRoom>();
+
+            MinimapRoom start = _rooms[0]; // generator.Rooms[0] is Start, and Start is never a hallway
+            start.GridPosition = Vector2Int.zero;
+            placed.Add(start);
+            queue.Enqueue(start);
+
+            while (queue.Count > 0)
+            {
+                MinimapRoom room = queue.Dequeue();
+                foreach (RoomConnector connector in room.Source.Connectors)
+                {
+                    if (connector == null || !connector.IsOccupied) continue;
+                    if (connector.WorldDirection.IsVertical()) continue;
+
+                    RoomDefinition neighbourDef = RealRoomThrough(connector);
+                    if (neighbourDef == null || !_byDefinition.TryGetValue(neighbourDef, out MinimapRoom neighbour)) continue;
+                    if (!placed.Add(neighbour)) continue;
+
+                    neighbour.GridPosition = room.GridPosition + connector.WorldDirection.ToGridOffset();
+                    queue.Enqueue(neighbour);
+                }
+            }
+        }
+
+        /// <summary>The real (non-hallway) room reached through <paramref name="connector"/>, stepping over
+        /// any hallways in between. Null if it dead-ends in a hallway or runs off the graph.</summary>
+        private RoomDefinition RealRoomThrough(RoomConnector connector)
+        {
+            RoomConnector current = connector;
+            for (int guard = 0; guard < 16; guard++)
+            {
+                RoomConnector partner = current.ConnectedTo;
+                RoomDefinition owner = partner?.Owner;
+                if (owner == null) return null;
+                if (!IsHallway(owner)) return owner;
+
+                current = OtherOccupiedConnector(owner, partner); // continue out the hallway's far door
+                if (current == null) return null;
+            }
+            return null;
+        }
+
+        private static RoomConnector OtherOccupiedConnector(RoomDefinition room, RoomConnector notThis)
+        {
+            foreach (RoomConnector c in room.Connectors)
+                if (c != null && c != notThis && c.IsOccupied) return c;
+            return null;
+        }
+
+        private bool IsHallway(RoomDefinition def) => def != null && def.RoomType == generator.SeparatorType;
 
         private void BuildTiles()
         {
@@ -179,9 +244,11 @@ namespace Signal.Minimap
                     Vector2 b = (Vector2)other.GridPosition * roomSpacing;
                     rt.anchoredPosition = (a + b) * 0.5f;
                     bool horizontal = Mathf.Abs(a.x - b.x) > Mathf.Abs(a.y - b.y);
+                    // Span the real gap, so a link that loops back across more than one cell still connects.
+                    float length = Mathf.Max(roomSpacing, horizontal ? Mathf.Abs(a.x - b.x) : Mathf.Abs(a.y - b.y));
                     rt.sizeDelta = horizontal
-                        ? new Vector2(roomSpacing, connectionWidth)
-                        : new Vector2(connectionWidth, roomSpacing);
+                        ? new Vector2(length, connectionWidth)
+                        : new Vector2(connectionWidth, length);
 
                     var img = go.GetComponent<Image>();
                     img.raycastTarget = false;

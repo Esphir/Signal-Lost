@@ -43,6 +43,12 @@ namespace Signal.Generation
         /// <summary>The seed the last run actually used — copy it to reproduce a layout you liked.</summary>
         public int LastSeed { get; private set; }
 
+        /// <summary>The room type used as a connecting hallway. The minimap hides these and collapses them.</summary>
+        public RoomType SeparatorType => settings != null ? settings.SeparatorType : RoomType.Transition;
+
+        /// <summary>Every Nth run is a boss floor. 0 = never. The boss reads it to know which fight this is.</summary>
+        public int BossFloorInterval => settings != null ? settings.BossFloorInterval : 0;
+
         /// <summary>
         /// When set, the next Generate() uses this seed instead of rolling one, then clears it. The
         /// save/resume flow sets this before loading the level so a continued run rebuilds the exact
@@ -206,8 +212,13 @@ namespace Signal.Generation
             _selector = new RoomSelector(database, settings, _random);
             _validator = new RoomValidator(settings.OverlapTolerance);
 
-            int target = _random.Next(settings.MinimumRooms, settings.MaximumRooms + 1);
-            BuildPlan(target);
+            if (IsBossFloor())
+                BuildBossFloor();
+            else
+            {
+                int target = _random.Next(settings.MinimumRooms, settings.MaximumRooms + 1);
+                BuildPlan(target);
+            }
 
             // Rooms are instantiated at the origin and then moved into place. Unity's
             // autoSyncTransforms defaults to off, so until we push these poses the physics scene
@@ -245,6 +256,9 @@ namespace Signal.Generation
             Dictionary<RoomDefinition, int> distance = GraphDistancesFromStart();
             if (!distance.TryGetValue(end, out int hops)) { reason = "exit unreachable"; return false; }
             if (hops < settings.MinEndDistanceFromStart) { reason = $"exit only {hops} hop(s) from spawn"; return false; }
+
+            // A boss floor is only valid with its boss room actually placed.
+            if (IsBossFloor() && CountRoomsOfType(RoomType.Boss) == 0) { reason = "boss floor missing its boss room"; return false; }
 
             reason = null;
             return true;
@@ -358,6 +372,31 @@ namespace Signal.Generation
             }
 
             if (!endReserved) PlaceEndRoom(target);
+        }
+
+        /// <summary>True when this run should be a boss floor (every Nth run, with a Boss room available).</summary>
+        private bool IsBossFloor()
+        {
+            if (settings.BossFloorInterval <= 0 || !database.HasAny(RoomType.Boss)) return false;
+            int run = Signal.Run.RunManager.HasInstance ? Signal.Run.RunManager.Instance.CurrentRun : 1;
+            return run % settings.BossFloorInterval == 0;
+        }
+
+        /// <summary>
+        /// The fixed boss-floor layout: spawn → treasure → hallway → boss → exit, laid out as one straight
+        /// path. The treasure room hands out its usual guaranteed drop before the fight, the boss room is a
+        /// combat-lock room (so the exit gate opens only once the boss falls), and the exit caps the run.
+        /// </summary>
+        private void BuildBossFloor()
+        {
+            if (!PlaceFirstRoom()) return; // the spawn room
+
+            PlaceNext(RoomType.Treasure, 1, 5, allowBranch: false);
+            PlaceNext(settings.SeparatorType, 2, 5, allowBranch: false);
+            if (!PlaceNext(RoomType.Boss, 3, 5, allowBranch: false))
+                Debug.LogWarning("[Gen] Boss floor: couldn't place the Boss room — this attempt will be rerolled.", this);
+
+            PlaceEndRoom(5);
         }
 
         /// <summary>

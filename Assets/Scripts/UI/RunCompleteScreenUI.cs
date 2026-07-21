@@ -1,3 +1,4 @@
+using System.Collections;
 using Signal.Generation;
 using Signal.Run;
 using UnityEngine;
@@ -8,10 +9,10 @@ using UnityEngine.UI;
 namespace Signal.UI
 {
     /// <summary>
-    /// The "RUN COMPLETED" overlay shown on reaching the End room. Two choices: Next Run (roll the next
-    /// floor and checkpoint the save) or Save &amp; Exit (save and return to the menu). Self-contained —
-    /// built from code in the project's style on its own root object, so it survives the level rebuild a
-    /// Next Run triggers, and tears itself down after acting.
+    /// The "RUN COMPLETED" overlay shown on reaching the End room — or, on a boss floor, on killing the
+    /// boss. Two choices: Next Run (roll the next floor and checkpoint the save) or Save &amp; Exit (save
+    /// and return to the menu). Self-contained — built from code in the project's style on its own root
+    /// object, so it survives the level rebuild a Next Run triggers, and tears itself down after acting.
     /// </summary>
     public sealed class RunCompleteScreenUI : MonoBehaviour
     {
@@ -24,15 +25,28 @@ namespace Signal.UI
         private bool _prevVisible;
 
         /// <summary>Builds and shows a fresh completion screen, freezing the game. No-op if already open.</summary>
-        public static void ShowNew()
+        public static void ShowNew() => ShowAfter(0f);
+
+        /// <summary>
+        /// Same screen, raised after a real-time pause — for kills that need a beat to land before a modal
+        /// covers them. Claims the slot immediately, so nothing else can open one during the wait.
+        /// </summary>
+        public static void ShowAfter(float delaySeconds)
         {
             if (_open) return;
-            new GameObject("RunCompleteScreen").AddComponent<RunCompleteScreenUI>().Build();
+            _open = true;
+            var screen = new GameObject("RunCompleteScreen").AddComponent<RunCompleteScreenUI>();
+            screen.StartCoroutine(screen.Raise(delaySeconds));
+        }
+
+        private IEnumerator Raise(float delaySeconds)
+        {
+            if (delaySeconds > 0f) yield return new WaitForSecondsRealtime(delaySeconds);
+            Build();
         }
 
         private void Build()
         {
-            _open = true;
             UiBuilder.EnsureEventSystem();
 
             // Remember the gameplay cursor state so Next Run hands control straight back to it locked.
@@ -87,13 +101,11 @@ namespace Signal.UI
             Close();
             if (generator == null) { Debug.LogError("[Run] No LevelGenerator to start the next run."); return; }
 
-            // Roll the next floor behind the loading screen (progress untouched), then checkpoint the
-            // save on the seed it actually settled on — after any rerolls for a valid layout.
-            generator.GenerateWithLoadingScreen(() =>
-            {
-                if (RunManager.HasInstance) RunManager.Instance.AdvanceRun(); // bump the run counter
-                RunSaveSystem.SaveCurrent(generator.LastSeed);                // checkpoint the new floor
-            });
+            // Advance the run counter FIRST so the next floor generates for the run the player is about to
+            // play — this is what makes every Nth run a boss floor and scales enemies to the new run. Then
+            // roll the layout behind the loading screen and checkpoint the seed it settled on.
+            if (RunManager.HasInstance) RunManager.Instance.AdvanceRun();
+            generator.GenerateWithLoadingScreen(() => RunSaveSystem.SaveCurrent(generator.LastSeed));
         }
 
         private void OnSaveAndExit()
@@ -105,16 +117,11 @@ namespace Signal.UI
             // the gameplay scene when the menu loads, so it needs no explicit hide.
             LevelLoadingScreen.Show("Saving…");
 
-            // The run is beaten, so this banks the NEXT floor — not the one just cleared. Roll the next
-            // layout and bump the run counter, exactly as Next Run does, then save that seed against the
-            // carried-over progress (upgrades, stats, health). Resuming from the menu drops the player
-            // straight into that next run, fully intact. Generation is synchronous so the save is written
-            // before we leave for the menu.
-            if (generator != null)
-            {
-                generator.Generate();                                         // next floor's layout + seed
-                if (RunManager.HasInstance) RunManager.Instance.AdvanceRun(); // bump the run counter
-            }
+            // The run is beaten, so this banks the NEXT floor — not the one just cleared. Advance the run
+            // counter FIRST so the rolled layout matches the run being saved (boss floors, enemy scaling),
+            // then generate synchronously so the save is written before we leave for the menu.
+            if (RunManager.HasInstance) RunManager.Instance.AdvanceRun();
+            if (generator != null) generator.Generate();
 
             RunSaveSystem.SaveCurrent(generator != null ? generator.LastSeed : 0);
             SceneManager.LoadScene(MainMenuSceneName);
