@@ -26,8 +26,6 @@ namespace Signal.Combat.Projectiles
         [Header("Explosion")]
         [Min(0.1f)] public float explosionRadius = 3f;
         public GameObject explosionVfx;
-        public AudioClip explosionSfx;
-        [Range(0f, 1f)] public float sfxVolume = 1f;
 
         [Header("Landing Indicator")]
         [Tooltip("Show a ground marker at the predicted impact point for the projectile's flight.")]

@@ -852,7 +852,24 @@ namespace Signal.Generation
             }
 
             room.transform.position += opening.transform.position - candidate.transform.position;
+
+            // A horizontal doorway says nothing about floor height, but the connector markers are placed
+            // by hand and sit at slightly different heights from prefab to prefab — a hallway's are 3cm
+            // above a combat room's. Mating them literally seats one room a centimetre below its
+            // neighbour, and that step reads as a dark seam running across the join. What has to line up
+            // is the floors, so take the height from the room being joined and ignore the markers' own.
+            RoomDefinition host = HostOf(opening);
+            if (host != null && !opening.WorldDirection.IsVertical() && !candidate.WorldDirection.IsVertical())
+            {
+                Vector3 seated = room.transform.position;
+                seated.y = host.transform.position.y;
+                room.transform.position = seated;
+            }
         }
+
+        /// <summary>The room a connector belongs to, whether or not it has been collected yet.</summary>
+        private static RoomDefinition HostOf(RoomConnector connector)
+            => connector.Owner != null ? connector.Owner : connector.GetComponentInParent<RoomDefinition>();
 
         private static Vector3 Flatten(Vector3 v)
         {

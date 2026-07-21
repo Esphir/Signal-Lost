@@ -26,8 +26,6 @@ GameObject:
   - component: {fileID: 4644212239799148002}
   - component: {fileID: 4644212239799149002}
   - component: {fileID: 7413000000000000001}
-  - component: {fileID: 8333379296557570961}
-  - component: {fileID: 7051778449600445454}
   m_Layer: 3
   m_Name: Plummeter
   m_TagString: Enemy
@@ -350,37 +348,3 @@ MonoBehaviour:
   indicatorGlyph: "\u2605"
   indicatorColor: {r: 1, g: 0.86, b: 0.2, a: 1}
   billboardCamera: {fileID: 0}
---- !u!114 &8333379296557570961
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8111276562493136826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea106c8ae7e8d334bac2f5bd84e728ee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  channel: {fileID: 11400000, guid: 31611c860bbc755449dcd5b56cafc626, type: 2}
-  origin: {fileID: 0}
---- !u!114 &7051778449600445454
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8111276562493136826}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 53bcbc2606da56d4a8c1f9ea25214c18, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  spawn: {fileID: 11400000, guid: 95408ce8f44f7844c83f08eeee2b8891, type: 2}
-  attack: {fileID: 11400000, guid: 0568d9c00b276ad46b3aab0650a4956f, type: 2}
-  hit: {fileID: 11400000, guid: 469474168a350874498df9c296d6b0c4, type: 2}
-  death: {fileID: 11400000, guid: ded849ab30314ae4e8b10e38c6073ea7, type: 2}
-  stunned: {fileID: 11400000, guid: cb47a4bc3743e884c8210cedd122c78b, type: 2}
-  leap: {fileID: 11400000, guid: 2ebc36387cc866b4fa0a1f4f6e5cb1de, type: 2}
-  falling: {fileID: 11400000, guid: 1b5bb76913b08504aa9da2dc106181f3, type: 2}
-  slam: {fileID: 11400000, guid: 59530d8ecd9db634cadbae3843ad4cbf, type: 2}

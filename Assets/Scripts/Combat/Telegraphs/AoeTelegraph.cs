@@ -14,8 +14,6 @@ namespace Signal.Combat.Telegraphs
         public float PulseSpeed;         // pulses per second, 0 = none
         public float WarningDuration;    // time until impact — drives the heat-up tint
         public GameObject AppearVfx;     // optional hook, spawned at the telegraph position
-        public AudioClip AppearSfx;      // optional hook
-        public float SfxVolume;
     }
 
     /// <summary>
@@ -71,8 +69,6 @@ namespace Signal.Combat.Telegraphs
 
             if (_settings.AppearVfx != null)
                 Instantiate(_settings.AppearVfx, position, Quaternion.identity);
-            if (_settings.AppearSfx != null)
-                AudioSource.PlayClipAtPoint(_settings.AppearSfx, position, _settings.SfxVolume);
         }
 
         public void Hide()

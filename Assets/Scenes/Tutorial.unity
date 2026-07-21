@@ -227,6 +227,9 @@ MonoBehaviour:
   - prefab: {fileID: 8502750233207912748, guid: 36e095780f691624ca9b6e98da43b590, type: 3}
     point: {fileID: 454794303}
     displayName: 
+  arena:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   suppressLoot: 1
 --- !u!1 &247465599
 GameObject:
@@ -299,6 +302,9 @@ MonoBehaviour:
   - prefab: {fileID: 8100000000000000001, guid: 8ea9308700c30d3542f5060c5d2877d8, type: 3}
     point: {fileID: 0}
     displayName: 
+  arena:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   suppressLoot: 1
 --- !u!1 &259479888
 GameObject:
@@ -497,6 +503,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemies: []
+  arena:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   suppressLoot: 1
 --- !u!1 &796141081
 GameObject:
@@ -570,6 +579,9 @@ MonoBehaviour:
   - prefab: {fileID: 1513119564538955794, guid: 3bdaec7a99280a04caa90f55b6793885, type: 3}
     point: {fileID: 1711081844}
     displayName: Support Enemy
+  arena:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   suppressLoot: 1
 --- !u!1 &830000010
 GameObject:
@@ -597,7 +609,7 @@ Transform:
   m_GameObject: {fileID: 830000010}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.1632714, y: 0.72, z: 71}
+  m_LocalPosition: {x: 0.34, y: 0.925, z: 64.55}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1582,6 +1594,9 @@ MonoBehaviour:
   - prefab: {fileID: 8111276562493136826, guid: 93fb79be2942ab14b8c7551146aea0d8, type: 3}
     point: {fileID: 0}
     displayName: 
+  arena:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   suppressLoot: 1
 --- !u!1 &1814727602
 GameObject:
@@ -1651,6 +1666,9 @@ MonoBehaviour:
   - prefab: {fileID: 9171620467850103300, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
     point: {fileID: 0}
     displayName: Lobber
+  arena:
+    m_Center: {x: 0, y: 0, z: 0}
+    m_Extent: {x: 0, y: 0, z: 0}
   suppressLoot: 1
 --- !u!1001 &1840960362
 PrefabInstance:

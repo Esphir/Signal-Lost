@@ -1,5 +1,6 @@
 using Signal.UI;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -56,6 +57,7 @@ namespace Signal.Tutorial
         {
             UiBuilder.EnsureEventSystem();
             Time.timeScale = 0f;
+            UiModalState.Push(); // suspends player input, and holds the camera still behind the panel
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -99,6 +101,7 @@ namespace Signal.Tutorial
         {
             if (_startUI != null) Destroy(_startUI);
             _startUI = null;
+            UiModalState.Pop();
             Time.timeScale = 1f;
 
             // Hand back the locked gameplay cursor; each step's prompt frees and re-locks it from here.
@@ -111,8 +114,7 @@ namespace Signal.Tutorial
         private void OnSkipTutorial()
         {
             TutorialState.Completed = true;
-            Time.timeScale = 1f;
-            SceneManager.LoadScene(continueSceneName);
+            Leave(continueSceneName);
         }
 
         private void BeginStep(int index)
@@ -181,6 +183,13 @@ namespace Signal.Tutorial
         {
             if (_completeUI != null) return;
             UiBuilder.EnsureEventSystem();
+
+            // Freeze the game behind the panel, the way every other full-screen menu does. A controller
+            // makes the omission obvious: a stick doesn't recentre itself, so the player carries on
+            // walking around under the "complete" screen.
+            Time.timeScale = 0f;
+            UiModalState.Push(); // also suspends player input, so the confirm button can't reach the player
+
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -208,15 +217,30 @@ namespace Signal.Tutorial
             br.anchoredPosition = new Vector2(0f, -40f);
             br.sizeDelta = new Vector2(360f, 160f);
 
-            AddButton(buttons.transform, "Continue", () => SceneManager.LoadScene(continueSceneName));
-            AddButton(buttons.transform, "Return to Main Menu", () => SceneManager.LoadScene(mainMenuSceneName));
+            Button first = AddButton(buttons.transform, "Continue", () => Leave(continueSceneName));
+            AddButton(buttons.transform, "Return to Main Menu", () => Leave(mainMenuSceneName));
+
+            EventSystem.current?.SetSelectedGameObject(first.gameObject); // controller focus
         }
 
-        private void AddButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
+        /// <summary>
+        /// Leaves the tutorial. Unfreezing has to happen here: loading a scene resets neither the time
+        /// scale nor the modal count, so skipping it would drop the player into a frozen level with the
+        /// pause menu convinced a full-screen UI is still open.
+        /// </summary>
+        private void Leave(string sceneName)
+        {
+            UiModalState.Pop();
+            Time.timeScale = 1f;
+            SceneManager.LoadScene(sceneName);
+        }
+
+        private Button AddButton(Transform parent, string label, UnityEngine.Events.UnityAction onClick)
         {
             Button button = UiBuilder.CreateButton(parent, $"{label}Button", label, new Color(0.16f, 0.16f, 0.22f), 24, out _);
             ((RectTransform)button.transform).sizeDelta = new Vector2(340f, 60f);
             button.onClick.AddListener(onClick);
+            return button;
         }
     }
 }

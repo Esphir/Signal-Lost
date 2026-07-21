@@ -113,11 +113,8 @@ namespace Signal.UI
             Button button = image.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
 
-            // Every button in the game is built here, so hover/click audio comes for free and no menu
-            // script references a sound. The hook no-ops when no UIAudioController exists.
-            button.gameObject.AddComponent<Signal.Audio.ButtonAudioHooks>();
-
-            // Same reason: one place to make controller selection visible, so no menu can forget to.
+            // Every button in the game is built here, so this is the one place to make controller
+            // selection visible and no menu can forget to.
             SelectionHighlight.Attach(button.gameObject);
 
             text = CreateText(image.transform, "Label", label, fontSize, FontStyle.Normal, TextAnchor.MiddleCenter);

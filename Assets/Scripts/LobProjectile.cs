@@ -166,8 +166,6 @@ public class LobProjectile : MonoBehaviour
 
         if (config.explosionVfx != null)
             Instantiate(config.explosionVfx, point, Quaternion.identity);
-        if (config.explosionSfx != null)
-            AudioSource.PlayClipAtPoint(config.explosionSfx, point, config.sfxVolume);
 
         Despawn();
     }

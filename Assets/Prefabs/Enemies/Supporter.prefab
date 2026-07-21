@@ -26,8 +26,6 @@ GameObject:
   - component: {fileID: 4644212239799148003}
   - component: {fileID: 4644212239799149003}
   - component: {fileID: 7411000000000000001}
-  - component: {fileID: 8952839795508358400}
-  - component: {fileID: 437339024982733434}
   m_Layer: 3
   m_Name: Supporter
   m_TagString: Enemy
@@ -361,36 +359,3 @@ MonoBehaviour:
   indicatorGlyph: "\u2605"
   indicatorColor: {r: 1, g: 0.86, b: 0.2, a: 1}
   billboardCamera: {fileID: 0}
---- !u!114 &8952839795508358400
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1513119564538955794}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea106c8ae7e8d334bac2f5bd84e728ee, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  channel: {fileID: 11400000, guid: 31611c860bbc755449dcd5b56cafc626, type: 2}
-  origin: {fileID: 0}
---- !u!114 &437339024982733434
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1513119564538955794}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 09b078693b3fe474cba1ffced2a06471, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  spawn: {fileID: 11400000, guid: 95408ce8f44f7844c83f08eeee2b8891, type: 2}
-  attack: {fileID: 11400000, guid: 0568d9c00b276ad46b3aab0650a4956f, type: 2}
-  hit: {fileID: 11400000, guid: 469474168a350874498df9c296d6b0c4, type: 2}
-  death: {fileID: 11400000, guid: ded849ab30314ae4e8b10e38c6073ea7, type: 2}
-  stunned: {fileID: 11400000, guid: cb47a4bc3743e884c8210cedd122c78b, type: 2}
-  buffCast: {fileID: 11400000, guid: 80e5ac6c5ad6e874089d70a3cdc1d82e, type: 2}
-  buffApplied: {fileID: 11400000, guid: efaf432f434a6f1428456e2ac0243214, type: 2}

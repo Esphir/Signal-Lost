@@ -4561,7 +4561,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3bda225e8f0483b4db7f5af2858427c5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  roomType: 2
+  roomType: 5
   difficultyTier: 0
   localBounds:
     m_Center: {x: -6.0000286, y: 2.0000253, z: 16.000004}

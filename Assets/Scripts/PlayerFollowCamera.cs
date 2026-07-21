@@ -44,6 +44,7 @@ public class PlayerFollowCamera : MonoBehaviour
     private PlayerInputHandler _input;
     private CinemachineOrbitalFollow _orbital;
     private CinemachineCameraOffset _cameraOffset;
+    private CinemachineInputAxisController _axisInput;
     private float _currentShoulder;
     private bool _lockOnActive;
     private Vector3 _lockOnWorldPoint;
@@ -59,7 +60,10 @@ public class PlayerFollowCamera : MonoBehaviour
             vcam = GetComponent<CinemachineCamera>();
 
         if (vcam != null)
+        {
             _orbital = vcam.GetComponent<CinemachineOrbitalFollow>();
+            _axisInput = vcam.GetComponent<CinemachineInputAxisController>();
+        }
 
         if (_orbital == null)
             Debug.LogWarning("PlayerFollowCamera: No CinemachineOrbitalFollow found.");
@@ -96,7 +100,16 @@ public class PlayerFollowCamera : MonoBehaviour
     {
         UpdateShoulder(); // independent of look input — keep it live even without a player
 
-        if (_orbital == null || _input == null) return;
+        // The camera stays put behind any full-screen UI or whenever the game is frozen, whichever
+        // screen it is and whether or not that screen remembered to suspend player input.
+        bool frozen = Signal.UI.UiModalState.AnyOpen || Time.timeScale <= 0f;
+
+        // Cinemachine's own axis controller binds the Look and zoom actions straight out of the actions
+        // asset and enables them itself, so suspending the player's PlayerInput never reaches it — left
+        // alone it keeps orbiting the camera behind an open menu. It has to be switched off by hand.
+        if (_axisInput != null && _axisInput.enabled == frozen) _axisInput.enabled = !frozen;
+
+        if (frozen || _orbital == null || _input == null) return;
 
         if (_lockOnActive)
             ApplyLockOnRotation();

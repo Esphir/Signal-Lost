@@ -27,8 +27,6 @@ namespace Signal.Combat.Enemies
 
         [Header("Impact Feedback")]
         public GameObject impactVfxPrefab;
-        public AudioClip impactSfx;
-        [Range(0f, 1f)] public float sfxVolume = 1f;
 
         [Header("Telegraph")]
         [Tooltip("Show a ground warning at the landing point from the moment the leap commits until impact.")]
@@ -44,8 +42,5 @@ namespace Signal.Combat.Enemies
         public float telegraphPulseSpeed = 3f;
         [Tooltip("Optional VFX spawned when the warning appears.")]
         public GameObject telegraphVfx;
-        [Tooltip("Optional SFX played when the warning appears.")]
-        public AudioClip telegraphSfx;
-        [Range(0f, 1f)] public float telegraphSfxVolume = 1f;
     }
 }

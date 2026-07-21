@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using Signal.Combat.Interfaces;
 
@@ -9,6 +8,12 @@ namespace Signal.Combat.Enemies
     /// behind the front line), retreating directly when no allies remain. Buffing is handled
     /// independently by <see cref="AllyBuffAbility"/>; movement by <see cref="EnemyMotor"/> —
     /// this class only picks positions.
+    ///
+    /// It stays solid against its allies. Hiding behind the front line used to be arranged by switching
+    /// collision off between the support and everything near it, which stopped it shoving the line
+    /// around but let it stand inside other enemies — so it read as clipping through them rather than
+    /// sheltering behind them. It now holds a spacing instead: the position it picks is pushed clear of
+    /// every nearby ally, and being crowded is itself a reason to move.
     /// </summary>
     [RequireComponent(typeof(EnemyMotor), typeof(AllyBuffAbility))]
     public class SupportAI : MonoBehaviour
@@ -32,7 +37,7 @@ namespace Signal.Combat.Enemies
         [Tooltip("Don't reposition for corrections smaller than this (prevents jittering).")]
         private float repositionThreshold = 0.75f;
         [SerializeField, Min(0.5f)]
-        [Tooltip("Spacing kept from allies so the support never overlaps or shoves them — also leaves room to Bash it clear of the group.")]
+        [Tooltip("Spacing kept from allies. Big enough that the support shelters behind the line without leaning on it, and leaves room to Bash it clear of the group.")]
         private float supportDistance = 2.5f;
 
         private EnemyMotor _motor;
@@ -40,8 +45,6 @@ namespace Signal.Combat.Enemies
         private Transform _threat;
         private Collider[] _allyBuffer;
         private int _allyCount;
-        private Collider[] _myColliders;
-        private readonly HashSet<Collider> _ignoredAllies = new HashSet<Collider>();
         private float _nextThreatSearch;
 
         private void Awake()
@@ -49,7 +52,6 @@ namespace Signal.Combat.Enemies
             _motor = GetComponent<EnemyMotor>();
             _stunnable = GetComponent<IStunnable>();
             _allyBuffer = new Collider[16];
-            _myColliders = GetComponentsInChildren<Collider>();
         }
 
         private void Update()
@@ -63,10 +65,68 @@ namespace Signal.Combat.Enemies
                 : RetreatPosition();
             desired = ApplySeparation(desired);
 
-            if ((desired - transform.position).sqrMagnitude > repositionThreshold * repositionThreshold)
-                _motor.MoveTowards(desired);
+            // Standing too close to an ally is a reason to move in its own right, even when the cover
+            // position is barely different — otherwise the support settles pressed against the line and
+            // stays there, which is the look the old collision-ignoring produced.
+            bool crowded = IsCrowded();
+            if (crowded || (desired - transform.position).sqrMagnitude > repositionThreshold * repositionThreshold)
+                _motor.MoveTowards(StepAround(desired));
             else
                 _motor.FaceTowards(_threat.position);
+        }
+
+        /// <summary>
+        /// Bends the route around an ally standing in the way. Steering only the destination isn't enough:
+        /// the walk there is a straight line, so a front-liner between here and cover gets leaned on and
+        /// shoved along. This returns a waypoint beside the blocker instead, on whichever side it is
+        /// already closer to, and is re-evaluated every frame so the detour curves rather than zig-zags.
+        /// </summary>
+        private Vector3 StepAround(Vector3 destination)
+        {
+            Vector3 toDestination = destination - transform.position;
+            toDestination.y = 0f;
+
+            float travel = toDestination.magnitude;
+            if (travel < 0.01f) return destination;
+            Vector3 heading = toDestination / travel;
+
+            for (int i = 0; i < _allyCount; i++)
+            {
+                Collider ally = _allyBuffer[i];
+                if (ally == null || ally.transform.root == transform.root) continue;
+
+                Vector3 toAlly = ally.transform.position - transform.position;
+                toAlly.y = 0f;
+
+                float along = Vector3.Dot(toAlly, heading);
+                if (along <= 0f || along > travel) continue; // behind us, or beyond where we're going
+
+                Vector3 nearestOnPath = transform.position + heading * along;
+                Vector3 offset = ally.transform.position - nearestOnPath;
+                offset.y = 0f;
+                if (offset.magnitude >= supportDistance) continue; // the path already clears it
+
+                Vector3 side = Vector3.Cross(Vector3.up, heading);
+                float away = Vector3.Dot(offset, side) > 0f ? -1f : 1f;
+                return nearestOnPath + side * (away * supportDistance);
+            }
+
+            return destination;
+        }
+
+        /// <summary>True when an ally is inside the spacing — the support should step out, not lean on it.</summary>
+        private bool IsCrowded()
+        {
+            for (int i = 0; i < _allyCount; i++)
+            {
+                Collider ally = _allyBuffer[i];
+                if (ally == null || ally.transform.root == transform.root) continue;
+
+                Vector3 away = transform.position - ally.transform.position;
+                away.y = 0f;
+                if (away.sqrMagnitude < supportDistance * supportDistance) return true;
+            }
+            return false;
         }
 
         /// <summary>Point behind the ally on the line away from the player.</summary>
@@ -123,9 +183,6 @@ namespace Signal.Combat.Enemies
                 if (root == transform.root) continue;
                 if (!root.CompareTag(allyTag)) continue;
 
-                // Stop shoving allies around: never physically collide with them.
-                IgnoreAlly(_allyBuffer[i]);
-
                 float dist = (root.position - transform.position).sqrMagnitude;
                 if (root.GetComponentInChildren<SupportAI>() != null)
                 {
@@ -139,13 +196,6 @@ namespace Signal.Combat.Enemies
             }
 
             return best != null ? best : bestSupport; // hide behind another support only as a last resort
-        }
-
-        private void IgnoreAlly(Collider allyCollider)
-        {
-            if (allyCollider == null || !_ignoredAllies.Add(allyCollider) || _myColliders == null) return;
-            foreach (Collider mine in _myColliders)
-                if (mine != null) Physics.IgnoreCollision(mine, allyCollider, true);
         }
 
         private bool TryAcquireThreat()

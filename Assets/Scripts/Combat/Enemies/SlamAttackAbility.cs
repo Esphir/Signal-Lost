@@ -112,8 +112,6 @@ namespace Signal.Combat.Enemies
 
             if (config.impactVfxPrefab != null)
                 Instantiate(config.impactVfxPrefab, point, Quaternion.identity);
-            if (config.impactSfx != null)
-                AudioSource.PlayClipAtPoint(config.impactSfx, point, config.sfxVolume);
 
             Impacted?.Invoke(point);
             CombatLog.Info($"'{name}' slammed down at {point} — shockwave expanding.", this);
@@ -165,9 +163,7 @@ namespace Signal.Combat.Enemies
                 ScaleMultiplier = config.telegraphScaleMultiplier,
                 PulseSpeed = config.telegraphPulseSpeed,
                 WarningDuration = warningDuration,
-                AppearVfx = config.telegraphVfx,
-                AppearSfx = config.telegraphSfx,
-                SfxVolume = config.telegraphSfxVolume
+                AppearVfx = config.telegraphVfx
             });
         }
 

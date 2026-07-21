@@ -1,4 +1,3 @@
-using Signal.Dev;
 using Signal.Generation;
 using Signal.Run;
 using Signal.Tutorial;
@@ -61,7 +60,6 @@ namespace Signal.UI
 
             Button start = AddButton(buttons.transform, "Start", OnStart);
             AddButton(buttons.transform, "Settings", OnSettings);
-            AddButton(buttons.transform, "Developer Menu", OnDeveloperMenu);
             AddButton(buttons.transform, "Quit", OnQuit);
 
             // Focus Start so a controller has somewhere to navigate from the moment the game opens.
@@ -78,8 +76,6 @@ namespace Signal.UI
 
         private void OnStart()
         {
-            DeveloperModeManager.DeveloperMode = false;
-
             // A saved run resumes straight into the level with its exact layout — no tutorial. Otherwise
             // the tutorial plays only until it's been completed once; after that, Play goes to the level.
             RunSaveData save = RunSaveSystem.HasSave ? RunSaveSystem.Load() : null;
@@ -97,12 +93,6 @@ namespace Signal.UI
             {
                 SceneManager.LoadScene(levelSceneName);
             }
-        }
-
-        private void OnDeveloperMenu()
-        {
-            DeveloperModeManager.DeveloperMode = true;
-            SceneManager.LoadScene(gameplaySceneName);
         }
 
         private void OnSettings()
