@@ -32,6 +32,11 @@ namespace Signal.Spawning
         [Tooltip("Off = at most one per section, no matter what Max Count says. This is the switch that keeps a section to a single Support enemy.")]
         public bool canSpawnMultiple = true;
 
+        [Min(1)]
+        [Tooltip("Earliest run this enemy may appear on. 1 = from the very first run. Raise it to hold a " +
+                 "harder or more annoying type (e.g. Supporters) back until players have a run or two under their belt.")]
+        public int minRunNumber = 1;
+
         /// <summary>A row with no prefab assigned is inert rather than an error.</summary>
         public bool IsValid => prefab != null;
 

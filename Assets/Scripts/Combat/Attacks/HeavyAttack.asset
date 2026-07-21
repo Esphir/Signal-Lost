@@ -22,7 +22,7 @@ MonoBehaviour:
   recoveryTime: 0.12
   hitOffset: 1
   hitRadius: 1.2
-  lungeDistance: 0.5
+  lungeDistance: 0.1
   hitStopDuration: 0.09
   cameraShakeAmount: 0.3
   cameraShakeDuration: 0.2
@@ -31,3 +31,4 @@ MonoBehaviour:
   maxChargeTime: 1.2
   minChargeDamageMultiplier: 0.5
   minChargeRangeMultiplier: 0.75
+  cooldown: 1.5

@@ -98,6 +98,11 @@ namespace Signal.Generation
 
         private void Awake()
         {
+            // The floor's combat-clear tracker rides on this object so the exit gate can find it; it
+            // re-arms itself on every generation via MapGenerated.
+            if (FloorCombatTracker.Instance == null && GetComponent<FloorCombatTracker>() == null)
+                gameObject.AddComponent<FloorCombatTracker>();
+
             if (!generateOnAwake) return;
 
             // In play mode the level pops in behind a loading overlay; in the editor (Regenerate button)
@@ -499,6 +504,15 @@ namespace Signal.Generation
         private static int OwnerDistance(RoomConnector connector, Dictionary<RoomDefinition, int> distance)
             => connector.Owner != null && distance.TryGetValue(connector.Owner, out int d) ? d : 0;
 
+        /// <summary>How many placed rooms are of a given type — used to cap combat rooms per floor.</summary>
+        private int CountRoomsOfType(RoomType type)
+        {
+            int count = 0;
+            foreach (RoomDefinition room in _rooms)
+                if (room != null && room.RoomType == type) count++;
+            return count;
+        }
+
         /// <summary>Squared world distance from a doorway's owning room to the Start room. Cheap ranking key.</summary>
         private float PhysicalDistFromStart(RoomConnector connector)
             => _rooms.Count == 0 || connector.Owner == null
@@ -598,7 +612,10 @@ namespace Signal.Generation
                 return settings.SeparatorType;
             }
 
-            bool combatBlocked = consecutiveCombat >= settings.MaxConsecutiveCombatRooms;
+            // Combat is blocked by the back-to-back streak cap AND by the whole-floor cap — the exit only
+            // opens once every combat room is cleared, so a floor mustn't demand more fights than intended.
+            bool combatBlocked = consecutiveCombat >= settings.MaxConsecutiveCombatRooms
+                                 || (settings.MaxCombatRooms > 0 && CountRoomsOfType(RoomType.Combat) >= settings.MaxCombatRooms);
             if (!combatBlocked && database.HasAny(RoomType.Combat) && _random.NextDouble() < 0.6d)
             {
                 consecutiveCombat++;
@@ -849,6 +866,10 @@ namespace Signal.Generation
             // once, at placement. Rooms with no spawn sections (hallways, treasure) never get one.
             if (room.SpawnSections is { Length: > 0 } && room.GetComponent<CombatLockController>() == null)
                 room.gameObject.AddComponent<CombatLockController>();
+
+            // The exit stays sealed until the whole floor's combat is cleared.
+            if (room.RoomType == RoomType.End && room.GetComponent<EndRoomGate>() == null)
+                room.gameObject.AddComponent<EndRoomGate>().keyPrefab = settings.KeyPrefab;
 
             if (EnemySpawnManager.Instance != null)
                 foreach (EnemySpawnSection section in room.SpawnSections)

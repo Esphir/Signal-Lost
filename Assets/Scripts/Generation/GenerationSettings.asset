@@ -22,6 +22,7 @@ MonoBehaviour:
   deadEndCaps: []
   checkpointFrequency: 4
   maxConsecutiveCombatRooms: 2
+  maxCombatRooms: 4
   minEndDistanceFromStart: 2
   separatorType: 5
   hallwaySeparationChance: 60
@@ -56,5 +57,8 @@ MonoBehaviour:
   repeatMemory: 3
   placementAttempts: 12
   overlapTolerance: 0.05
+  maxGenerationAttempts: 25
+  showLoadingScreen: 1
+  keyPrefab: {fileID: 3917225545456290640, guid: d0ab17a2543d7284394fad8ca52f4c4e, type: 3}
   drawGizmos: 1
   logGeneration: 0

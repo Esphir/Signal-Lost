@@ -21,13 +21,13 @@ namespace Signal.Spawning
         /// fewer than requested (rather than repeating a capped row) when the profile's caps can't
         /// satisfy the total.
         /// </summary>
-        public static void Select(EnemySpawnProfile profile, int total, List<GameObject> results)
+        public static void Select(EnemySpawnProfile profile, int total, List<GameObject> results, int currentRun = 1)
         {
             if (results == null) return;
             results.Clear();
             if (profile == null || total <= 0) return;
 
-            List<EnemySpawnEntry> pool = BuildPool(profile);
+            List<EnemySpawnEntry> pool = BuildPool(profile, currentRun);
             if (pool.Count == 0) return;
 
             var counts = new Dictionary<EnemySpawnEntry, int>(pool.Count);
@@ -52,12 +52,15 @@ namespace Signal.Spawning
             }
         }
 
-        /// <summary>Rows that can actually contribute: a real prefab and a cap above zero.</summary>
-        private static List<EnemySpawnEntry> BuildPool(EnemySpawnProfile profile)
+        /// <summary>
+        /// Rows that can actually contribute: a real prefab, a cap above zero, and unlocked at the current
+        /// run (so an enemy gated to a later run stays out of the pool entirely, weight and minimums and all).
+        /// </summary>
+        private static List<EnemySpawnEntry> BuildPool(EnemySpawnProfile profile, int currentRun)
         {
             var pool = new List<EnemySpawnEntry>();
             foreach (EnemySpawnEntry entry in profile.Entries)
-                if (entry != null && entry.IsValid && entry.EffectiveMaxCount > 0)
+                if (entry != null && entry.IsValid && entry.EffectiveMaxCount > 0 && currentRun >= entry.minRunNumber)
                     pool.Add(entry);
             return pool;
         }

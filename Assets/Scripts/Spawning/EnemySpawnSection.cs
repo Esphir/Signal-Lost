@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Signal.Combat.Interfaces;
+using Signal.Run;
 using UnityEngine;
 
 namespace Signal.Spawning
@@ -174,8 +175,11 @@ namespace Signal.Spawning
                 return;
             }
 
-            int total = Random.Range(minEnemyCount, maxEnemyCount + 1);
-            WeightedEnemySelector.Select(spawnProfile, total, _selection);
+            // Scale the rolled count by the current run — eased on run 1, ramping after — and let the
+            // selector drop enemy types not yet unlocked at this run (e.g. Supporters held to run 2+).
+            int run = RunDifficulty.CurrentRun;
+            int total = RunDifficulty.ScaleEnemyCount(Random.Range(minEnemyCount, maxEnemyCount + 1));
+            WeightedEnemySelector.Select(spawnProfile, total, _selection, run);
             if (_selection.Count == 0) return;
 
             List<EnemySpawnPoint> points = BuildShuffledPoints();

@@ -67,6 +67,11 @@ namespace Signal.Generation
         [Tooltip("Cap on back-to-back combat rooms, so a run can breathe.")]
         private int maxConsecutiveCombatRooms = 2;
 
+        [SerializeField, Min(0)]
+        [Tooltip("Most combat rooms a single floor may contain. 0 = no cap. Since the exit unlocks only " +
+                 "after every combat room is cleared, this bounds how much fighting a run demands.")]
+        private int maxCombatRooms = 4;
+
         [SerializeField, Min(2)]
         [Tooltip("Fewest rooms (doorway hops) between the Start room and the End room, so the exit never " +
                  "hangs right off spawn. 2 = at least one room in between; the End is otherwise placed as " +
@@ -131,6 +136,10 @@ namespace Signal.Generation
         [Tooltip("Show a full-screen loading overlay while the level generates (including any rerolls), so rooms never pop in on screen. Play mode only.")]
         private bool showLoadingScreen = true;
 
+        [SerializeField]
+        [Tooltip("Optional key visual dropped at the exit door when the floor's combat is cleared and the exit unlocks. Empty = the door just opens, no key.")]
+        private GameObject keyPrefab;
+
         [Header("Debug")]
         [SerializeField] private bool drawGizmos = true;
         [SerializeField]
@@ -157,6 +166,7 @@ namespace Signal.Generation
         }
         public int CheckpointFrequency => checkpointFrequency;
         public int MaxConsecutiveCombatRooms => maxConsecutiveCombatRooms;
+        public int MaxCombatRooms => maxCombatRooms;
         public int MinEndDistanceFromStart => minEndDistanceFromStart;
         public RoomType SeparatorType => separatorType;
         public float HallwaySeparationChance => hallwaySeparationChance;
@@ -170,6 +180,7 @@ namespace Signal.Generation
         public float OverlapTolerance => overlapTolerance;
         public int MaxGenerationAttempts => maxGenerationAttempts;
         public bool ShowLoadingScreen => showLoadingScreen;
+        public GameObject KeyPrefab => keyPrefab;
         public bool DrawGizmos => drawGizmos;
         public bool LogGeneration => logGeneration;
 

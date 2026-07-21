@@ -25,6 +25,12 @@ namespace Signal.Generation
         private void OnTriggerEnter(Collider other)
         {
             if (_fired || !other.CompareTag(playerTag)) return;
+
+            // Don't finish the run through a still-locked exit. The gate's wall normally blocks the player
+            // from ever reaching this trigger, but this guards the case where the trigger reaches past it.
+            EndRoomGate gate = GetComponentInParent<EndRoomGate>();
+            if (gate != null && !gate.IsUnlocked) return;
+
             _fired = true;
             RunCompleteScreenUI.ShowNew();
         }
