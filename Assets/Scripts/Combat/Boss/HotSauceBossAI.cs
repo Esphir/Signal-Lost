@@ -12,8 +12,8 @@ namespace Signal.Combat.Boss
     /// The hot-sauce boss brain: a finite-state machine that loops Prowl → Attack → Recovery. It owns no
     /// attack logic — attacks are separate <see cref="BossAttack"/> components it carries, each of which
     /// telegraphs and executes itself — so the fight is a movement puzzle of readable patterns rather than
-    /// a wall of damage. Selection is weighted by player distance (flamethrower/spin up close, arena
-    /// control at range) and never repeats the last attack while another is available.
+    /// a wall of damage. Selection is weighted by player distance (a burst for anything in melee, flame
+    /// for mid range, arena control at long) and never repeats the last attack while another is available.
     ///
     /// Between attacks it prowls: it hops to a fresh angle on the player at its preferred range while
     /// staying turned toward them, so the player has to keep repositioning too. It only stands still to
@@ -277,6 +277,7 @@ namespace Signal.Combat.Boss
             {
                 gameObject.AddComponent<FlamethrowerAttack>();
                 gameObject.AddComponent<BottleSpinAttack>();
+                gameObject.AddComponent<SauceBurstAttack>();
                 gameObject.AddComponent<GhostPepperSummonAttack>();
                 GetComponents(_attacks);
             }

@@ -29,5 +29,52 @@ namespace Signal.Combat.Boss
             Vector3 to = point - center; to.y = 0f;
             return to.sqrMagnitude <= radius * radius;
         }
+
+        /// <summary>
+        /// The full shape of a flame: the cone, plus a splash around the source itself.
+        ///
+        /// A cone pinches to nothing at its apex, which is exactly where a melee player stands — so a cone
+        /// alone leaves a safe pocket at the boss's feet and rewards hugging it. The splash closes that
+        /// pocket, but only ahead of the source: getting *behind* the flame is still the right answer.
+        /// </summary>
+        public static bool InFlame(Vector3 source, Vector3 forward, float halfAngleDeg, float range,
+                                   float splashRadius, Vector3 point)
+        {
+            Vector3 to = point - source; to.y = 0f;
+            Vector3 fwd = forward; fwd.y = 0f;
+
+            if (to.sqrMagnitude <= splashRadius * splashRadius && Vector3.Dot(fwd, to) >= 0f) return true;
+            return InCone(source, forward, halfAngleDeg, range, point);
+        }
+    }
+
+    /// <summary>
+    /// Turns time spent standing in fire into damage. Sampling "is the player in the cone right now?" on a
+    /// fixed tick throws away most of what a fast sweep does — the flame can cross the player entirely
+    /// between two samples — so this banks exposure and pays out once it's worth a tick. Brief brushes still
+    /// cost what they should, and nothing is lost to sampling luck.
+    /// </summary>
+    public struct FlameTicker
+    {
+        private float _banked;
+
+        /// <summary>Adds this frame's exposure. Returns the seconds to charge for, or 0 when none is due.</summary>
+        public float Tick(bool inFlame, float deltaTime, float tickInterval)
+        {
+            if (inFlame) _banked += deltaTime;
+            if (_banked < tickInterval) return 0f;
+
+            float due = _banked;
+            _banked = 0f;
+            return due;
+        }
+
+        /// <summary>Pays out whatever is banked when the flame stops, so the last brush still counts.</summary>
+        public float Flush()
+        {
+            float due = _banked;
+            _banked = 0f;
+            return due;
+        }
     }
 }

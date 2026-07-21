@@ -8,6 +8,10 @@ namespace Signal.Combat.Enemies
     /// <see cref="SlamAttackAbility"/>. Movement is delegated to <see cref="EnemyMotor"/>
     /// (which already yields to stun/knockback), the attack to the ability component —
     /// this class only decides.
+    ///
+    /// It closes the distance in small hops rather than gliding: a creature whose whole identity is
+    /// leaping into the air shouldn't slide along the floor to get there, and it shares the boss's arc
+    /// solve so the two read as the same kind of motion at different scales.
     /// </summary>
     [RequireComponent(typeof(EnemyMotor), typeof(SlamAttackAbility))]
     public class PlummeterAI : MonoBehaviour
@@ -16,6 +20,11 @@ namespace Signal.Combat.Enemies
         [SerializeField] private string targetTag = "Player";
         [SerializeField, Min(1f)] private float detectionRange = 15f;
         [SerializeField, Min(0.5f)] private float attackRange = 3.5f;
+
+        [Header("Movement")]
+        [SerializeField]
+        [Tooltip("Travel in small hops instead of gliding. Tune the arc on the EnemyMotor's Hops block.")]
+        private bool hopLocomotion = true;
 
         private EnemyMotor _motor;
         private SlamAttackAbility _slam;
@@ -28,6 +37,7 @@ namespace Signal.Combat.Enemies
             _motor = GetComponent<EnemyMotor>();
             _slam = GetComponent<SlamAttackAbility>();
             _stunnable = GetComponent<IStunnable>();
+            _motor.UseHops(hopLocomotion);
         }
 
         private void Update()
@@ -44,7 +54,10 @@ namespace Signal.Combat.Enemies
             {
                 _motor.Stop();
                 _motor.FaceTowards(_target.position);
-                if (_slam.CooldownReady)
+
+                // Never start the leap mid-hop: the slam takes its own ground height from wherever it
+                // launches, so committing in the air would land it hovering.
+                if (_slam.CooldownReady && !_motor.Airborne)
                     _slam.TryExecute(_target.position);
                 return;
             }

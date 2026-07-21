@@ -5,9 +5,13 @@ namespace Signal.Combat.Boss
 {
     /// <summary>
     /// Attack 1 — Flamethrower. The boss faces the player, its nozzle glows through a short windup, then
-    /// it fires a continuous cone that slowly sweeps to one side. Damage ticks while the player stands in
-    /// the cone, and it drips small burning patches along the ground. It's a positioning tool: the safe
-    /// answer is always to move opposite the sweep or step out of range.
+    /// it fires a continuous cone that slowly sweeps to one side while drifting toward the player, and
+    /// drips small burning patches along the ground. It's a positioning tool: the safe answer is to move
+    /// opposite the sweep, step out of range, or get behind it.
+    ///
+    /// The burn is measured from the boss outward, with a splash covering its own footprint — a cone hung
+    /// off the nozzle would pinch to nothing exactly where a melee player stands, making the safest place
+    /// in the room the one place a flamethrower should never be safe.
     /// </summary>
     public sealed class FlamethrowerAttack : BossAttack
     {
@@ -22,6 +26,14 @@ namespace Signal.Combat.Boss
         [SerializeField, Min(10f)] private float sweepArc = 75f;
         [SerializeField, Min(1f)] private float damagePerSecond = 22f;
         [SerializeField] private Vector3 nozzleOffset = new Vector3(0f, 1.2f, 0.6f);
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Splash around the boss that burns too — closes the safe pocket a bare cone leaves at its feet. Only ahead of it; behind is still safe.")]
+        private float splashRadius = 2.6f;
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Degrees per second the sweep drifts toward the player while firing. 0 = fully committed to its opening aim.")]
+        private float trackingSpeed = 30f;
 
         [Header("Preferred range")]
         [SerializeField, Min(0f)] private float idealDistance = 7f;
@@ -67,23 +79,27 @@ namespace Signal.Combat.Boss
 
             Quaternion baseRot = FacingPlayer(ctx);
             float side = Random.value < 0.5f ? -1f : 1f;
-            float dpsTickTimer = 0f, patchTimer = 0f;
+            var ticker = new FlameTicker();
+            float patchTimer = 0f;
 
             for (float t = 0f; t < duration; t += Time.deltaTime)
             {
                 float k = t / duration;
+
+                // The sweep is the attack, but a fixed arc is trivially walked out of — so the aim drifts
+                // toward the player underneath it. Slow enough that running still beats it.
+                baseRot = Quaternion.RotateTowards(baseRot, FacingPlayer(ctx), trackingSpeed * Time.deltaTime);
                 ctx.Boss.rotation = baseRot * Quaternion.Euler(0f, side * sweepArc * (k - 0.5f), 0f);
 
-                Vector3 origin = jet.transform.position;
+                // Damage is measured from the boss, not from the nozzle out in front of it: the cone has to
+                // start where the boss is, or standing on top of it is safe.
+                Vector3 origin = ctx.Boss.position;
                 Vector3 forward = ctx.Boss.forward;
 
-                dpsTickTimer -= Time.deltaTime;
-                if (dpsTickTimer <= 0f)
-                {
-                    dpsTickTimer = tick;
-                    if (ctx.Player != null && FlameDamage.InCone(origin, forward, coneHalfAngle, range, ctx.Player.position))
-                        ctx.DamagePlayer(dps * tick, ctx.Player.position);
-                }
+                bool burning = ctx.Player != null &&
+                               FlameDamage.InFlame(origin, forward, coneHalfAngle, range, splashRadius, ctx.Player.position);
+                float due = ticker.Tick(burning, Time.deltaTime, tick);
+                if (due > 0f && ctx.Player != null) ctx.DamagePlayer(dps * due, ctx.Player.position);
 
                 patchTimer -= Time.deltaTime;
                 if (patchTimer <= 0f && patchDps > 0f)
@@ -97,6 +113,9 @@ namespace Signal.Combat.Boss
 
                 yield return null;
             }
+
+            float last = ticker.Flush();
+            if (last > 0f && ctx.Player != null) ctx.DamagePlayer(dps * last, ctx.Player.position);
 
             Destroy(jet);
             ctx.Anim?.Relax();

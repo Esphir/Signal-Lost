@@ -57,7 +57,7 @@ namespace Signal.Combat.Boss
         private float _landAt;
         private float _nextHopAt;
 
-        private float Gravity => Mathf.Max(0.1f, -Physics.gravity.y * hopGravity);
+        private float Gravity => HopArc.Gravity(hopGravity);
 
         private void Awake()
         {
@@ -99,7 +99,7 @@ namespace Signal.Combat.Boss
             {
                 // Extra gravity only on the way through the air, so the arc is snappy without making the
                 // boss heavy the rest of the time.
-                _rb.AddForce(Physics.gravity * (hopGravity - 1f), ForceMode.Acceleration);
+                _rb.AddForce(HopArc.ExtraGravity(hopGravity), ForceMode.Acceleration);
                 if (Time.fixedTime < _landAt) return;
                 Land();
                 return;
@@ -120,14 +120,8 @@ namespace Signal.Combat.Boss
         /// <summary>Launches one arc: up by <see cref="hopHeight"/>, forward by as much as is left to cover.</summary>
         private void Hop(Vector3 toTarget)
         {
-            float gravity = Gravity;
-            float rise = Mathf.Sqrt(2f * gravity * hopHeight);
-            float airTime = 2f * rise / gravity;
-            float reach = Mathf.Min(hopDistance * Mathf.Max(0.1f, SpeedScale), toTarget.magnitude);
-
-            Vector3 step = toTarget.normalized * (reach / airTime);
-            _rb.linearVelocity = new Vector3(step.x, rise, step.z);
-
+            _rb.linearVelocity = HopArc.Solve(toTarget, hopDistance * Mathf.Max(0.1f, SpeedScale),
+                                              hopHeight, Gravity, out float airTime);
             Airborne = true;
             _landAt = Time.fixedTime + airTime;
         }

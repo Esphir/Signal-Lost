@@ -243,22 +243,25 @@ namespace Signal.Generation
         /// A layout is shippable only if it has an exit, that exit doesn't overlap anything, and it sits at
         /// least Min End Distance hops from spawn (never hung straight off the Start room). Anything else is
         /// rerolled by <see cref="Generate"/>.
+        ///
+        /// On a boss floor the boss room <em>is</em> the exit — killing the boss ends the run — so the same
+        /// rules are checked against it instead of against an End room that never gets placed.
         /// </summary>
         private bool IsLevelValid(out string reason)
         {
-            RoomDefinition end = null;
-            foreach (RoomDefinition room in _rooms)
-                if (room != null && room.RoomType == RoomType.End) { end = room; break; }
+            bool bossFloor = IsBossFloor();
+            RoomType exitType = bossFloor ? RoomType.Boss : RoomType.End;
 
-            if (end == null) { reason = "no exit"; return false; }
+            RoomDefinition exit = null;
+            foreach (RoomDefinition room in _rooms)
+                if (room != null && room.RoomType == exitType) { exit = room; break; }
+
+            if (exit == null) { reason = bossFloor ? "boss floor missing its boss room" : "no exit"; return false; }
             if (LastReport != null && LastReport.Overlaps > 0) { reason = "rooms overlap"; return false; }
 
             Dictionary<RoomDefinition, int> distance = GraphDistancesFromStart();
-            if (!distance.TryGetValue(end, out int hops)) { reason = "exit unreachable"; return false; }
+            if (!distance.TryGetValue(exit, out int hops)) { reason = "exit unreachable"; return false; }
             if (hops < settings.MinEndDistanceFromStart) { reason = $"exit only {hops} hop(s) from spawn"; return false; }
-
-            // A boss floor is only valid with its boss room actually placed.
-            if (IsBossFloor() && CountRoomsOfType(RoomType.Boss) == 0) { reason = "boss floor missing its boss room"; return false; }
 
             reason = null;
             return true;
@@ -383,9 +386,12 @@ namespace Signal.Generation
         }
 
         /// <summary>
-        /// The fixed boss-floor layout: spawn → treasure → hallway → boss → exit, laid out as one straight
-        /// path. The treasure room hands out its usual guaranteed drop before the fight, the boss room is a
-        /// combat-lock room (so the exit gate opens only once the boss falls), and the exit caps the run.
+        /// The fixed boss-floor layout: spawn → treasure → hallway → boss, laid out as one straight path.
+        /// The treasure room hands out its usual guaranteed drop before the fight, and the boss room is a
+        /// combat-lock room.
+        ///
+        /// There is deliberately no End room: killing the boss finishes the run then and there, so an exit
+        /// room would only be a corridor the player never walks down.
         /// </summary>
         private void BuildBossFloor()
         {
@@ -395,8 +401,6 @@ namespace Signal.Generation
             PlaceNext(settings.SeparatorType, 2, 5, allowBranch: false);
             if (!PlaceNext(RoomType.Boss, 3, 5, allowBranch: false))
                 Debug.LogWarning("[Gen] Boss floor: couldn't place the Boss room — this attempt will be rerolled.", this);
-
-            PlaceEndRoom(5);
         }
 
         /// <summary>
@@ -869,10 +873,16 @@ namespace Signal.Generation
             foreach (RoomDefinition room in _rooms)
             {
                 if (room == null) continue;
+
+                // The cap is one fixed-size prop shared by every room, so it only fits a standard doorway.
+                // The boss arena is built oversized and its openings are wider than the cap can cover —
+                // those fall back to the room's own blocking wall, which is authored to fit.
+                GameObject roomCap = room.RoomType == RoomType.Boss ? null : cap;
+
                 foreach (RoomConnector connector in room.Connectors)
                 {
                     if (connector == null || connector.IsOccupied) continue;
-                    connector.Seal(cap);
+                    connector.Seal(roomCap);
                     sealed_++;
                 }
             }

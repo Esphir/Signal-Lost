@@ -253,7 +253,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55d83faa54146f946a3b7307df6895cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  knockbackMultiplier: 1
+  knockbackMultiplier: 2
 --- !u!114 &6021129370711652004
 MonoBehaviour:
   m_ObjectHideFlags: 0

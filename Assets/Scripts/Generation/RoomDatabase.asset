@@ -36,7 +36,7 @@ MonoBehaviour:
   - prefab: {fileID: 192246073589006133, guid: 00d8b26504b4dcb499aafdcc635534b7, type: 3}
     weight: 1
     minRoomIndex: 0
-    maxRoomIndex: 0
+    maxRoomIndex: 1
   - prefab: {fileID: 803888928708974194, guid: d5673093f44d71640a26379746b556ed, type: 3}
     weight: 1
     minRoomIndex: 0

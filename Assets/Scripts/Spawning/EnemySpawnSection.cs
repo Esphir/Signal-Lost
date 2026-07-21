@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using Signal.Combat.Enemies;
 using Signal.Combat.Interfaces;
+using Signal.Generation;
 using Signal.Run;
 using UnityEngine;
 
@@ -91,6 +93,18 @@ namespace Signal.Spawning
 
         public IReadOnlyList<EnemySpawnPoint> SpawnPoints => spawnPoints;
         public IReadOnlyList<GameObject> SpawnedEnemies => _spawned;
+
+        /// <summary>The room this section sits in — the bounds its enemies are kept inside. Null if standalone.</summary>
+        public RoomDefinition Room
+        {
+            get
+            {
+                if (_room == null) _room = GetComponentInParent<RoomDefinition>();
+                return _room;
+            }
+        }
+
+        private RoomDefinition _room;
 
         private readonly List<GameObject> _spawned = new List<GameObject>();
         private readonly List<Vector3> _reserved = new List<Vector3>();
@@ -232,6 +246,16 @@ namespace Signal.Spawning
         {
             GameObject enemy = Instantiate(prefab, position, rotation);
             _reserved.Add(position);
+
+            // Physics can punt an enemy through a wall, and a stranded one still counts as alive — which
+            // would leave a combat-lock room's doors shut forever. Every spawn gets a way home.
+            EnemyBoundsGuard guard = enemy.GetComponent<EnemyBoundsGuard>();
+            if (guard == null) guard = enemy.AddComponent<EnemyBoundsGuard>();
+            guard.Configure(position, Room);
+
+            // And a way off each other's heads, since landing on a neighbour otherwise sticks.
+            if (enemy.GetComponent<EnemyStackBreaker>() == null) enemy.AddComponent<EnemyStackBreaker>();
+
             // Push the new collider into the physics scene so the next candidate's overlap test sees it.
             Physics.SyncTransforms();
             return enemy;

@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using Signal.Combat.Enemies;
 using Signal.Combat.Telegraphs;
+using Signal.Spawning;
 using UnityEngine;
 
 namespace Signal.Combat.Boss
@@ -96,6 +98,11 @@ namespace Signal.Combat.Boss
             GameObject go = Instantiate(minionPrefab, position, Quaternion.identity);
             go.tag = ctx.Boss.CompareTag("Enemy") ? "Enemy" : go.tag;
             go.layer = ctx.Boss.gameObject.layer; // so the player's attacks can hit it
+
+            // Summons get the same safety nets as spawned enemies — the guard works its own room out from
+            // where it landed, since the boss doesn't track which room it's fighting in.
+            if (go.GetComponent<EnemyBoundsGuard>() == null) go.AddComponent<EnemyBoundsGuard>();
+            if (go.GetComponent<EnemyStackBreaker>() == null) go.AddComponent<EnemyStackBreaker>();
 
             var ai = go.GetComponent<GhostPepperAI>();
             if (ai == null) ai = go.AddComponent<GhostPepperAI>();

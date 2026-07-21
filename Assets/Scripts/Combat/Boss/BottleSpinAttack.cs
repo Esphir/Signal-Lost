@@ -10,6 +10,10 @@ namespace Signal.Combat.Boss
     /// cap that sweeps a full circle — a rotating hazard the player must stay ahead of (or slip behind).
     /// After the rotation it pushes itself upright, leaving a moment of recovery.
     ///
+    /// The sweep burns from the boss outward and splashes across its own footprint, so hugging a spinning
+    /// flamethrower is the worst place in the room rather than the safest, and it lays burning ground at
+    /// two radii so it can't be answered by picking one distance and standing there.
+    ///
     /// The tip is a real rotation of the boss transform, not a cosmetic child, so the model visibly lies
     /// down and the flame leaves the cap rather than the roof. Because a tipped collider would fall, drift,
     /// or shove itself back upright, the attack takes the rigidbody kinematic for its duration and animates
@@ -35,6 +39,10 @@ namespace Signal.Combat.Boss
         [SerializeField]
         [Tooltip("Where the cap sits while lying down, relative to the boss's centre: x sideways, y up, z along the spray.")]
         private Vector3 nozzleOffset = new Vector3(0f, 0f, 1.8f);
+
+        [SerializeField, Min(0f)]
+        [Tooltip("Splash around the thrashing bottle. Standing on top of a spinning flamethrower must be the worst place in the room, not the safest.")]
+        private float splashRadius = 3f;
 
         [Header("Burning ground")]
         [SerializeField, Min(0.3f)] private float patchRadius = 1.5f;
@@ -91,8 +99,9 @@ namespace Signal.Combat.Boss
             float patchEvery = totalDeg / Mathf.Max(1, patchesPerRotation * Mathf.Max(1, rotations));
             float nextPatchDeg = patchEvery;
             const float tick = 0.15f;
-            float tickTimer = 0f;
+            var ticker = new FlameTicker();
             float sweptDeg = 0f;
+            int patchIndex = 0;
 
             for (float t = 0f; t < duration; t += Time.deltaTime)
             {
@@ -100,21 +109,22 @@ namespace Signal.Combat.Boss
                 SetPose(ctx, yaw + sweptDeg, standY - drop, 1f);
 
                 Vector3 forward = Quaternion.Euler(0f, yaw + sweptDeg, 0f) * Vector3.forward;
-                Vector3 origin = Nozzle(ctx, forward);
-                _jet.transform.SetPositionAndRotation(origin, Quaternion.LookRotation(forward));
+                _jet.transform.SetPositionAndRotation(Nozzle(ctx, forward), Quaternion.LookRotation(forward));
 
-                tickTimer -= Time.deltaTime;
-                if (tickTimer <= 0f)
-                {
-                    tickTimer = tick;
-                    if (ctx.Player != null && FlameDamage.InCone(origin, forward, coneHalfAngle, range, ctx.Player.position))
-                        ctx.DamagePlayer(dps * tick, ctx.Player.position);
-                }
+                // Damage is measured from the boss itself, not from the cap out in front of it — a cone
+                // hung off the nozzle leaves the ground under the boss completely safe.
+                bool burning = ctx.Player != null &&
+                               FlameDamage.InFlame(ctx.Boss.position, forward, coneHalfAngle, range, splashRadius, ctx.Player.position);
+                float due = ticker.Tick(burning, Time.deltaTime, tick);
+                if (due > 0f && ctx.Player != null) ctx.DamagePlayer(dps * due, ctx.Player.position);
 
                 if (sweptDeg >= nextPatchDeg && patchDps > 0f)
                 {
                     nextPatchDeg += patchEvery;
-                    Vector3 spot = origin + forward * (range * 0.7f);
+                    // Alternate near and far so the spin leaves a hostile floor at every radius, instead of
+                    // one distant ring with a clean circle to stand in at the boss's feet.
+                    float reach = range * ((patchIndex++ % 2 == 0) ? 0.3f : 0.75f);
+                    Vector3 spot = ctx.Boss.position + forward * reach;
                     spot.y = ctx.Boss.position.y;
                     BurningGround.Spawn(spot, patchRadius, ctx.ScaleDamage(patchDps),
                                         patchLifetime * ctx.FlameDurationMultiplier, ctx.Instigator);
@@ -122,6 +132,9 @@ namespace Signal.Combat.Boss
 
                 yield return null;
             }
+
+            float last = ticker.Flush();
+            if (last > 0f && ctx.Player != null) ctx.DamagePlayer(dps * last, ctx.Player.position);
 
             DestroyJet();
 
