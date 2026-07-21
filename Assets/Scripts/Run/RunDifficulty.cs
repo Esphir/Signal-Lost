@@ -9,29 +9,26 @@ namespace Signal.Run
     /// </summary>
     public static class RunDifficulty
     {
-        /// <summary>New players never face more than this many enemies in one room on the first run.</summary>
-        public const int FirstRunEnemyCap = 3;
+        /// <summary>Most enemies a room may spawn on the very first run.</summary>
+        public const int FirstRunEnemyCap = 2;
 
-        /// <summary>Extra enemies per run beyond the first (fractional, floored). 0.5 = +1 every 2 runs.</summary>
-        public const float ExtraEnemiesPerRun = 0.5f;
-
-        /// <summary>Ceiling on the run-based enemy bonus, so a late run can't become an unspawnable wall.</summary>
-        public const int MaxExtraEnemies = 6;
+        /// <summary>How much the per-room enemy ceiling grows each run after the first. 1 = +1 per run.</summary>
+        public const float ExtraEnemiesPerRun = 1f;
 
         /// <summary>The current run number (1-based). 1 when no run is active.</summary>
         public static int CurrentRun => RunManager.HasInstance ? RunManager.Instance.CurrentRun : 1;
 
         /// <summary>
-        /// Scales a section's freshly-rolled enemy count for the current run: capped low on run 1, then
-        /// ramped by <see cref="ExtraEnemiesPerRun"/> up to <see cref="MaxExtraEnemies"/> extra.
+        /// The most enemies a room may spawn on the current run: <see cref="FirstRunEnemyCap"/> on run 1,
+        /// growing by <see cref="ExtraEnemiesPerRun"/> each run after.
+        /// </summary>
+        public static int EnemyCeiling(int run) => FirstRunEnemyCap + Mathf.FloorToInt((Mathf.Max(1, run) - 1) * ExtraEnemiesPerRun);
+
+        /// <summary>
+        /// Clamps a section's freshly-rolled enemy count to the current run's ceiling — so run 1 tops out at
+        /// two, run 2 at three, and so on, while the section's own roll still adds variety underneath.
         /// </summary>
         public static int ScaleEnemyCount(int rolledCount)
-        {
-            int run = Mathf.Max(1, CurrentRun);
-            int extra = Mathf.Min(MaxExtraEnemies, Mathf.FloorToInt((run - 1) * ExtraEnemiesPerRun));
-            int total = rolledCount + extra;
-            if (run <= 1) total = Mathf.Min(total, FirstRunEnemyCap);
-            return Mathf.Max(0, total);
-        }
+            => Mathf.Clamp(rolledCount, 0, EnemyCeiling(CurrentRun));
     }
 }

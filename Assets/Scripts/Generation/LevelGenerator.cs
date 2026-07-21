@@ -871,6 +871,10 @@ namespace Signal.Generation
             if (room.RoomType == RoomType.End && room.GetComponent<EndRoomGate>() == null)
                 room.gameObject.AddComponent<EndRoomGate>().keyPrefab = settings.KeyPrefab;
 
+            // Every treasure room hands out one guaranteed drop (Rare/Epic/Legendary).
+            if (room.RoomType == RoomType.Treasure && room.GetComponent<Signal.Loot.TreasureRoomLoot>() == null)
+                room.gameObject.AddComponent<Signal.Loot.TreasureRoomLoot>().Configure(settings.LootSettings);
+
             if (EnemySpawnManager.Instance != null)
                 foreach (EnemySpawnSection section in room.SpawnSections)
                     EnemySpawnManager.Instance.Register(section);

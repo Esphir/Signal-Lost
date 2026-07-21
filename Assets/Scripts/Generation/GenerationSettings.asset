@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GenerationSettings
   m_EditorClassIdentifier: 
   minimumRooms: 8
-  maximumRooms: 20
+  maximumRooms: 12
   useRandomSeed: 0
   randomSeed: 12345
   branchChance: 25
@@ -60,5 +60,6 @@ MonoBehaviour:
   maxGenerationAttempts: 25
   showLoadingScreen: 1
   keyPrefab: {fileID: 3917225545456290640, guid: d0ab17a2543d7284394fad8ca52f4c4e, type: 3}
+  lootSettings: {fileID: 11400000, guid: 4737176b639b1a90932b3cc0f13cf214, type: 2}
   drawGizmos: 1
-  logGeneration: 0
+  logGeneration: 1

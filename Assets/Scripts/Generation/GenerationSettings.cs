@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Signal.Loot;
 using UnityEngine;
 
 namespace Signal.Generation
@@ -140,6 +141,10 @@ namespace Signal.Generation
         [Tooltip("Optional key visual dropped at the exit door when the floor's combat is cleared and the exit unlocks. Empty = the door just opens, no key.")]
         private GameObject keyPrefab;
 
+        [SerializeField]
+        [Tooltip("Loot data (loot prefab + rarity materials) for the guaranteed treasure-room drop. Empty = treasure rooms drop nothing.")]
+        private LootSettingsSO lootSettings;
+
         [Header("Debug")]
         [SerializeField] private bool drawGizmos = true;
         [SerializeField]
@@ -181,6 +186,7 @@ namespace Signal.Generation
         public int MaxGenerationAttempts => maxGenerationAttempts;
         public bool ShowLoadingScreen => showLoadingScreen;
         public GameObject KeyPrefab => keyPrefab;
+        public LootSettingsSO LootSettings => lootSettings;
         public bool DrawGizmos => drawGizmos;
         public bool LogGeneration => logGeneration;
 
