@@ -164,6 +164,11 @@ MonoBehaviour:
   moveSpeed: 4
   turnSpeed: 10
   arrivalDistance: 0.2
+  hopDistance: 1.6
+  hopHeight: 0.35
+  hopInterval: 0.1
+  hopGravity: 2.6
+  landingFriction: 22
   knockbackRecoveryTime: 1
 --- !u!114 &8909212559469331284
 MonoBehaviour:
@@ -196,6 +201,7 @@ MonoBehaviour:
   targetTag: Player
   detectionRange: 15
   attackRange: 10
+  hopLocomotion: 1
 --- !u!114 &6100724910009048537
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -241,7 +247,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 55d83faa54146f946a3b7307df6895cf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  knockbackMultiplier: 1
+  knockbackMultiplier: 0
 --- !u!114 &5152042692491368002
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -315,6 +321,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   settings: {fileID: 11400000, guid: 4737176b639b1a90932b3cc0f13cf214, type: 2}
   guaranteedDrop: 0
+  enemyDifficultyBonus: 0
 --- !u!114 &4644212239799149002
 MonoBehaviour:
   m_ObjectHideFlags: 0
