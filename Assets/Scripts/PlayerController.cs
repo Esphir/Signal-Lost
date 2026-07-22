@@ -10,7 +10,6 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Movement")]
     public float moveSpeed = 7f;
-    public float sprintSpeed = 11f;
     [Tooltip("Time in seconds to reach full speed from rest. Lower = snappier.")]
     public float accelerationTime = 0.12f;
     [Tooltip("Time in seconds to stop from full speed. Lower = snappier.")]
@@ -40,7 +39,6 @@ public class PlayerController : MonoBehaviour
 
     public bool IsGrounded { get; private set; }
     public bool IsMoving { get; private set; }
-    public bool IsSprinting { get; private set; }
     public bool IsRolling => _dodge != null && _dodge.IsRolling;
     public float CurrentSpeed { get; private set; }
     public Vector3 Velocity => _velocity;
@@ -140,7 +138,6 @@ public class PlayerController : MonoBehaviour
         if (IsRolling) return;
 
         Vector2 move = _input.MoveInput;
-        IsSprinting = _input.SprintHeld && move.magnitude > 0.1f;
 
         Vector3 input = new Vector3(move.x, 0f, move.y);
         if (input.sqrMagnitude > 1f) input.Normalize();
@@ -150,7 +147,7 @@ public class PlayerController : MonoBehaviour
         Vector3 camRight = Quaternion.Euler(0f, camYaw, 0f) * Vector3.right;
         Vector3 wishDir = camForward * input.z + camRight * input.x;
 
-        float targetSpeed = RunManager.QueryStat(StatType.MoveSpeed, IsSprinting ? sprintSpeed : moveSpeed);
+        float targetSpeed = RunManager.QueryStat(StatType.MoveSpeed, moveSpeed);
         float smoothTime = wishDir.sqrMagnitude > 0f ? accelerationTime : decelerationTime;
 
         _moveVelocity = Vector3.SmoothDamp(_moveVelocity, wishDir * targetSpeed, ref _moveVelocityRef, smoothTime);

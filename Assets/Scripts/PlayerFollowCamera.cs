@@ -1,4 +1,4 @@
-// Third-person Cinemachine camera rig: look, zoom, lock-on and shoulder offset.
+// Third-person Cinemachine camera rig: look, zoom, framing, lock-on and shoulder offset.
 using UnityEngine;
 using Unity.Cinemachine;
 
@@ -17,8 +17,8 @@ public class PlayerFollowCamera : MonoBehaviour
     public float gamepadSensitivity = 220f;
 
     [Header("Smoothing")]
-    [Tooltip("How quickly the camera catches up to mouse input. Lower = more lag/weight, higher = snappier. 15–25 is a good range.")]
-    public float cameraSmoothing = 20f;
+    [Tooltip("How quickly the camera catches up to look input. Lower = heavier and calmer, higher = snappier. 8–20 is a good range; drop it if the camera feels dizzying.")]
+    public float cameraSmoothing = 12f;
 
     [Header("Pitch Limits")]
     [Tooltip("Lowest the camera can look (negative = below horizon). -5 prevents ground clipping.")]
@@ -26,14 +26,23 @@ public class PlayerFollowCamera : MonoBehaviour
     [Tooltip("Highest the camera can look. 75 stops it flipping over the top of the player.")]
     public float maxPitch = 75f;
 
-    [Header("Zoom")]
-    public float zoomSpeed = 2f;
+    [Header("Distance")]
+    [Tooltip("Where the camera starts, and the furthest it may ever sit. Zooming can only pull closer than this, never further out.")]
+    public float cameraDistance = 7.725f;
+
+    [Tooltip("Closest the player may zoom in.")]
     public float minRadius = 2f;
-    public float maxRadius = 10f;
+
+    [Tooltip("Distance changed per scroll notch.")]
+    public float zoomSpeed = 2f;
 
     [Header("Lock-On")]
     [Tooltip("How fast the camera swings to frame a locked target.")]
     public float lockOnLerpSpeed = 6f;
+
+    [Header("Framing")]
+    [Tooltip("Raises the camera's aim so the player sits lower in frame and more of what's ahead — enemies included — is visible. 0 centres the player.")]
+    public float aimHeightOffset = 0.5f;
 
     [Header("Shoulder")]
     [Tooltip("How far to the side the camera sits. The settings menu picks the sign: right = +, left = -.")]
@@ -66,6 +75,8 @@ public class PlayerFollowCamera : MonoBehaviour
         if (_orbital == null)
             Debug.LogWarning("PlayerFollowCamera: No CinemachineOrbitalFollow found.");
 
+        if (_axisInput != null) _axisInput.enabled = false;
+
         if (vcam != null)
         {
             _cameraOffset = vcam.GetComponent<CinemachineCameraOffset>();
@@ -82,6 +93,7 @@ public class PlayerFollowCamera : MonoBehaviour
 
         if (_orbital != null)
         {
+            _orbital.Radius = cameraDistance;
             _targetYaw   = _orbital.HorizontalAxis.Value;
             _targetPitch = _orbital.VerticalAxis.Value;
         }
@@ -95,9 +107,6 @@ public class PlayerFollowCamera : MonoBehaviour
         UpdateShoulder();
 
         bool frozen = Signal.UI.UiModalState.AnyOpen || Time.timeScale <= 0f;
-
-        if (_axisInput != null && _axisInput.enabled == frozen) _axisInput.enabled = !frozen;
-
         if (frozen || _orbital == null || _input == null) return;
 
         if (_lockOnActive)
@@ -108,12 +117,26 @@ public class PlayerFollowCamera : MonoBehaviour
         HandleZoom();
     }
 
+    private void HandleZoom()
+    {
+        float scroll = _input.ScrollInput;
+        if (Mathf.Abs(scroll) < 0.01f) return;
+
+        _orbital.Radius = Mathf.Clamp(
+            _orbital.Radius - scroll * zoomSpeed,
+            Mathf.Min(minRadius, cameraDistance), cameraDistance);
+    }
+
     private void UpdateShoulder()
     {
         if (_cameraOffset == null) return;
 
         float target = shoulderOffset * Signal.UI.SettingsStore.CameraSide;
-        if (Mathf.Approximately(_currentShoulder, target)) return;
+        if (Mathf.Approximately(_currentShoulder, target))
+        {
+            if (!Mathf.Approximately(_cameraOffset.Offset.y, aimHeightOffset)) ApplyShoulderOffset();
+            return;
+        }
 
         if (shoulderSwitchSpeed <= 0f)
         {
@@ -134,6 +157,7 @@ public class PlayerFollowCamera : MonoBehaviour
         if (_cameraOffset == null) return;
         Vector3 offset = _cameraOffset.Offset;
         offset.x = _currentShoulder;
+        offset.y = aimHeightOffset;
         _cameraOffset.Offset = offset;
     }
 
@@ -174,16 +198,6 @@ public class PlayerFollowCamera : MonoBehaviour
 
         _orbital.HorizontalAxis.Value = _targetYaw;
         _orbital.VerticalAxis.Value   = _targetPitch;
-    }
-
-    private void HandleZoom()
-    {
-        float scroll = _input.ScrollInput;
-        if (Mathf.Abs(scroll) < 0.01f) return;
-
-        _orbital.Radius = Mathf.Clamp(
-            _orbital.Radius - scroll * zoomSpeed,
-            minRadius, maxRadius);
     }
 
     public void SetLockOnTarget(Vector3 worldPoint)

@@ -16,7 +16,6 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
 
     public bool    JumpHeld              { get; private set; }
     public bool    JumpPressedThisFrame  { get; private set; }
-    public bool    SprintHeld            { get; private set; }
 
     public bool    DodgePressedThisFrame    { get; private set; }
     public bool    AttackPressed            { get; private set; }
@@ -29,7 +28,6 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
     public bool    LockOnPressedThisFrame   { get; private set; }
 
     private InputAction _jumpAction;
-    private InputAction _sprintAction;
     private InputAction _heavyAttackAction;
     private InputAction _lookAction;
 
@@ -40,7 +38,6 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
         InputBindingStorage.Load(playerInput.actions);
 
         _jumpAction        = playerInput.actions.FindAction("Jump");
-        _sprintAction      = playerInput.actions.FindAction("Sprint");
         _heavyAttackAction = playerInput.actions.FindAction("HeavyAttack");
         _lookAction        = playerInput.actions.FindAction("Look");
 
@@ -51,7 +48,6 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
     private void Update()
     {
         if (_jumpAction != null)        JumpHeld        = _jumpAction.IsPressed();
-        if (_sprintAction != null)      SprintHeld      = _sprintAction.IsPressed();
         if (_heavyAttackAction != null) HeavyAttackHeld = _heavyAttackAction.IsPressed();
 
         ReadLook();
@@ -91,9 +87,6 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
         JumpHeld = value.isPressed;
         if (value.isPressed) JumpPressedThisFrame = true;
     }
-
-    public void OnSprint(InputValue value)
-        => SprintHeld = value.isPressed;
 
     public void OnDodge(InputValue value)
     {

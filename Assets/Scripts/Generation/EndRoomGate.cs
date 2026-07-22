@@ -150,25 +150,12 @@ namespace Signal.Generation
                 ? death
                 : (_doorPoint != null ? _doorPoint.position : transform.position);
 
-            spot = GroundBelow(spot);
+            spot = Signal.Combat.GroundProbe.Below(spot);
 
             GameObject key = Instantiate(keyPrefab, spot + Vector3.up * 0.8f, Quaternion.identity, transform);
             if (key.GetComponent<KeySpinner>() == null) key.AddComponent<KeySpinner>();
             key.AddComponent<KeyPickup>().Configure(OnKeyCollected);
         }
 
-        private static Vector3 GroundBelow(Vector3 point)
-        {
-            RaycastHit[] hits = Physics.RaycastAll(point + Vector3.up * 0.5f, Vector3.down, 60f,
-                                                   ~0, QueryTriggerInteraction.Ignore);
-            System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-
-            foreach (RaycastHit hit in hits)
-            {
-                if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("Enemy")) continue;
-                return hit.point;
-            }
-            return point;
-        }
     }
 }

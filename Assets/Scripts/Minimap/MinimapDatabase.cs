@@ -21,6 +21,8 @@ namespace Signal.Minimap
         [Header("Tile Overlays")]
         [Tooltip("Frame drawn on every visible tile. Optional.")]
         public Sprite border;
+        [Tooltip("Colour of that frame.")]
+        public Color borderColor = Color.black;
         [Tooltip("Extra highlight drawn only on the current room (glow/ring). Optional.")]
         public Sprite currentIndicator;
 

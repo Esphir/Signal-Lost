@@ -6,6 +6,8 @@ using UnityEngine.UI;
 
 namespace Signal.Minimap
 {
+    public enum MinimapCorner { TopLeft, TopRight, BottomLeft, BottomRight }
+
     [DisallowMultipleComponent]
     public sealed class MinimapManager : MonoBehaviour
     {
@@ -24,8 +26,11 @@ namespace Signal.Minimap
         [SerializeField, Min(1f)] private float iconSize = 20f;
         [SerializeField, Min(0f)] private float connectionWidth = 5f;
         [SerializeField, Min(0f)] private float padding = 12f;
-        [SerializeField, Min(0.1f)] private float scale = 1f;
+        [SerializeField, Min(0.1f), Tooltip("Overall size of the map widget.")]
+        private float mapScale = 1.25f;
         [SerializeField, Range(0f, 1f)] private float opacity = 1f;
+        [SerializeField, Tooltip("Screen corner the map sits in. Applied on rebuild, so it also moves a map placed elsewhere.")]
+        private MinimapCorner corner = MinimapCorner.BottomRight;
 
         [Header("Behaviour")]
         [SerializeField] private bool revealEntireMap;
@@ -36,6 +41,10 @@ namespace Signal.Minimap
 
         [Header("Player")]
         [SerializeField] private string playerTag = "Player";
+        [SerializeField, Tooltip("Show an arrow on the current room pointing where the player is looking.")]
+        private bool showFacingArrow = true;
+        [SerializeField, Min(4f)] private float arrowSize = 16f;
+        [SerializeField] private Color arrowColor = Color.white;
 
         public static MinimapManager Instance { get; private set; }
 
@@ -46,6 +55,8 @@ namespace Signal.Minimap
         private MinimapRoom _current;
         private Transform _player;
         private bool _lastReveal;
+        private RectTransform _arrow;
+        private static Sprite _arrowSprite;
 
         private struct Connection { public Image Image; public MinimapRoom A, B; }
 
@@ -86,6 +97,8 @@ namespace Signal.Minimap
 
             MinimapRoom here = FindRoomAt(PlayerPosition());
             if (here != null && here != _current) EnterRoom(here);
+
+            UpdateFacingArrow();
         }
 
         public void Rebuild()
@@ -243,6 +256,7 @@ namespace Signal.Minimap
         {
             for (int i = content.childCount - 1; i >= 0; i--)
                 Destroy(content.GetChild(i).gameObject);
+            _arrow = null;
             _rooms.Clear();
             _byDefinition.Clear();
             _connections.Clear();
@@ -310,11 +324,97 @@ namespace Signal.Minimap
 
         private void ApplyContainerSettings()
         {
-            if (container != null)
+            if (container == null) return;
+
+            container.localScale = Vector3.one * mapScale;
+
+            Vector2 anchor = corner switch
             {
-                container.localScale = Vector3.one * scale;
-                container.anchoredPosition = new Vector2(-padding, -padding);
+                MinimapCorner.TopLeft => new Vector2(0f, 1f),
+                MinimapCorner.TopRight => new Vector2(1f, 1f),
+                MinimapCorner.BottomLeft => new Vector2(0f, 0f),
+                _ => new Vector2(1f, 0f),
+            };
+
+            container.anchorMin = container.anchorMax = container.pivot = anchor;
+            container.anchoredPosition = new Vector2(anchor.x > 0.5f ? -padding : padding,
+                                                     anchor.y > 0.5f ? -padding : padding);
+        }
+
+        private void UpdateFacingArrow()
+        {
+            if (!showFacingArrow || _current == null) return;
+
+            if (_arrow == null)
+            {
+                Image image = new GameObject("FacingArrow", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+                image.transform.SetParent(content, false);
+                image.sprite = ArrowSprite();
+                image.color = arrowColor;
+                image.raycastTarget = false;
+                _arrow = image.rectTransform;
+                _arrow.anchorMin = _arrow.anchorMax = _arrow.pivot = new Vector2(0.5f, 0.5f);
             }
+
+            _arrow.SetAsLastSibling();
+            _arrow.sizeDelta = Vector2.one * arrowSize;
+            _arrow.anchoredPosition = (Vector2)_current.GridPosition * roomSpacing;
+            _arrow.localRotation = Quaternion.Euler(0f, 0f, -LookYaw());
+        }
+
+        private float LookYaw()
+        {
+            Camera view = Camera.main;
+            if (view != null) return view.transform.eulerAngles.y;
+            return _player != null ? _player.eulerAngles.y : 0f;
+        }
+
+        private static Sprite ArrowSprite()
+        {
+            if (_arrowSprite != null) return _arrowSprite;
+
+            const int size = 48;
+            const float margin = 6f;
+            const float outline = 3f;
+
+            float centre = (size - 1) * 0.5f;
+            float apexY = size - 1 - margin;
+            float baseY = margin;
+            float halfBase = centre - margin;
+
+            var solid = new bool[size, size];
+            for (int y = 0; y < size; y++)
+            {
+                if (y < baseY || y > apexY) continue;
+                float halfWidth = halfBase * (apexY - y) / (apexY - baseY);
+                for (int x = 0; x < size; x++)
+                    solid[x, y] = Mathf.Abs(x - centre) <= halfWidth;
+            }
+
+            var texture = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear };
+            for (int y = 0; y < size; y++)
+            for (int x = 0; x < size; x++)
+                texture.SetPixel(x, y, solid[x, y] ? Color.white
+                                     : NearSolid(solid, x, y, outline) ? Color.black : Color.clear);
+            texture.Apply();
+
+            _arrowSprite = Sprite.Create(texture, new Rect(0f, 0f, size, size), new Vector2(0.5f, 0.5f));
+            return _arrowSprite;
+        }
+
+        private static bool NearSolid(bool[,] solid, int x, int y, float distance)
+        {
+            int reach = Mathf.CeilToInt(distance);
+            int size = solid.GetLength(0);
+
+            for (int dy = -reach; dy <= reach; dy++)
+            for (int dx = -reach; dx <= reach; dx++)
+            {
+                int nx = x + dx, ny = y + dy;
+                if (nx < 0 || ny < 0 || nx >= size || ny >= size) continue;
+                if (solid[nx, ny] && dx * dx + dy * dy <= distance * distance) return true;
+            }
+            return false;
         }
     }
 }

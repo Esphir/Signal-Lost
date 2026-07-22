@@ -34,9 +34,9 @@ namespace Signal.MinimapEditor
                 typeof(RectTransform), typeof(RectMask2D), typeof(MinimapManager));
             var crt = container.GetComponent<RectTransform>();
             crt.SetParent(canvasGo.transform, false);
-            crt.anchorMin = crt.anchorMax = crt.pivot = new Vector2(1f, 1f);
+            crt.anchorMin = crt.anchorMax = crt.pivot = new Vector2(1f, 0f);
             crt.sizeDelta = new Vector2(300f, 300f);
-            crt.anchoredPosition = new Vector2(-12f, -12f);
+            crt.anchoredPosition = new Vector2(-12f, 12f);
 
             var content = new GameObject("Content", typeof(RectTransform));
             var conRt = content.GetComponent<RectTransform>();

@@ -22,7 +22,8 @@ MonoBehaviour:
   deadEndCaps: []
   checkpointFrequency: 4
   maxConsecutiveCombatRooms: 2
-  maxCombatRooms: 4
+  maxCombatRooms: 3
+  bossFloorInterval: 5
   minEndDistanceFromStart: 2
   separatorType: 5
   hallwaySeparationChance: 60

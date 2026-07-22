@@ -104,7 +104,9 @@ namespace Signal.Minimap
         {
             float a = _opacity * _reveal;
             _background.color = new Color(_brightness, _brightness, _brightness, a);
-            _border.color = new Color(1f, 1f, 1f, a * (_targetScale > 1f ? 1f : 0.5f));
+            Color border = _db != null ? _db.borderColor : Color.black;
+            _border.color = new Color(border.r, border.g, border.b,
+                                      border.a * a * (_targetScale > 1f ? 1f : 0.5f));
             _indicator.color = new Color(1f, 1f, 1f, a);
             if (_iconDef != null)
                 _icon.color = new Color(_iconDef.tint.r, _iconDef.tint.g, _iconDef.tint.b,

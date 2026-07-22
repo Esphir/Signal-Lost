@@ -59,9 +59,10 @@ namespace Signal.Combat.Enemies
             Vector3 start = transform.position;
 
             Vector3 landing = new Vector3(targetPoint.x, start.y, targetPoint.z);
+            Vector3 ground = GroundProbe.Below(landing);
             Vector3 apex = landing + Vector3.up * config.jumpHeight;
 
-            ShowTelegraph(landing);
+            ShowTelegraph(ground);
 
             if (config.preJumpDelay > 0f) yield return new WaitForSeconds(config.preJumpDelay);
 
@@ -83,8 +84,8 @@ namespace Signal.Combat.Enemies
             transform.position = landing;
             _rb.isKinematic = wasKinematic;
 
-            OnImpact(landing);
-            yield return ExpandShockwave(landing);
+            OnImpact(ground);
+            yield return ExpandShockwave(ground);
 
             IsExecuting = false;
         }

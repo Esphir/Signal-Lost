@@ -633,6 +633,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5322899584460030932, guid: 51f8352724facb2439a3a74ce94cdc5b, type: 3}
+      propertyPath: rollCooldown
+      value: 0.3
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1127,13 +1131,17 @@ MonoBehaviour:
   iconSize: 14
   connectionWidth: 4
   padding: 12
-  scale: 1
+  mapScale: 1.25
   opacity: 1
+  corner: 3
   revealEntireMap: 0
   animateDiscoveries: 1
   currentRoomPulse: 1
   recenterOnCurrent: 1
   playerTag: Player
+  showFacingArrow: 1
+  arrowSize: 16
+  arrowColor: {r: 1, g: 0.95, b: 0.4, a: 1}
 --- !u!114 &2076015816
 MonoBehaviour:
   m_ObjectHideFlags: 0
