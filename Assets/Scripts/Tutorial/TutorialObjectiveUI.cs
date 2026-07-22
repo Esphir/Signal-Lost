@@ -1,3 +1,4 @@
+// On-screen checklist for the active tutorial step.
 using System.Collections;
 using System.Collections.Generic;
 using Signal.UI;
@@ -6,14 +7,6 @@ using UnityEngine.UI;
 
 namespace Signal.Tutorial
 {
-    /// <summary>
-    /// On-screen checklist for the active tutorial step. It is deliberately dumb: it renders whatever
-    /// <see cref="TutorialStep.Objectives"/> the step exposes and refreshes a row when that step
-    /// raises <see cref="TutorialStep.ObjectiveChanged"/> — no polling, and no knowledge of what any
-    /// objective means. A new step with any number of objectives needs no change here.
-    ///
-    /// Completed rows tick, recolor and fade but stay listed until the whole step ends.
-    /// </summary>
     public class TutorialObjectiveUI : MonoBehaviour
     {
         [Header("Glyphs")]
@@ -49,7 +42,6 @@ namespace Signal.Tutorial
 
         private void OnDestroy() => Unsubscribe();
 
-        /// <summary>Renders <paramref name="step"/>'s checklist and follows it until Hide/another Show.</summary>
         public void Show(TutorialStep step)
         {
             Unsubscribe();
@@ -64,7 +56,6 @@ namespace Signal.Tutorial
 
             _step.ObjectiveChanged += OnObjectiveChanged;
 
-            // A step with no objectives (or one that completed instantly) shows nothing.
             _panel.SetActive(_rows.Count > 0);
         }
 
@@ -81,7 +72,6 @@ namespace Signal.Tutorial
             _step = null;
         }
 
-        // The only update path — driven by the step's event, never by polling.
         private void OnObjectiveChanged(TutorialObjective objective)
         {
             if (!_rows.TryGetValue(objective, out Text row)) return;
@@ -112,7 +102,6 @@ namespace Signal.Tutorial
             row.fontStyle = objective.IsComplete ? FontStyle.Italic : FontStyle.Normal;
         }
 
-        // Small "just ticked" flourish. Unscaled so it still plays if something paused the game.
         private IEnumerator Pop(RectTransform rect)
         {
             float half = completePopDuration * 0.5f;
@@ -139,11 +128,8 @@ namespace Signal.Tutorial
             _rows.Clear();
         }
 
-        // ── UI construction ───────────────────────────────────────────────────
-
         private void Build()
         {
-            // Below the prompt canvas (40) so a paused prompt always reads on top.
             Canvas canvas = UiBuilder.CreateOverlayCanvas("TutorialObjectiveCanvas", 30);
             _panel = canvas.gameObject;
 
@@ -152,13 +138,12 @@ namespace Signal.Tutorial
             bg.raycastTarget = false;
 
             RectTransform r = bg.rectTransform;
-            r.anchorMin = new Vector2(1f, 1f);      // top-right HUD corner
+            r.anchorMin = new Vector2(1f, 1f);
             r.anchorMax = new Vector2(1f, 1f);
             r.pivot = new Vector2(1f, 1f);
             r.anchoredPosition = new Vector2(-40f, -40f);
             r.sizeDelta = new Vector2(460f, 190f);
 
-            // Height follows the number of rows, so any objective count fits.
             var fitter = bg.gameObject.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
@@ -174,7 +159,7 @@ namespace Signal.Tutorial
             _titleText = UiBuilder.CreateText(bg.transform, "Title", "", 24, FontStyle.Bold, TextAnchor.MiddleLeft);
             _titleText.gameObject.AddComponent<LayoutElement>().minHeight = 32f;
 
-            _list = (RectTransform)bg.transform; // rows are laid out by the same vertical group
+            _list = (RectTransform)bg.transform;
         }
     }
 }

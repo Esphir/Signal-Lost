@@ -1,3 +1,4 @@
+// Generic, inspector-configurable health component.
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -6,11 +7,6 @@ using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Health
 {
-    /// <summary>
-    /// Generic, inspector-configurable health component. Works for the player or any enemy —
-    /// composition over inheritance: attach this plus a knockback/stun component as needed rather
-    /// than deriving from a shared "Combatant" base class.
-    /// </summary>
     public class HealthComponent : MonoBehaviour, IHealth, IDamageable
     {
         [Header("Health")]
@@ -30,9 +26,6 @@ namespace Signal.Combat.Health
 
         private IInvulnerabilityGate _invulnerabilityGate;
 
-        // Reusable buffer for the optional IDamageModifier pipeline (shields, damage reduction, …).
-        // Queried per hit rather than cached because buffs add/remove modifiers at runtime;
-        // the List overload of GetComponents does not allocate.
         private readonly List<IDamageModifier> _damageModifiers = new List<IDamageModifier>();
         private static readonly Comparison<IDamageModifier> ByPriority =
             (a, b) => a.Priority.CompareTo(b.Priority);
@@ -67,11 +60,6 @@ namespace Signal.Combat.Health
             if (CurrentHealth <= 0f) Die();
         }
 
-        /// <summary>
-        /// Runs the incoming amount through every IDamageModifier on this GameObject in ascending
-        /// Priority (percent reductions before flat shield absorbs). Buffs add/remove these
-        /// components freely; with none present the amount passes through untouched.
-        /// </summary>
         private float ApplyDamageModifiers(in DamageInfo damageInfo)
         {
             GetComponents(_damageModifiers);
@@ -84,11 +72,6 @@ namespace Signal.Combat.Health
             return amount;
         }
 
-        /// <summary>
-        /// SendMessage-compatible overload so legacy float-based callers (e.g. LobProjectile's
-        /// SendMessage("TakeDamage", damage)) route into the same DamageInfo path instead of
-        /// silently finding no receiver.
-        /// </summary>
         public void TakeDamage(float amount) => TakeDamage(new DamageInfo(amount, null));
 
         public void Heal(float amount)
@@ -100,20 +83,12 @@ namespace Signal.Combat.Health
             HealthChanged?.Invoke(CurrentHealth, maxHealth);
         }
 
-        /// <summary>
-        /// Sets current health directly, clamped into range — for save/restore. Doesn't run the death
-        /// path (a restored run is alive by definition) nor the damage/heal events; just notifies UI.
-        /// </summary>
         public void SetCurrentHealth(float value)
         {
             CurrentHealth = Mathf.Clamp(value, 0f, maxHealth);
             HealthChanged?.Invoke(CurrentHealth, maxHealth);
         }
 
-        /// <summary>
-        /// Changes max health at runtime (run upgrades, level scaling). Increases can optionally
-        /// heal by the same amount; current health is always clamped into the new range.
-        /// </summary>
         public void SetMaxHealth(float newMax, bool healByIncrease)
         {
             newMax = Mathf.Max(1f, newMax);
@@ -129,18 +104,6 @@ namespace Signal.Combat.Health
             HealthChanged?.Invoke(CurrentHealth, maxHealth);
         }
 
-        /// <summary>
-        /// Kills this object outright through the normal death path — the very same <see cref="Die"/>
-        /// that a fatal <see cref="TakeDamage(DamageInfo)"/> reaches. Every Died listener
-        /// (DeathHandler, LootDropper and its kill reporting, health bars, VFX) therefore runs exactly
-        /// as it would for any other kill; nothing here destroys or pools the object itself.
-        ///
-        /// Deliberately skips the damage-modifier pipeline and the invulnerability gate: this is for
-        /// instant-death hazards (sewage, pits, kill volumes), which a shield or an i-frame window
-        /// should not let you survive. Use <see cref="TakeDamage(DamageInfo)"/> for anything that is
-        /// conceptually damage.
-        /// </summary>
-        /// <param name="source">Optional instigator, for the combat log only.</param>
         public void Kill(GameObject source = null)
         {
             if (IsDead) return;

@@ -1,3 +1,4 @@
+// Main menu screen: title + Start / Settings / Credits / Quit, built from code so restyling later is a single-file change.
 using Signal.Generation;
 using Signal.Run;
 using Signal.Tutorial;
@@ -8,10 +9,6 @@ using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Main menu screen: title + Start / Settings / Credits / Quit, built from code so restyling later
-    /// is a single-file change. Lives in the Main Menu scene.
-    /// </summary>
     public class MainMenuUI : MonoBehaviour
     {
         [SerializeField] private string gameTitle = "SIGNAL LOST";
@@ -63,7 +60,6 @@ namespace Signal.UI
             AddButton(buttons.transform, "Credits", CreditsUI.Show);
             AddButton(buttons.transform, "Quit", OnQuit);
 
-            // Focus Start so a controller has somewhere to navigate from the moment the game opens.
             EventSystem.current?.SetSelectedGameObject(start.gameObject);
         }
 
@@ -77,8 +73,6 @@ namespace Signal.UI
 
         private void OnStart()
         {
-            // A saved run resumes straight into the level with its exact layout — no tutorial. Otherwise
-            // the tutorial plays only until it's been completed once; after that, Play goes to the level.
             RunSaveData save = RunSaveSystem.HasSave ? RunSaveSystem.Load() : null;
             if (save != null)
             {

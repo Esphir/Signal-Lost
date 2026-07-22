@@ -1,20 +1,12 @@
+// The credits screen: everything in the game that someone else made.
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// The credits screen: everything in the game that someone else made. Self-contained and built from
-    /// code like the project's other screens, so the main menu only has to ask for it — no scene wiring.
-    ///
-    /// <see cref="Sections"/> below is the single place to edit. Add an entry there whenever an asset is
-    /// imported, because nothing here is discovered automatically: a credit that isn't written down is a
-    /// credit that quietly stops being true the next time the project grows.
-    /// </summary>
     public sealed class CreditsUI : MonoBehaviour
     {
-        /// <summary>A credited group and the work used from it.</summary>
         private readonly struct Section
         {
             public readonly string Heading;
@@ -53,7 +45,6 @@ namespace Signal.UI
 
         private GameObject _restoreSelection;
 
-        /// <summary>Builds and shows the credits. No-op if they're already up.</summary>
         public static void Show()
         {
             if (_open != null) return;
@@ -72,7 +63,7 @@ namespace Signal.UI
             _restoreSelection = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
 
             Canvas canvas = UiBuilder.CreateOverlayCanvas("CreditsCanvas", 30);
-            canvas.transform.SetParent(transform, false); // destroying this object takes the overlay with it
+            canvas.transform.SetParent(transform, false);
 
             Image dim = UiBuilder.NewChild<Image>(canvas.transform, "Dim");
             dim.color = DimColor;
@@ -90,8 +81,8 @@ namespace Signal.UI
             scrollRect.anchorMin = new Vector2(0.5f, 0f);
             scrollRect.anchorMax = new Vector2(0.5f, 1f);
             scrollRect.pivot = new Vector2(0.5f, 0.5f);
-            scrollRect.offsetMin = new Vector2(-450f, 140f); // room for the Back button underneath
-            scrollRect.offsetMax = new Vector2(450f, -180f); // and the title above
+            scrollRect.offsetMin = new Vector2(-450f, 140f);
+            scrollRect.offsetMax = new Vector2(450f, -180f);
 
             foreach (Section section in Sections) AddSection(content, section);
 
@@ -104,7 +95,7 @@ namespace Signal.UI
             backRect.sizeDelta = new Vector2(300f, 60f);
             back.onClick.AddListener(Close);
 
-            EventSystem.current?.SetSelectedGameObject(back.gameObject); // controller focus
+            EventSystem.current?.SetSelectedGameObject(back.gameObject);
         }
 
         private void AddSection(RectTransform content, Section section)
@@ -122,14 +113,11 @@ namespace Signal.UI
                 line.gameObject.AddComponent<LayoutElement>().preferredHeight = 30f;
             }
 
-            // A blank line between groups, so the list reads as sections rather than one long column.
             UiBuilder.NewRect(content, "Spacer").gameObject.AddComponent<LayoutElement>().preferredHeight = 22f;
         }
 
         private void Close()
         {
-            // Hand focus back where it came from, so a controller returns to the Credits button rather
-            // than to whatever the menu happens to list first.
             if (_restoreSelection != null && _restoreSelection.activeInHierarchy)
                 EventSystem.current?.SetSelectedGameObject(_restoreSelection);
 

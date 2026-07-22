@@ -1,12 +1,8 @@
+// Aggregates StatModifiers and resolves final values as (base + Σflat) * (1 + Σpercent/100).
 using System.Collections.Generic;
 
 namespace Signal.Stats
 {
-    /// <summary>
-    /// Aggregates <see cref="StatModifier"/>s and resolves final values as
-    /// (base + Σflat) * (1 + Σpercent/100). Base values stay where they already live
-    /// (configs, components); this only layers on top.
-    /// </summary>
     public sealed class StatSheet
     {
         private struct Totals

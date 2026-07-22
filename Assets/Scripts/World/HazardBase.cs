@@ -1,24 +1,12 @@
+// Shared behavior for damage/respawn hazards (sewage, lava, spikes, acid…).
 using Signal.Combat.Data;
 using Signal.Combat.Health;
 using UnityEngine;
 
 namespace Signal.World
 {
-    /// <summary>
-    /// Shared behavior for damage/respawn hazards (sewage, lava, spikes, acid…). On player contact it
-    /// asks the <see cref="RespawnManager"/> to respawn, then deals its damage and applies any status
-    /// effects. On enemy contact it kills the enemy through its normal death flow. Each hazard
-    /// chooses who it affects via <see cref="affectsPlayer"/> / <see cref="affectsEnemies"/>, so a
-    /// subclass only needs to set its serialized values and, optionally, override
-    /// <see cref="ApplyStatusEffects"/> or <see cref="AffectEnemy"/> — no hazard logic is duplicated.
-    /// </summary>
     public abstract class HazardBase : MonoBehaviour
     {
-        /// <summary>
-        /// Raised whenever this hazard reacts to something entering it — player or enemy — with the
-        /// victim and the contact point. A notification only: hazards stay unaware of audio and VFX,
-        /// and a new hazard type inherits this hook for free.
-        /// </summary>
         public event System.Action<GameObject, Vector3> Triggered;
 
         [Header("Affects")]
@@ -58,7 +46,6 @@ namespace Signal.World
         [SerializeField]
         private Vector3 triggerSize = new Vector3(8f, 3f, 8f);
 
-        /// <summary>Effective damage state after the per-hazard and scene-level toggles.</summary>
         protected bool DealsDamage => dealDamage && LevelSettings.HazardsDealDamage && damageAmount > 0f;
 
         protected virtual void Awake() => EnsureTrigger();
@@ -85,21 +72,12 @@ namespace Signal.World
             if (affectsEnemies) TryAffectEnemy(other);
         }
 
-        /// <summary>
-        /// Resolves the collider to its owning combatant and, if it's an enemy, hands it to
-        /// <see cref="AffectEnemy"/>. Nothing here knows about specific enemy types: any object
-        /// tagged <see cref="enemyTag"/> with a <see cref="HealthComponent"/> qualifies, so future
-        /// enemies work with no code change.
-        /// </summary>
         private void TryAffectEnemy(Collider other)
         {
-            // Enemy colliders frequently sit on child objects (the Lobber's barrel, hitboxes), so the
-            // tag and health live on an ancestor rather than on the collider that entered.
             HealthComponent health = other.GetComponentInParent<HealthComponent>();
             if (health == null || health.IsDead) return;
-            if (!health.CompareTag(enemyTag)) return; // never the player: that path returned above
+            if (!health.CompareTag(enemyTag)) return;
 
-            // The splash reads as "something fell in", so it plays for enemies exactly as for the player.
             if (splashVfxPrefab != null)
                 VfxPool.Play(splashVfxPrefab, health.transform.position, Quaternion.identity);
 
@@ -107,13 +85,6 @@ namespace Signal.World
             AffectEnemy(health);
         }
 
-        /// <summary>
-        /// What this hazard does to an enemy. The default is instant death through the enemy's own
-        /// death flow — <see cref="HealthComponent.Kill"/> raises the same Died event a normal kill
-        /// does, so DeathHandler, loot drops, kill statistics and VFX all behave identically and the
-        /// GameObject is never destroyed from here. Override for a hazard that should merely damage
-        /// or slow enemies instead.
-        /// </summary>
         protected virtual void AffectEnemy(HealthComponent enemyHealth) => enemyHealth.Kill(gameObject);
 
         private void TriggerHazard(GameObject player)
@@ -125,10 +96,8 @@ namespace Signal.World
                 return;
             }
 
-            // Bail before the splash so it plays exactly once per trigger (not once per overlap frame).
             if (!manager.CanRespawn) return;
 
-            // Splash stays at the contact point; the RespawnManager owns the fade/teleport that follow.
             if (splashVfxPrefab != null)
                 VfxPool.Play(splashVfxPrefab, player.transform.position, Quaternion.identity);
 
@@ -148,10 +117,8 @@ namespace Signal.World
             ApplyStatusEffects(player);
         }
 
-        /// <summary>Runs the moment the hazard fires (before respawn). Override for wind-up FX/SFX.</summary>
         protected virtual void OnHazardTriggered(GameObject player) { }
 
-        /// <summary>Runs after the player has respawned. Override to apply status effects (slow, poison…).</summary>
         protected virtual void ApplyStatusEffects(GameObject player) { }
     }
 }

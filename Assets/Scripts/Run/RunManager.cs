@@ -1,3 +1,4 @@
+// Snapshot of a run's tallies.
 using System;
 using Signal.Stats;
 using UnityEngine;
@@ -12,7 +13,6 @@ namespace Signal.Run
         Victory,
     }
 
-    /// <summary>Snapshot of a run's tallies. A value type, so a copy handed to the run-end UI survives the run being cleared.</summary>
     public struct RunStats
     {
         public int EnemiesKilled;
@@ -24,12 +24,6 @@ namespace Signal.Run
         public ItemRarity HighestRarity;
     }
 
-    /// <summary>
-    /// Owns the current run: acquired upgrades, their aggregated stat modifiers, and per-run
-    /// statistics. Survives scene loads (DontDestroyOnLoad) and is created on first access.
-    /// Knows nothing about player, loot, or UI components — they read stats via <see cref="QueryStat"/>
-    /// / <see cref="Statistics"/>, report tallies through the Report* methods, and react to events.
-    /// </summary>
     public sealed class RunManager : MonoBehaviour
     {
         private const string MainMenuSceneName = "Main Menu";
@@ -52,18 +46,14 @@ namespace Signal.Run
             }
         }
 
-        /// <summary>Final value of a stat: base + current run modifiers. Passes the base through when no run exists.</summary>
         public static float QueryStat(StatType stat, float baseValue)
             => _instance == null ? baseValue : _instance.Data.Stats.GetValue(stat, baseValue);
 
         public RunData Data { get; } = new RunData();
         public bool RunActive { get; private set; }
 
-        /// <summary>Which level of the current run the player is on — 1 at the start, +1 per Next Run.
-        /// Reset by <see cref="StartRun"/>, carried by the save so a resumed run shows the right number.</summary>
         public int CurrentRun { get; private set; } = 1;
 
-        /// <summary>Live statistics for the current run (duration is filled to the moment of access).</summary>
         public RunStats Statistics
         {
             get
@@ -74,16 +64,12 @@ namespace Signal.Run
             }
         }
 
-        /// <summary>Raised whenever run stats change (upgrade gained, run started/ended).</summary>
         public event Action StatsChanged;
 
-        /// <summary>Raised when the player picks an upgrade.</summary>
         public event Action<RunUpgrade> UpgradeAcquired;
 
-        /// <summary>Raised when the player walks over a loot drop and collects it.</summary>
         public event Action<ItemRarity> LootCollected;
 
-        /// <summary>Raised when a run ends, with a snapshot of its statistics and the reason.</summary>
         public event Action<RunStats, RunEndReason> RunEnded;
 
         private RunStats _stats;
@@ -119,7 +105,6 @@ namespace Signal.Run
             StatsChanged?.Invoke();
         }
 
-        /// <summary>Advances to the next level of the run (the End room's Next Run). Bumps the counter.</summary>
         public void AdvanceRun()
         {
             CurrentRun++;
@@ -127,7 +112,6 @@ namespace Signal.Run
             StatsChanged?.Invoke();
         }
 
-        /// <summary>Ends the run, snapshots its statistics for the <see cref="RunEnded"/> event, then wipes all run progression.</summary>
         public void EndRun(RunEndReason reason)
         {
             if (!RunActive) return;
@@ -143,10 +127,9 @@ namespace Signal.Run
             StatsChanged?.Invoke();
         }
 
-        /// <summary>Saves the chosen upgrade and applies its modifier immediately.</summary>
         public void AddUpgrade(in RunUpgrade upgrade)
         {
-            if (!RunActive) StartRun(); // picking an upgrade after death/menu implicitly begins a fresh run
+            if (!RunActive) StartRun();
 
             Data.Add(upgrade);
             _stats.UpgradesSelected++;
@@ -155,10 +138,6 @@ namespace Signal.Run
             StatsChanged?.Invoke();
         }
 
-        /// <summary>
-        /// Rehydrates a run from a save: re-applies its upgrades (and their stat modifiers) and stats,
-        /// without the wipe <see cref="StartRun"/> does. Used by the continue/resume flow.
-        /// </summary>
         public void RestoreRun(System.Collections.Generic.IReadOnlyList<RunUpgrade> upgrades, RunStats stats, int runNumber)
         {
             Data.Clear();
@@ -166,7 +145,7 @@ namespace Signal.Run
                 foreach (RunUpgrade upgrade in upgrades) Data.Add(upgrade);
 
             _stats = stats;
-            _runStartTime = Time.time - stats.Duration; // so live Duration keeps counting from the saved total
+            _runStartTime = Time.time - stats.Duration;
             CurrentRun = Mathf.Max(1, runNumber);
             RunActive = true;
             Debug.Log($"[Run] Run restored — run {CurrentRun}, {Data.Upgrades.Count} upgrade(s), {stats.EnemiesKilled} kill(s).");
@@ -190,7 +169,7 @@ namespace Signal.Run
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            Time.timeScale = 1f; // a freshly loaded scene always starts unpaused
+            Time.timeScale = 1f;
 
             if (scene.name == MainMenuSceneName)
             {
@@ -198,12 +177,8 @@ namespace Signal.Run
                 return;
             }
 
-            // Entering a gameplay scene with no run active (e.g. a new game from the menu) starts a
-            // fresh run; an already-active run carries across level transitions untouched.
             if (!RunActive) StartRun();
 
-            // A run resumed from the menu is poured in here — after StartRun and after the scene's
-            // objects (player, generated level) have awoken — so it overwrites the fresh start cleanly.
             if (RunSaveSystem.PendingResume != null)
             {
                 RunSaveSystem.Apply(RunSaveSystem.PendingResume);

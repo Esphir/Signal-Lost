@@ -1,3 +1,4 @@
+// Turns the single 4 Door Room into a small family of rooms so the generator has variety to draw from: a Combat junction (three ways out, enemies inside), a Treasure dead-end (one way out), and an End room (one way out, rolls a fresh layout on entry).
 using System.Collections.Generic;
 using System.Text;
 using Signal.Generation;
@@ -7,13 +8,6 @@ using UnityEngine;
 
 namespace Signal.GenerationEditor
 {
-    /// <summary>
-    /// Turns the single 4 Door Room into a small family of rooms so the generator has variety to draw
-    /// from: a Combat junction (three ways out, enemies inside), a Treasure dead-end (one way out), and
-    /// an End room (one way out, rolls a fresh layout on entry). Each is a real prefab copy — geometry
-    /// untouched — with some doors sealed into walls, a RoomType set, and content added. Re-runnable:
-    /// existing variants are left alone so it never clobbers hand-tuning or orphans database rows.
-    /// </summary>
     public static class RoomVariantTools
     {
         private const string BaseRoom = "Assets/Prefabs/Rooms/4 Door Room.prefab";
@@ -32,7 +26,6 @@ namespace Signal.GenerationEditor
             var log = new StringBuilder();
             var made = new List<string>();
 
-            //                 name            RoomType            open  enemies  end
             TryMake(made, log, "Combat Room",   RoomType.Combat,    3,    true,    false);
             TryMake(made, log, "Treasure Room", RoomType.Treasure,  1,    false,   false);
             TryMake(made, log, "End Room",      RoomType.End,       1,    false,   true);
@@ -40,13 +33,12 @@ namespace Signal.GenerationEditor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            // Wire connectors on the new prefabs (sealed doors are skipped — they're no longer "doors").
             foreach (string path in made) log.Append(RoomAuthoringTools.SetupPrefab(path));
             AssetDatabase.SaveAssets();
 
             Debug.Log($"[Rooms] Variant creation:\n{log}");
 
-            if (made.Count > 0) RoomAuthoringTools.PopulateDatabase();   // adds the new rooms to the database
+            if (made.Count > 0) RoomAuthoringTools.PopulateDatabase();
             EditorUtility.DisplayDialog("Room Variants",
                 made.Count > 0
                     ? $"Created {made.Count} room(s), wired connectors, and added them to the database. See Console."
@@ -83,8 +75,6 @@ namespace Signal.GenerationEditor
                     so.ApplyModifiedPropertiesWithoutUndo();
                 }
 
-                // Keep `keepOpen` doorways as connector-doors; rename the rest so Setup ignores them. The
-                // panel stays put and active, so a sealed doorway is simply a solid wall.
                 List<Transform> doors = RoomAuthoringTools.FindDoorMarkers(root);
                 int kept = Mathf.Min(keepOpen, doors.Count);
                 for (int i = kept; i < doors.Count; i++)
@@ -133,7 +123,6 @@ namespace Signal.GenerationEditor
             so.FindProperty("maxEnemyCount").intValue = 6;
             so.ApplyModifiedPropertiesWithoutUndo();
 
-            // Four spawn points spread across the floor; they self-register with the section at runtime.
             float x = b.size.x * 0.2f;
             float z = b.size.z * 0.2f;
             Vector2[] spread = { new Vector2(-x, -z), new Vector2(x, -z), new Vector2(-x, z), new Vector2(x, z) };

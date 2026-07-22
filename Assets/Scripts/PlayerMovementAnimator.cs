@@ -1,16 +1,9 @@
+// Drives the full-body "Movement" animator layer (jump / falling loop / directional rolls), blending it in only while airborne or rolling.
 using System.Collections.Generic;
 using UnityEngine;
 using KevinIglesias;
 using Signal.Combat;
 
-/// <summary>
-/// Drives the full-body "Movement" animator layer (jump / falling loop / directional rolls),
-/// blending it in only while airborne or rolling.
-///
-/// Suspends the <see cref="SpineProxy"/> while this layer dominates: the Mixamo movement clips
-/// have no proxy-bone curves, so the proxy would otherwise stomp the rolling/falling spine into
-/// the locomotion pose every LateUpdate. Resumes as the layer blends back out.
-/// </summary>
 public class PlayerMovementAnimator : MonoBehaviour
 {
     [SerializeField]
@@ -31,10 +24,8 @@ public class PlayerMovementAnimator : MonoBehaviour
     private static readonly int HashRollTrigger = Animator.StringToHash("RollTrigger");
     private static readonly int HashJump = Animator.StringToHash("Jump");
 
-    // RollDirection values — must match the Movement layer's AnyState transitions.
     private const int RollForward = 0, RollBackward = 1, RollLeft = 2, RollRight = 3;
 
-    // Clip names inside the roll FBXs, used to look up real animation lengths at startup.
     private static readonly (int direction, string clipName)[] RollClips =
     {
         (RollForward, "RollForward"),
@@ -45,8 +36,8 @@ public class PlayerMovementAnimator : MonoBehaviour
 
     private Animator _animator;
     private PlayerController _controller;
-    private PlayerDodge _dodge;      // optional
-    private SpineProxy _spineProxy;  // optional
+    private PlayerDodge _dodge;
+    private SpineProxy _spineProxy;
     private int _layerIndex = -1;
     private readonly Dictionary<int, float> _rollClipLengths = new Dictionary<int, float>();
 
@@ -78,7 +69,6 @@ public class PlayerMovementAnimator : MonoBehaviour
 
     private void OnEnable()
     {
-        // Fire the Jump trigger for BOTH the ground jump and the air (double) jump.
         if (_controller == null) return;
         _controller.Jumped += ReplayJump;
         _controller.DoubleJumped += ReplayJump;
@@ -91,15 +81,10 @@ public class PlayerMovementAnimator : MonoBehaviour
             _controller.Jumped -= ReplayJump;
             _controller.DoubleJumped -= ReplayJump;
         }
-        // Never leave the proxy suspended if this component is torn down while airborne/rolling.
+
         SpineProxyGate.SetSuspended(_spineProxy, this, false);
     }
 
-    /// <summary>
-    /// (Re-)enters the shared Jump state from frame one via the Movement layer's AnyState -> Jump
-    /// transition — so a double jump replays the Jump clip even while already airborne (in Fall),
-    /// instead of being stuck in Falling. Reset first so a stale, unconsumed trigger can't double-fire.
-    /// </summary>
     private void ReplayJump()
     {
         if (_animator == null) return;
@@ -121,15 +106,10 @@ public class PlayerMovementAnimator : MonoBehaviour
             _animator.SetLayerWeight(_layerIndex, weight);
         }
 
-        // Via the gate (not SpineProxy.enabled directly) since PlayerCombat suspends it too.
         if (_spineProxy != null)
             SpineProxyGate.SetSuspended(_spineProxy, this, weight >= spineProxySuspendWeight);
     }
 
-    /// <summary>
-    /// Immediately forces the movement layer off and marks the animator grounded, so a fall/land
-    /// state can't linger across a teleport/respawn. Safe to call while this component is disabled.
-    /// </summary>
     public void SnapToGrounded()
     {
         if (_animator == null) return;
@@ -139,11 +119,6 @@ public class PlayerMovementAnimator : MonoBehaviour
         SpineProxyGate.SetSuspended(_spineProxy, this, false);
     }
 
-    /// <summary>
-    /// Plays the roll animation matching a world-space direction (resolved against current facing)
-    /// and reports the real clip length so gameplay can pace the dodge to the animation.
-    /// Returns false when unavailable — callers should fall back to their own timing.
-    /// </summary>
     public bool TryPlayRoll(Vector3 worldDirection, out float animationDuration)
     {
         animationDuration = 0f;

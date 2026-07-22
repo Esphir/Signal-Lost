@@ -1,3 +1,4 @@
+// Watches every combat pocket on the current floor and reports when they're all done — the signal the End room's gate waits on.
 using System;
 using System.Collections.Generic;
 using Signal.Combat.Interfaces;
@@ -6,27 +7,15 @@ using UnityEngine;
 
 namespace Signal.Generation
 {
-    /// <summary>
-    /// Watches every combat pocket on the current floor and reports when they're all done — the signal
-    /// the End room's gate waits on. "Done" means every active spawn section has fired and has no living
-    /// enemies left; a floor with no combat at all counts as clear immediately.
-    ///
-    /// It re-reads its section list from the generator's rooms whenever the level (re)generates, so a
-    /// Next Run reroll re-arms it against the new floor automatically. Added to the LevelGenerator by the
-    /// generator itself — no scene wiring needed.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class FloorCombatTracker : MonoBehaviour
     {
         public static FloorCombatTracker Instance { get; private set; }
 
-        /// <summary>True once every combat room on the floor is cleared (or there were none).</summary>
         public bool IsCleared { get; private set; }
 
-        /// <summary>Raised once, the moment the floor becomes cleared.</summary>
         public event Action Cleared;
 
-        /// <summary>Combat pockets on the floor and how many are cleared — for a HUD objective read-out.</summary>
         public int TotalCombatSections { get; private set; }
         public int ClearedCombatSections { get; private set; }
 
@@ -37,7 +26,6 @@ namespace Signal.Generation
         private Vector3 _lastDeathPosition;
         private bool _hasDeathPosition;
 
-        /// <summary>Where the most recent enemy on the floor died — where the key drops when the floor clears.</summary>
         public bool TryGetLastDeathPosition(out Vector3 position)
         {
             position = _lastDeathPosition;
@@ -67,7 +55,6 @@ namespace Signal.Generation
             if (Instance == this) Instance = null;
         }
 
-        /// <summary>Re-reads the floor's active combat sections and re-arms the tracker.</summary>
         public void Rebuild()
         {
             _sections.Clear();
@@ -77,14 +64,11 @@ namespace Signal.Generation
                 {
                     if (room == null || room.SpawnSections == null) continue;
                     foreach (EnemySpawnSection section in room.SpawnSections)
-                        // Active only: the Start room's stripped sections never fire, so they mustn't
-                        // count toward a clear the player can never achieve.
+
                         if (section != null && section.gameObject.activeInHierarchy) _sections.Add(section);
                 }
             }
 
-            // Watch each pocket so we can note where its enemies fall; the last one gives the key its spot.
-            // Old sections are destroyed on a reroll, taking their subscriptions with them — no unhooking needed.
             foreach (EnemySpawnSection section in _sections)
             {
                 EnemySpawnSection s = section;
@@ -97,7 +81,7 @@ namespace Signal.Generation
             _hasDeathPosition = false;
             _pollTimer = 0f;
 
-            Evaluate(); // a floor with no combat is open from the start
+            Evaluate();
         }
 
         private void HookEnemyDeaths(EnemySpawnSection section)
@@ -129,7 +113,7 @@ namespace Signal.Generation
             int cleared = 0;
             foreach (EnemySpawnSection section in _sections)
             {
-                if (section == null) { cleared++; continue; } // a destroyed section can't hold the floor hostage
+                if (section == null) { cleared++; continue; }
                 if (section.HasSpawned && section.AliveCount == 0) cleared++;
             }
             ClearedCombatSections = cleared;

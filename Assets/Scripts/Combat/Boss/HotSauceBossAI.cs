@@ -1,3 +1,4 @@
+// The hot-sauce boss brain: a finite-state machine that loops Prowl → Attack → Recovery.
 using System.Collections;
 using System.Collections.Generic;
 using Signal.Combat.Health;
@@ -8,22 +9,6 @@ using UnityEngine;
 
 namespace Signal.Combat.Boss
 {
-    /// <summary>
-    /// The hot-sauce boss brain: a finite-state machine that loops Prowl → Attack → Recovery. It owns no
-    /// attack logic — attacks are separate <see cref="BossAttack"/> components it carries, each of which
-    /// telegraphs and executes itself — so the fight is a movement puzzle of readable patterns rather than
-    /// a wall of damage. Selection is weighted by player distance (a burst for anything in melee, flame
-    /// for mid range, arena control at long) and never repeats the last attack while another is available.
-    ///
-    /// Between attacks it prowls: it hops to a fresh angle on the player at its preferred range while
-    /// staying turned toward them, so the player has to keep repositioning too. It only stands still to
-    /// telegraph and to recover — standing still is the tell that it's about to hurt you, or that you can
-    /// hurt it.
-    ///
-    /// At half health it flips to phase 2: windups play faster, recovery windows shrink, flames linger, and
-    /// attacks sometimes chain — frantic, but every hit still has a telegraph and an escape. Across runs it
-    /// ramps too (see ApplyRunScaling), and killing it ends the floor the way the End room would.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HealthComponent))]
     public sealed class HotSauceBossAI : MonoBehaviour
@@ -128,11 +113,6 @@ namespace Signal.Combat.Boss
             StartCoroutine(MainLoop());
         }
 
-        /// <summary>
-        /// Ramps the fight for how many bosses the player has already beaten: harder hits, and less breathing
-        /// room between attacks. Telegraphs are deliberately left alone — a later boss should be relentless,
-        /// not unreadable.
-        /// </summary>
         private void ApplyRunScaling()
         {
             if (!scaleWithRun) return;
@@ -154,42 +134,35 @@ namespace Signal.Combat.Boss
                 _health.HealthChanged -= OnHealthChanged;
                 _health.Died -= OnDied;
             }
-            // The fight can also end by the room going away — but a death is already draining the bar out.
+
             if (State != BossState.Dead) BossHealthBarUI.Hide();
         }
 
-        // ── FSM ──────────────────────────────────────────────────────────────────
-
         private IEnumerator MainLoop()
         {
-            // Sleep until the player is present and close (room entry / spawn handles the actual trigger).
             State = BossState.Sleeping;
             while (!_ctx.ResolvePlayer() || _ctx.DistanceToPlayer > activationRange)
                 yield return new WaitForSeconds(0.25f);
 
-            // Waking is the start of the fight, so that's when the bar belongs on screen — not while the
-            // player is still rooms away.
             if (showHealthBar) BossHealthBarUI.Show(_health, bossName);
 
             while (State != BossState.Dead)
             {
                 State = BossState.Idle;
                 _ctx.Anim?.Relax();
-                yield return Prowl(Paced(prowlTime));  // hop to a new angle on the player
-                yield return Hold(Paced(idleTime));    // then square up, so the telegraph starts from a still pose
+                yield return Prowl(Paced(prowlTime));
+                yield return Hold(Paced(idleTime));
                 if (State == BossState.Dead) yield break;
 
                 BossAttack attack = ChooseAttack();
                 if (attack == null) { yield return new WaitForSeconds(0.3f); continue; }
 
-                State = BossState.Attacking;   // each attack telegraphs then fires inside its own Run
+                State = BossState.Attacking;
                 _lastAttack = attack;
-                _move.Release();               // the attack owns the boss's pose from here
+                _move.Release();
                 yield return attack.Run(_ctx);
                 if (State == BossState.Dead) yield break;
 
-                // Recovery is the damage window — it plants itself. Phase 2 shortens it and sometimes skips
-                // it to chain.
                 State = BossState.Recovery;
                 bool chain = _phase2 && Random.value < phase2ChainChance;
                 if (!chain)
@@ -197,7 +170,6 @@ namespace Signal.Combat.Boss
             }
         }
 
-        /// <summary>Weighted pick by distance; the last attack is excluded while any other is available.</summary>
         private BossAttack ChooseAttack()
         {
             if (!_ctx.ResolvePlayer()) return null;
@@ -210,7 +182,7 @@ namespace Signal.Combat.Boss
             foreach (BossAttack attack in _attacks)
             {
                 float w = attack.CanUse(_ctx) ? Mathf.Max(0f, attack.WeightAt(distance, _ctx)) : 0f;
-                if (attack == _lastAttack && usable > 1) w = 0f; // no back-to-back unless it's the only choice
+                if (attack == _lastAttack && usable > 1) w = 0f;
                 _weights.Add(w);
                 total += w;
             }
@@ -239,8 +211,6 @@ namespace Signal.Combat.Boss
             return count;
         }
 
-        // ── Phase / life ─────────────────────────────────────────────────────────
-
         private void OnHealthChanged(float current, float max)
         {
             if (!_phase2 && current > 0f && current <= max * 0.5f) EnterPhase2();
@@ -262,13 +232,11 @@ namespace Signal.Combat.Boss
             State = BossState.Dead;
             StopAllCoroutines();
             if (_move != null) _move.Release();
-            BossHealthBarUI.Dismiss(); // drains out on screen rather than blinking away with the corpse
-            // The fight ends on the boss: clear any summoned peppers so nothing lingers.
+            BossHealthBarUI.Dismiss();
+
             foreach (GhostPepperAI minion in FindObjectsByType<GhostPepperAI>(FindObjectsSortMode.None))
                 Destroy(minion.gameObject);
         }
-
-        // ── Setup / helpers ────────────────────────────────────────────────────────
 
         private void EnsureAttacks()
         {
@@ -286,13 +254,8 @@ namespace Signal.Combat.Boss
                 if (attack is GhostPepperSummonAttack summon) summon.SetMinionPrefab(ghostPepperPrefab);
         }
 
-        /// <summary>Every between-attack window, tightened by the run's pace multiplier.</summary>
         private float Paced(float seconds) => seconds / Mathf.Max(0.1f, _pace);
 
-        /// <summary>
-        /// Stand still and track the player — the telegraph and recovery pose. It won't hand back until the
-        /// boss is actually on the ground, so an attack can never start (and pose the boss) mid-hop.
-        /// </summary>
         private IEnumerator Hold(float seconds)
         {
             _move.Stop();
@@ -308,7 +271,6 @@ namespace Signal.Combat.Boss
             }
         }
 
-        /// <summary>Hop to a fresh angle on the player, still facing them, picking again on arrival.</summary>
         private IEnumerator Prowl(float seconds)
         {
             if (seconds <= 0f || !_ctx.ResolvePlayer()) { yield return Hold(seconds); yield break; }
@@ -323,7 +285,6 @@ namespace Signal.Combat.Boss
             _move.Stop();
         }
 
-        /// <summary>A point at the preferred range, swung around the player, kept inside the arena.</summary>
         private Vector3 PickProwlSpot()
         {
             Vector3 player = _ctx.PlayerPosition;
@@ -332,9 +293,8 @@ namespace Signal.Combat.Boss
 
             float arc = strafeArc * Random.Range(0.35f, 1f) * (Random.value < 0.5f ? -1f : 1f);
             Vector3 dir = Quaternion.Euler(0f, arc, 0f) * fromPlayer.normalized;
-            Vector3 spot = player + dir * (preferredDistance * Random.Range(0.8f, 1.15f)); // vary so it isn't a fixed orbit
+            Vector3 spot = player + dir * (preferredDistance * Random.Range(0.8f, 1.15f));
 
-            // Never wander out of the fight: pull the spot back inside the arena ring.
             Vector3 fromCenter = spot - _ctx.ArenaCenter; fromCenter.y = 0f;
             float limit = arenaRadius * 0.8f;
             if (fromCenter.sqrMagnitude > limit * limit)

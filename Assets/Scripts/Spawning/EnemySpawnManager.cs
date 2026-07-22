@@ -1,13 +1,9 @@
+// Optional overseer for a level's sections: one place to query them, and to reset or force them while debugging.
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Signal.Spawning
 {
-    /// <summary>
-    /// Optional overseer for a level's sections: one place to query them, and to reset or force them
-    /// while debugging. Sections are fully self-sufficient without a manager in the scene — this only
-    /// aggregates, so adding one is never required.
-    /// </summary>
     [DisallowMultipleComponent]
     public class EnemySpawnManager : MonoBehaviour
     {
@@ -21,7 +17,6 @@ namespace Signal.Spawning
 
         public IReadOnlyList<EnemySpawnSection> Sections => _sections;
 
-        /// <summary>Sections that have already fired.</summary>
         public int ActivatedSectionCount
         {
             get
@@ -33,7 +28,6 @@ namespace Signal.Spawning
             }
         }
 
-        /// <summary>Enemies still alive across every section this manager knows about.</summary>
         public int AliveEnemyCount
         {
             get
@@ -56,7 +50,6 @@ namespace Signal.Spawning
 
             if (!autoDiscoverSections) return;
 
-            // Sections whose OnEnable ran before this Awake couldn't register themselves.
             foreach (EnemySpawnSection section in
                      FindObjectsByType<EnemySpawnSection>(FindObjectsInactive.Include, FindObjectsSortMode.None))
                 Register(section);
@@ -78,7 +71,6 @@ namespace Signal.Spawning
 
         public void Unregister(EnemySpawnSection section) => _sections.Remove(section);
 
-        /// <summary>Clears every section back to unspawned and removes their enemies. Debug aid.</summary>
         [ContextMenu("Reset All Sections")]
         public void ResetAll()
         {
@@ -86,7 +78,6 @@ namespace Signal.Spawning
                 if (section != null) section.ResetSection();
         }
 
-        /// <summary>Fires every section at once, ignoring triggers. Debug aid.</summary>
         [ContextMenu("Activate All Sections")]
         public void ActivateAll()
         {

@@ -1,3 +1,4 @@
+// Manages timed buffs on this GameObject: applies effects, refreshes durations on re-application, expires them, and raises events for visuals/UI.
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,11 +6,6 @@ using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Buffs
 {
-    /// <summary>
-    /// Manages timed buffs on this GameObject: applies effects, refreshes durations on
-    /// re-application, expires them, and raises events for visuals/UI. Attach to any enemy (or the
-    /// player) to make it buffable — nothing else needs to change.
-    /// </summary>
     public class BuffReceiver : MonoBehaviour, IBuffable
     {
         private struct ActiveBuff
@@ -24,14 +20,12 @@ namespace Signal.Combat.Buffs
         public event Action<BuffSO> BuffApplied;
         public event Action<BuffSO> BuffExpired;
 
-        /// <summary>Number of currently active buffs (for indicators/UI).</summary>
         public int ActiveBuffCount => _active.Count;
 
         public bool ApplyBuff(BuffSO buff)
         {
             if (buff == null) return false;
 
-            // Same buff again → refresh its timer instead of stacking a duplicate effect.
             for (int i = 0; i < _active.Count; i++)
             {
                 if (_active[i].Definition != buff) continue;
@@ -73,8 +67,6 @@ namespace Signal.Combat.Buffs
 
         private void OnDestroy()
         {
-            // Effects usually add components to this same GameObject, which die with it anyway,
-            // but Remove is called for symmetry in case an effect holds external state.
             for (int i = _active.Count - 1; i >= 0; i--)
                 _active[i].Effect.Remove(gameObject);
             _active.Clear();

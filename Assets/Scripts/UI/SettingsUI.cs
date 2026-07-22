@@ -1,13 +1,9 @@
+// Settings panel host.
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Settings panel host. Builds the window chrome and hands its content area to each section
-    /// builder — currently only Controls (<see cref="RebindUI"/>); audio/graphics sections plug in
-    /// the same way later.
-    /// </summary>
     public class SettingsUI : MonoBehaviour
     {
         [SerializeField] private RebindUI rebindUI;
@@ -18,7 +14,7 @@ namespace Signal.UI
 
         private const float RowHeight = 64f;
         private const float RowSpacing = 6f;
-        private const float GeneralHeight = RowHeight * 2f + RowSpacing; // sensitivity + camera side
+        private const float GeneralHeight = RowHeight * 2f + RowSpacing;
 
         private static readonly Color WindowColor = new Color(0.11f, 0.11f, 0.15f, 0.98f);
         private static readonly Color ButtonColor = new Color(0.16f, 0.16f, 0.22f);
@@ -38,7 +34,6 @@ namespace Signal.UI
             if (IsOpen) return;
             UiBuilder.EnsureEventSystem();
 
-            // Above the pause menu (40) so it reads as a sub-menu; below loot (100).
             Canvas canvas = UiBuilder.CreateOverlayCanvas("SettingsCanvas", 60);
             _panel = canvas.gameObject;
 
@@ -87,7 +82,6 @@ namespace Signal.UI
             if (rebindUI != null) rebindUI.BuildSection(controls);
         }
 
-        // One full-width row in the General block, stacked top-down by index.
         private static Image NewGeneralRow(Transform parent, string name, int index)
         {
             Image row = UiBuilder.NewChild<Image>(parent, name);

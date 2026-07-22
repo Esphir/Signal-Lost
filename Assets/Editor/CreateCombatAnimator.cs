@@ -1,3 +1,4 @@
+// Editor tool that generates the player combat animator controller.
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -9,8 +10,6 @@ public static class CreateCombatAnimator
     [MenuItem("Tools/Signal Lost/Create Combat Animator Controller")]
     public static void Create()
     {
-        // Delete existing asset first — overwriting in-place destroys sub-assets
-        // (state machine, states, transitions) while we still hold references to them
         if (AssetDatabase.LoadAssetAtPath<AnimatorController>(OutputPath) != null)
             AssetDatabase.DeleteAsset(OutputPath);
 
@@ -22,7 +21,6 @@ public static class CreateCombatAnimator
 
         var controller = AnimatorController.CreateAnimatorControllerAtPath(OutputPath);
 
-        // ── Parameters ────────────────────────────────────────────────────
         controller.AddParameter(new AnimatorControllerParameter {
             name = "Speed", type = AnimatorControllerParameterType.Float, defaultFloat = 0f });
         controller.AddParameter(new AnimatorControllerParameter {
@@ -33,7 +31,7 @@ public static class CreateCombatAnimator
             name = "HeavyAttack", type = AnimatorControllerParameterType.Trigger });
         controller.AddParameter(new AnimatorControllerParameter {
             name = "AttackSpeed", type = AnimatorControllerParameterType.Float, defaultFloat = 1f });
-        // ── Layer 0: Base (locomotion, no mask) ───────────────────────────
+
         AnimatorStateMachine smBase = controller.layers[0].stateMachine;
 
         var blendTree = new BlendTree {
@@ -49,7 +47,6 @@ public static class CreateCombatAnimator
         stateLocomotion.iKOnFeet = true;
         smBase.defaultState = stateLocomotion;
 
-        // ── Layer 1: Upper Body (Human Body Upper Mask, Override, weight 1) ─
         controller.AddLayer(new AnimatorControllerLayer {
             name            = "Upper Body",
             defaultWeight   = 1f,
@@ -59,7 +56,6 @@ public static class CreateCombatAnimator
             stateMachine    = new AnimatorStateMachine()
         });
 
-        // Re-fetch layers array after adding — structs, not references
         var layers = controller.layers;
         AnimatorStateMachine smUpper = layers[1].stateMachine;
         AssetDatabase.AddObjectToAsset(smUpper, controller);
@@ -79,12 +75,10 @@ public static class CreateCombatAnimator
 
         smUpper.defaultState = stateCombatIdle;
 
-        // ── CombatIdle transitions ────────────────────────────────────────
         Trigger(stateCombatIdle, stateAttackR, "AttackR",     0.05f);
         Trigger(stateCombatIdle, stateAttackL, "AttackL",     0.05f);
         Trigger(stateCombatIdle, stateHeavy,   "HeavyAttack", 0.05f);
 
-        // ── Combo chaining ────────────────────────────────────────────────
         var t = stateAttackR.AddTransition(stateAttackL);
         t.AddCondition(AnimatorConditionMode.If, 0, "AttackL");
         t.hasExitTime = true; t.exitTime = 0.55f; t.duration = 0.05f;
@@ -93,7 +87,6 @@ public static class CreateCombatAnimator
         t.AddCondition(AnimatorConditionMode.If, 0, "AttackR");
         t.hasExitTime = true; t.exitTime = 0.55f; t.duration = 0.05f;
 
-        // ── Return to CombatIdle on finish ────────────────────────────────
         Exit(stateAttackR, stateCombatIdle, 0.15f);
         Exit(stateAttackL, stateCombatIdle, 0.15f);
         Exit(stateHeavy,   stateCombatIdle, 0.15f);
@@ -105,8 +98,6 @@ public static class CreateCombatAnimator
         Debug.Log($"[Signal Lost] PlayerCombat.controller created at {OutputPath}");
         Selection.activeObject = controller;
     }
-
-    // ── Transition helpers ────────────────────────────────────────────────
 
     static void Trigger(AnimatorState from, AnimatorState to, string param, float fade)
     {
@@ -123,8 +114,6 @@ public static class CreateCombatAnimator
         t.exitTime    = 1f;
         t.duration    = fade;
     }
-
-    // ── Clip finder ───────────────────────────────────────────────────────
 
     static AnimationClip FindClip(string clipName)
     {

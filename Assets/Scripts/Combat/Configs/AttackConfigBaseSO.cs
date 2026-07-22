@@ -1,17 +1,8 @@
+// Shared, inspector-tunable timing/animation/feedback fields for any attack.
 using UnityEngine;
 
 namespace Signal.Combat.Configs
 {
-    /// <summary>
-    /// Shared, inspector-tunable timing/animation/feedback fields for any attack. Concrete attack
-    /// types extend this rather than duplicating these fields, and designers tune balance entirely
-    /// as ScriptableObject assets without touching code.
-    ///
-    /// Timing model: when <see cref="animatorStateName"/> is set, the attack rides the actual clip
-    /// impact, active window and exit are normalized times inside that state, so a clip that changes
-    /// length (or plays at a different speed) can never desync from gameplay. The fixed
-    /// startup/recovery seconds are only a fallback for attacks without an animation state.
-    /// </summary>
     public abstract class AttackConfigBaseSO : ScriptableObject
     {
         [Header("Identity")]
@@ -51,13 +42,11 @@ namespace Signal.Combat.Configs
         public float cameraShakeAmount = 0.1f;
         public float cameraShakeDuration = 0.1f;
 
-        /// <summary>True when this attack's timing is meant to be driven by an animator state.</summary>
         public bool HasAnimatorState => !string.IsNullOrEmpty(animatorStateName);
 
         private int _animatorTriggerHash = -1;
         private int _animatorStateHash = -1;
 
-        /// <summary>Cached <see cref="Animator.StringToHash"/> of <see cref="animatorTrigger"/>.</summary>
         public int AnimatorTriggerHash
         {
             get
@@ -68,7 +57,6 @@ namespace Signal.Combat.Configs
             }
         }
 
-        /// <summary>Cached hash of <see cref="animatorStateName"/>; comparable to AnimatorStateInfo.shortNameHash.</summary>
         public int AnimatorStateHash
         {
             get
@@ -79,7 +67,6 @@ namespace Signal.Combat.Configs
             }
         }
 
-        /// <summary>State driving timing right now. Variant attacks (e.g. bash) override to track the playing state.</summary>
         public virtual string ActiveAnimatorStateName => animatorStateName;
         public virtual int ActiveAnimatorStateHash => AnimatorStateHash;
 

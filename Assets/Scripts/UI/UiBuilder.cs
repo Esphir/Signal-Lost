@@ -1,3 +1,4 @@
+// Helpers for the code-built UI screens, so panels stay consistent and easy to restyle in one place.
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -5,7 +6,6 @@ using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>Helpers for the code-built UI screens, so panels stay consistent and easy to restyle in one place.</summary>
     public static class UiBuilder
     {
         private static Font _font;
@@ -51,16 +51,10 @@ namespace Signal.UI
             return (RectTransform)go.transform;
         }
 
-        /// <summary>
-        /// Builds a vertical Scroll View: a masked viewport with a layout-driven, auto-sizing
-        /// content area (the returned <paramref name="content"/>). Caller anchors the returned
-        /// ScrollRect's transform. Add rows to content; it grows and scrolls automatically.
-        /// </summary>
         public static ScrollRect CreateScrollView(Transform parent, string name, out RectTransform content)
         {
             ScrollRect scroll = NewChild<ScrollRect>(parent, name);
 
-            // Transparent-but-raycastable so mouse-wheel scroll is caught over the whole list.
             Image viewport = NewChild<Image>(scroll.transform, "Viewport");
             viewport.color = new Color(0f, 0f, 0f, 0.001f);
             Stretch(viewport.rectTransform);
@@ -113,8 +107,6 @@ namespace Signal.UI
             Button button = image.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
 
-            // Every button in the game is built here, so this is the one place to make controller
-            // selection visible and no menu can forget to.
             SelectionHighlight.Attach(button.gameObject);
 
             text = CreateText(image.transform, "Label", label, fontSize, FontStyle.Normal, TextAnchor.MiddleCenter);

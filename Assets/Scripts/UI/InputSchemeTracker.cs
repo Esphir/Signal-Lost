@@ -1,3 +1,4 @@
+// Tracks whether the player is on a controller or on mouse and keyboard right now, and announces the moment that changes so prompts can relabel themselves mid-session.
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -6,35 +7,22 @@ namespace Signal.UI
 {
     public enum InputScheme { KeyboardMouse, Gamepad }
 
-    /// <summary>
-    /// Tracks whether the player is on a controller or on mouse and keyboard right now, and announces the
-    /// moment that changes so prompts can relabel themselves mid-session. One place decides, so a keyboard
-    /// hint and a controller hint can never disagree on the same screen.
-    ///
-    /// Detection watches for real input, never for which devices are plugged in and never for a device's
-    /// last update time: a connected-but-idle gamepad still streams state, so "whichever device reported
-    /// most recently" resolves to the gamepad forever and every prompt lies to a keyboard player. Only a
-    /// pressed button, a stick past its deadzone, or actual mouse movement counts as using something.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class InputSchemeTracker : MonoBehaviour
     {
-        /// <summary>Control scheme names, matching the groups in the Input Actions asset.</summary>
         public const string KeyboardSchemeName = "Keyboard&Mouse";
         public const string GamepadSchemeName = "Gamepad";
 
         private const float StickDeadzone = 0.35f;
         private const float TriggerDeadzone = 0.3f;
-        private const float MouseMoveThreshold = 1.5f; // pixels in a frame — ignores sensor drift
+        private const float MouseMoveThreshold = 1.5f;
 
         public static InputScheme Current { get; private set; } = InputScheme.KeyboardMouse;
 
         public static bool UsingGamepad => Current == InputScheme.Gamepad;
 
-        /// <summary>The scheme name for binding lookups against the actions asset.</summary>
         public static string SchemeName => UsingGamepad ? GamepadSchemeName : KeyboardSchemeName;
 
-        /// <summary>Raised when the player switches between controller and mouse and keyboard.</summary>
         public static event Action<InputScheme> Changed;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -54,9 +42,6 @@ namespace Signal.UI
 
         private void Update()
         {
-            // Gamepad wins ties: a hand resting on a mouse can't produce a press, but a controller in a lap
-            // shouldn't be able to steal the scheme from someone actively typing either — both sides here
-            // require deliberate input, so whichever fires is the one the player just used.
             if (GamepadActive()) Set(InputScheme.Gamepad);
             else if (KeyboardMouseActive()) Set(InputScheme.KeyboardMouse);
         }

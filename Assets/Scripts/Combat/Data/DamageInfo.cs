@@ -1,11 +1,8 @@
+// Immutable description of a single instance of damage.
 using UnityEngine;
 
 namespace Signal.Combat.Data
 {
-    /// <summary>
-    /// Immutable description of a single instance of damage. A struct so dealing damage to a
-    /// crowd of targets doesn't allocate per-hit.
-    /// </summary>
     public readonly struct DamageInfo
     {
         public readonly float Amount;

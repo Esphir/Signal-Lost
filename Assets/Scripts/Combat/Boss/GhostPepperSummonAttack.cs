@@ -1,3 +1,4 @@
+// Attack 4 — Ghost Pepper Summons.
 using System.Collections;
 using System.Collections.Generic;
 using Signal.Combat.Enemies;
@@ -7,15 +8,6 @@ using UnityEngine;
 
 namespace Signal.Combat.Boss
 {
-    /// <summary>
-    /// Attack 4 — Ghost Pepper Summons. The boss spawns a few low-health minions around the arena edge to
-    /// pressure the player while it keeps attacking. The summons are told who spawned them so they vanish
-    /// when the boss dies — the fight ends on the boss, not on mopping up adds.
-    ///
-    /// Deliberately the rarest thing the boss does: it's punctuation between fire attacks, not the fight.
-    /// Three throttles hold it back — a long re-summon delay, a live cap that won't top up until the player
-    /// has cleared most of the last batch, and a low selection weight so fire wins nearly every roll.
-    /// </summary>
     public sealed class GhostPepperSummonAttack : BossAttack
     {
         [Header("Summon")]
@@ -43,10 +35,8 @@ namespace Signal.Combat.Boss
 
         public int AliveCount { get { Prune(); return _alive.Count; } }
 
-        // Start part-way into the delay so the fight opens on fire, not on adds.
         private void OnEnable() => _nextSummonAt = Time.time + resummonDelay * 0.5f;
 
-        /// <summary>Supplies the minion prefab from the AI when the component was auto-added without one.</summary>
         public void SetMinionPrefab(GameObject prefab)
         {
             if (minionPrefab == null) minionPrefab = prefab;
@@ -58,7 +48,6 @@ namespace Signal.Combat.Boss
 
         public override float WeightAt(float distance, BossContext ctx)
         {
-            // Arena control — mildly favoured at range, but never the boss's answer to everything.
             return distance > ctx.ArenaRadius * 0.45f ? 1.6f : 0.5f;
         }
 
@@ -97,10 +86,8 @@ namespace Signal.Combat.Boss
         {
             GameObject go = Instantiate(minionPrefab, position, Quaternion.identity);
             go.tag = ctx.Boss.CompareTag("Enemy") ? "Enemy" : go.tag;
-            go.layer = ctx.Boss.gameObject.layer; // so the player's attacks can hit it
+            go.layer = ctx.Boss.gameObject.layer;
 
-            // Summons get the same safety nets as spawned enemies. No room is passed because the boss
-            // doesn't track which one it's fighting in — the guard works it out from where the pepper landed.
             EnemySafetyNets.Attach(go, position, null);
 
             var ai = go.GetComponent<GhostPepperAI>();

@@ -1,3 +1,4 @@
+// The contract every room prefab fulfils: what kind of room it is, how big it is, and where it can be joined.
 using System.Collections.Generic;
 using Signal.Spawning;
 using Signal.World;
@@ -6,14 +7,6 @@ using UnityEngine.Events;
 
 namespace Signal.Generation
 {
-    /// <summary>
-    /// The contract every room prefab fulfils: what kind of room it is, how big it is, and where it
-    /// can be joined. It describes a room and never generates anything (Single Responsibility).
-    ///
-    /// This is the only component you must add when authoring a new room. Spawn sections and
-    /// checkpoints are discovered from the prefab's own children, so a room that contains them is
-    /// wired automatically — there is nothing to register by hand.
-    /// </summary>
     [DisallowMultipleComponent]
     public class RoomDefinition : MonoBehaviour
     {
@@ -50,28 +43,18 @@ namespace Signal.Generation
         public int DifficultyTier => difficultyTier;
         public IReadOnlyList<RoomConnector> Connectors => connectors;
 
-        /// <summary>Order this room was generated in. -1 until placed. Shown in the Scene view.</summary>
         public int RoomIndex { get; internal set; } = -1;
 
-        /// <summary>
-        /// This room's cell on the dungeon grid, derived from the connector graph (Start = 0,0). It is
-        /// what the minimap lays out against — never world position — so a level of any shape maps to a
-        /// clean grid. Assigned by the generator after placement.
-        /// </summary>
         public Vector2Int GridPosition { get; internal set; }
 
-        /// <summary>Spawn sections inside this room. Found on the prefab — no manual registration.</summary>
         public EnemySpawnSection[] SpawnSections { get; private set; }
 
-        /// <summary>Checkpoints inside this room. Found on the prefab — they self-register at runtime.</summary>
         public Checkpoint[] Checkpoints { get; private set; }
 
-        /// <summary>World-space bounds at the room's current pose. Recomputed as it moves during fitting.</summary>
         public Bounds WorldBounds
         {
             get
             {
-                // Transform all eight corners so a rotated room still yields a correct world AABB.
                 Vector3 c = localBounds.center;
                 Vector3 e = localBounds.extents;
                 var bounds = new Bounds(transform.TransformPoint(c), Vector3.zero);
@@ -90,10 +73,6 @@ namespace Signal.Generation
 
         private void Awake() => Collect();
 
-        /// <summary>
-        /// Discovers everything the generator needs from the prefab's own hierarchy. Called on Awake
-        /// and again by the generator after placement, so it works for both runtime and editor use.
-        /// </summary>
         public void Collect()
         {
             if (connectors == null || connectors.Count == 0)
@@ -106,7 +85,6 @@ namespace Signal.Generation
             Checkpoints = GetComponentsInChildren<Checkpoint>(true);
         }
 
-        /// <summary>Connectors not yet mated — the places the next room can attach.</summary>
         public IEnumerable<RoomConnector> OpenConnectors()
         {
             foreach (RoomConnector connector in connectors)
@@ -119,7 +97,6 @@ namespace Signal.Generation
                 if (connector != null) connector.ResetLinks();
         }
 
-        /// <summary>Opens whichever of this room's doorways is mated to <paramref name="other"/>.</summary>
         internal void OpenConnectorTo(RoomConnector other)
         {
             foreach (RoomConnector connector in connectors)
@@ -128,7 +105,6 @@ namespace Signal.Generation
 
         private void OnValidate()
         {
-            // Keep the inspector list honest while authoring.
             if (connectors != null) connectors.RemoveAll(c => c == null);
         }
 
@@ -138,8 +114,8 @@ namespace Signal.Generation
 
             Bounds b = WorldBounds;
             Gizmos.color = RoomIndex >= 0
-                ? new Color(0.2f, 0.8f, 1f, 0.8f)      // placed by the generator
-                : new Color(0.6f, 0.6f, 0.6f, 0.5f);   // authored, not placed
+                ? new Color(0.2f, 0.8f, 1f, 0.8f)
+                : new Color(0.6f, 0.6f, 0.6f, 0.5f);
             Gizmos.DrawWireCube(b.center, b.size);
 
 #if UNITY_EDITOR

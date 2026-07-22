@@ -1,3 +1,4 @@
+// A tutorial prompt that pauses gameplay while the player reads (Time.timeScale = 0, player input off, cursor unlocked) and only resumes when Continue is pressed (mouse or controller).
 using System;
 using System.Text;
 using Signal.UI;
@@ -8,19 +9,6 @@ using UnityEngine.UI;
 
 namespace Signal.Tutorial
 {
-    /// <summary>
-    /// A tutorial prompt that pauses gameplay while the player reads (Time.timeScale = 0, player
-    /// input off, cursor unlocked) and only resumes when Continue is pressed (mouse or controller).
-    /// Descriptions read naturally: any <c>&lt;ActionName&gt;</c> token in the text is replaced with
-    /// that action's current binding (composite-formatted), pulled live from the Input System — never
-    /// hardcoded — and refreshed when the player rebinds or switches device.
-    ///
-    /// Interact is what moves a prompt along — the button the player's thumb is already on while working
-    /// through the tutorial. On a controller it's the only way through, so the prompt deliberately takes
-    /// no UI focus and the confirm button can't dismiss it; on mouse and keyboard the Continue button is
-    /// still there to click. The label names the live binding for the device in hand, so picking up the
-    /// other one mid-prompt relabels the text under the player's hands.
-    /// </summary>
     public class TutorialPromptUI : MonoBehaviour
     {
         [SerializeField] private InputActionAsset actions;
@@ -57,10 +45,8 @@ namespace Signal.Tutorial
 
         private void Awake()
         {
-            InputBindingStorage.Load(actions); // reflect saved rebinds
+            InputBindingStorage.Load(actions);
 
-            // Read from the shared asset rather than the player's PlayerInput: that one is deactivated for
-            // the length of the prompt, so its copy of Interact is switched off exactly when we need it.
             _continueAction = actions != null ? actions.FindAction(continueActionName) : null;
 
             Build();
@@ -81,11 +67,6 @@ namespace Signal.Tutorial
 
         private void OnSchemeChanged(InputScheme scheme) => Refresh();
 
-        /// <summary>
-        /// Shows the prompt and pauses gameplay while it's read. <paramref name="onContinue"/> runs
-        /// only after the player presses Continue and gameplay has resumed — so a step's active work
-        /// (spawning enemies, watching input) never begins until the pause ends.
-        /// </summary>
         public void Show(string title, string description, Action onContinue = null)
         {
             _rawTitle = title;
@@ -95,9 +76,6 @@ namespace Signal.Tutorial
             Refresh();
             EnterReadingPause();
 
-            // Deliberately focus nothing. Interact is the way through on a controller, so the confirm
-            // button must not be able to fire Continue — and a mouse click earlier could otherwise have
-            // left it selected and armed.
             EventSystem.current?.SetSelectedGameObject(null);
 
             _acceptInputAt = Time.unscaledTime + inputGrace;
@@ -106,7 +84,7 @@ namespace Signal.Tutorial
 
         public void Hide()
         {
-            _onContinue = null; // dismissed without a Continue press — don't start gameplay
+            _onContinue = null;
             _continueAction?.Disable();
             ExitReadingPause();
             if (_panel != null) _panel.SetActive(false);
@@ -115,20 +93,18 @@ namespace Signal.Tutorial
         private void OnContinue()
         {
             _continueAction?.Disable();
-            ExitReadingPause();     // resume: time, input, cursor
+            ExitReadingPause();
             _panel.SetActive(false);
 
             Action begin = _onContinue;
-            _onContinue = null;     // fire exactly once
-            begin?.Invoke();        // now (and only now) start the step's gameplay
+            _onContinue = null;
+            begin?.Invoke();
         }
 
         private void Update()
         {
             if (_panel == null || !_panel.activeSelf) return;
 
-            // The grace period stops the press that opened a prompt from also dismissing it — a real risk
-            // when the step being taught is Interact itself.
             if (Time.unscaledTime >= _acceptInputAt &&
                 _continueAction != null && _continueAction.WasPressedThisFrame())
             {
@@ -136,13 +112,9 @@ namespace Signal.Tutorial
                 return;
             }
 
-            // Device switches arrive as events now; this only catches bindings resolving a frame or two
-            // late (a controller plugged in while the prompt is already up).
             _refreshTimer -= Time.unscaledDeltaTime;
             if (_refreshTimer <= 0f) { _refreshTimer = 1f; Refresh(); }
         }
-
-        // ── Pause ─────────────────────────────────────────────────────────────
 
         private void EnterReadingPause()
         {
@@ -156,8 +128,7 @@ namespace Signal.Tutorial
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             Time.timeScale = 0f;
-            // Player input is suspended by UiModalState.Push above — one owner, so the button that
-            // dismisses this prompt can't also reach the player.
+
         }
 
         private void ExitReadingPause()
@@ -167,10 +138,8 @@ namespace Signal.Tutorial
             Time.timeScale = 1f;
             Cursor.lockState = _previousLock;
             Cursor.visible = _previousCursorVisible;
-            UiModalState.Pop(); // restores player input
+            UiModalState.Pop();
         }
-
-        // ── Text + bindings ───────────────────────────────────────────────────
 
         private void Refresh()
         {
@@ -181,7 +150,6 @@ namespace Signal.Tutorial
             if (_continueLabel != null) _continueLabel.text = ContinueLabel();
         }
 
-        /// <summary>Names the Interact binding for the device in hand — "(RB)" on a pad, "(E)" on a keyboard.</summary>
         private string ContinueLabel()
         {
             if (_continueAction == null) return "Continue";
@@ -192,7 +160,6 @@ namespace Signal.Tutorial
             return string.IsNullOrEmpty(interact) ? "Continue" : $"Continue   ({interact})";
         }
 
-        /// <summary>Replaces every &lt;ActionName&gt; token with the current binding for the active scheme.</summary>
         private string ResolveTokens(string text)
         {
             if (string.IsNullOrEmpty(text) || text.IndexOf('<') < 0) return text;
@@ -219,13 +186,10 @@ namespace Signal.Tutorial
             InputAction action = actions.FindAction(actionName);
             if (action == null) return actionName;
 
-            // Shared helper handles composites (Move's WASD), rebinds and keyboard/controller.
             string scheme = InputBindingFormatter.ActiveScheme(keyboardScheme, gamepadScheme);
             string label = InputBindingFormatter.Format(action, scheme);
             return string.IsNullOrEmpty(label) ? actionName : label;
         }
-
-        // ── UI construction ───────────────────────────────────────────────────
 
         private void Build()
         {
@@ -263,8 +227,6 @@ namespace Signal.Tutorial
             cr.sizeDelta = new Vector2(260f, 46f);
             _continueButton.onClick.AddListener(OnContinue);
 
-            // Clickable, but not a controller target: with no navigation there's nothing for a pad to
-            // select, and nothing selected means the confirm button can't stand in for Interact.
             _continueButton.navigation = new Navigation { mode = Navigation.Mode.None };
         }
     }

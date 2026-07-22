@@ -1,3 +1,4 @@
+// One-shot scaffold: fills "Level 1" with the standard gameplay essentials, mirroring how the Test/Tutorial scenes are assembled.
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Cinemachine;
@@ -7,10 +8,6 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// One-shot scaffold: fills "Level 1" with the standard gameplay essentials, mirroring how the
-/// Test/Tutorial scenes are assembled. Safe to re-run — it rebuilds the managed objects each time.
-/// </summary>
 public static class BuildLevel1Scene
 {
     private const string ScenePath = "Assets/Scenes/Level 1.unity";
@@ -30,8 +27,6 @@ public static class BuildLevel1Scene
     {
         Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
 
-        // The stock camera carries no CinemachineBrain; the prefab does. Removing it also avoids a
-        // second AudioListener once the prefab lands.
         foreach (GameObject root in scene.GetRootGameObjects())
             if (root.GetComponent<Camera>() != null && PrefabUtility.GetCorrespondingObjectFromSource(root) == null)
                 Object.DestroyImmediate(root);
@@ -45,7 +40,6 @@ public static class BuildLevel1Scene
         Place(GameSystemsPrefab, Vector3.zero, Quaternion.identity);
         Place(GameplayHudPrefab, Vector3.zero, Quaternion.identity);
 
-        // Cinemachine drives the Main Camera via the brain; without a tracking target it never follows.
         var vcam = cmCamera.GetComponent<CinemachineCamera>();
         vcam.Target.TrackingTarget = player.transform;
         EditorUtility.SetDirty(vcam);
@@ -80,14 +74,13 @@ public static class BuildLevel1Scene
         return instance;
     }
 
-    /// <summary>Ground-layer box so PlayerController's ground check (mask = Ground) sees it.</summary>
     private static void CreateFloor()
     {
         var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
         floor.name = "Floor";
         floor.layer = LayerMask.NameToLayer("Ground");
         floor.isStatic = true;
-        // Scaled so the walkable surface sits at y = 0.
+
         floor.transform.localPosition = new Vector3(0f, -FloorSize.y * 0.5f, 0f);
         floor.transform.localScale = FloorSize;
     }

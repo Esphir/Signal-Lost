@@ -1,16 +1,8 @@
+// A looping, code-built portal effect for the exit hole: a ring of motes that swirl and rise out of the portal surface, plus a soft central glow that pulses.
 using UnityEngine;
 
 namespace Signal.World
 {
-    /// <summary>
-    /// A looping, code-built portal effect for the exit hole: a ring of motes that swirl and rise out of
-    /// the portal surface, plus a soft central glow that pulses. Placeholder art in the project's style
-    /// (like <see cref="PlaceholderVfx"/>) — no authored VFX asset needed. Drop it on the portal plane and
-    /// set <see cref="radius"/> to match the hole; it builds and plays itself on Awake.
-    ///
-    /// Orientation assumes the object's local +Y is the portal's face normal (true for a standard Plane).
-    /// If the plane faces a different local axis, rotate this object so its up points out of the portal.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class PortalVfx : MonoBehaviour
     {
@@ -79,7 +71,7 @@ namespace Signal.World
             shape.radius = radius;
             shape.radiusThickness = 0.65f;
             shape.arc = 360f;
-            shape.rotation = new Vector3(90f, 0f, 0f); // lay the ring flat on the portal surface
+            shape.rotation = new Vector3(90f, 0f, 0f);
 
             ParticleSystem.VelocityOverLifetimeModule vel = ps.velocityOverLifetime;
             vel.enabled = true;
@@ -98,7 +90,6 @@ namespace Signal.World
             ps.Play();
         }
 
-        // Alpha rises in, holds, fades out — so looping motes pulse rather than pop.
         private static ParticleSystem.MinMaxGradient FadeInOut()
         {
             var g = new Gradient();
@@ -117,7 +108,6 @@ namespace Signal.World
         private static AnimationCurve Curve(float a, float b, float c)
             => new AnimationCurve(new Keyframe(0f, a), new Keyframe(0.5f, b), new Keyframe(1f, c));
 
-        // Same material path the other placeholder VFX use, so it renders under the project's pipeline.
         private static Material BuildMaterial()
         {
             Shader shader = Shader.Find("Sprites/Default");

@@ -1,13 +1,8 @@
+// Knockback-only attack (no damage) with two animation variants: a full-body standing state (base animatorStateName) and an upper-body movingStateName blended over locomotion.
 using UnityEngine;
 
 namespace Signal.Combat.Configs
 {
-    /// <summary>
-    /// Knockback-only attack (no damage) with two animation variants: a full-body standing state
-    /// (base <see cref="AttackConfigBaseSO.animatorStateName"/>) and an upper-body <see cref="movingStateName"/>
-    /// blended over locomotion. <see cref="SelectVariant"/> latches the choice per swing; both share timing.
-    /// Deliberately not a <see cref="DamagingAttackConfigSO"/> — mass falloff is automatic via <see cref="Rigidbody.AddForce(Vector3, ForceMode)"/>.
-    /// </summary>
     [CreateAssetMenu(menuName = "Combat/Attacks/Bash", fileName = "Bash")]
     public class BashConfigSO : AttackConfigBaseSO
     {
@@ -59,7 +54,6 @@ namespace Signal.Combat.Configs
             }
         }
 
-        /// <summary>Latches the variant for this swing; falls back to standing when no moving state is configured.</summary>
         public void SelectVariant(bool moving)
             => _movingVariant = moving && !string.IsNullOrEmpty(movingStateName);
 

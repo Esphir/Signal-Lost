@@ -1,3 +1,4 @@
+// The "RUN COMPLETED" overlay shown on reaching the End room — or, on a boss floor, on killing the boss.
 using System.Collections;
 using Signal.Generation;
 using Signal.Run;
@@ -8,12 +9,6 @@ using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// The "RUN COMPLETED" overlay shown on reaching the End room — or, on a boss floor, on killing the
-    /// boss. Two choices: Next Run (roll the next floor and checkpoint the save) or Save &amp; Exit (save
-    /// and return to the menu). Self-contained — built from code in the project's style on its own root
-    /// object, so it survives the level rebuild a Next Run triggers, and tears itself down after acting.
-    /// </summary>
     public sealed class RunCompleteScreenUI : MonoBehaviour
     {
         private const string MainMenuSceneName = "Main Menu";
@@ -24,13 +19,8 @@ namespace Signal.UI
         private CursorLockMode _prevLock;
         private bool _prevVisible;
 
-        /// <summary>Builds and shows a fresh completion screen, freezing the game. No-op if already open.</summary>
         public static void ShowNew() => ShowAfter(0f);
 
-        /// <summary>
-        /// Same screen, raised after a real-time pause — for kills that need a beat to land before a modal
-        /// covers them. Claims the slot immediately, so nothing else can open one during the wait.
-        /// </summary>
         public static void ShowAfter(float delaySeconds)
         {
             if (_open) return;
@@ -49,7 +39,6 @@ namespace Signal.UI
         {
             UiBuilder.EnsureEventSystem();
 
-            // Remember the gameplay cursor state so Next Run hands control straight back to it locked.
             _prevLock = Cursor.lockState;
             _prevVisible = Cursor.visible;
 
@@ -58,7 +47,7 @@ namespace Signal.UI
             Cursor.visible = true;
 
             Canvas canvas = UiBuilder.CreateOverlayCanvas("RunCompleteCanvas", 46);
-            canvas.transform.SetParent(transform, false); // destroying this object destroys the overlay
+            canvas.transform.SetParent(transform, false);
 
             Image dim = UiBuilder.NewChild<Image>(canvas.transform, "Dim");
             dim.color = DimColor;
@@ -101,9 +90,6 @@ namespace Signal.UI
             Close();
             if (generator == null) { Debug.LogError("[Run] No LevelGenerator to start the next run."); return; }
 
-            // Advance the run counter FIRST so the next floor generates for the run the player is about to
-            // play — this is what makes every Nth run a boss floor and scales enemies to the new run. Then
-            // roll the layout behind the loading screen and checkpoint the seed it settled on.
             if (RunManager.HasInstance) RunManager.Instance.AdvanceRun();
             generator.GenerateWithLoadingScreen(() => RunSaveSystem.SaveCurrent(generator.LastSeed));
         }
@@ -113,13 +99,8 @@ namespace Signal.UI
             LevelGenerator generator = FindFirstObjectByType<LevelGenerator>();
             Close();
 
-            // Cover the rebuild so the next floor never flashes on screen; this overlay is torn down with
-            // the gameplay scene when the menu loads, so it needs no explicit hide.
             LevelLoadingScreen.Show("Saving…");
 
-            // The run is beaten, so this banks the NEXT floor — not the one just cleared. Advance the run
-            // counter FIRST so the rolled layout matches the run being saved (boss floors, enemy scaling),
-            // then generate synchronously so the save is written before we leave for the menu.
             if (RunManager.HasInstance) RunManager.Instance.AdvanceRun();
             if (generator != null) generator.Generate();
 

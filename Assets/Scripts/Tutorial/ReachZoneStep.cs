@@ -1,12 +1,8 @@
+// Completes when the player reaches a TutorialTrigger — used for the Jump gap and the Double Jump wall (place the trigger past the obstacle).
 using UnityEngine;
 
 namespace Signal.Tutorial
 {
-    /// <summary>
-    /// Completes when the player reaches a <see cref="TutorialTrigger"/> — used for the Jump gap and
-    /// the Double Jump wall (place the trigger past the obstacle). The objective text is per-instance
-    /// so the same component reads correctly for each ("Jump over the gap", "Reach the platform…").
-    /// </summary>
     public class ReachZoneStep : TutorialStep
     {
         [SerializeField] private TutorialTrigger zone;

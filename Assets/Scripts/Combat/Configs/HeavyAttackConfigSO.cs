@@ -1,16 +1,15 @@
+// Fires immediately on button press, no charging.
 using UnityEngine;
 
 namespace Signal.Combat.Configs
 {
     public enum HeavyAttackMode
     {
-        /// <summary>Fires immediately on button press, no charging.</summary>
         SingleClick,
-        /// <summary>Damage/range scale up the longer the button is held, releasing fires the attack.</summary>
+
         HoldToCharge
     }
 
-    /// <summary>Configurable heavy attack either an instant single-click hit or a hold-to-charge swing.</summary>
     [CreateAssetMenu(menuName = "Combat/Attacks/Heavy Attack", fileName = "HeavyAttack")]
     public class HeavyAttackConfigSO : DamagingAttackConfigSO
     {

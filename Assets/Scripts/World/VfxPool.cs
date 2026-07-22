@@ -1,19 +1,14 @@
+// Minimal object pool for one-shot VFX prefabs, keyed by prefab.
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Signal.World
 {
-    /// <summary>
-    /// Minimal object pool for one-shot VFX prefabs, keyed by prefab. Instances self-return via
-    /// <see cref="PooledVfx"/> once their particles finish. Any prefab works — a <see cref="PooledVfx"/>
-    /// is added automatically if it isn't already present.
-    /// </summary>
     public static class VfxPool
     {
         private static readonly Dictionary<GameObject, Stack<PooledVfx>> Pools =
             new Dictionary<GameObject, Stack<PooledVfx>>();
 
-        /// <summary>Spawns (or reuses) a pooled instance at the pose and plays it. Returns it so callers can scale/parent.</summary>
         public static PooledVfx Play(GameObject prefab, Vector3 position, Quaternion rotation)
         {
             if (prefab == null) return null;
@@ -22,7 +17,7 @@ namespace Signal.World
                 Pools[prefab] = pool = new Stack<PooledVfx>();
 
             PooledVfx vfx = null;
-            while (pool.Count > 0 && vfx == null) vfx = pool.Pop(); // destroyed instances pop out null
+            while (pool.Count > 0 && vfx == null) vfx = pool.Pop();
 
             if (vfx == null)
             {
@@ -44,8 +39,7 @@ namespace Signal.World
         public static void Release(PooledVfx vfx)
         {
             if (vfx == null) return;
-            // Detach in case a caller parented it to a moving spawn point, so it can't drag a reused
-            // instance around later.
+
             vfx.transform.SetParent(null, worldPositionStays: true);
             vfx.gameObject.SetActive(false);
 

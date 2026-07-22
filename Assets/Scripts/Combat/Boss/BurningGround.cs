@@ -1,3 +1,4 @@
+// A patch of burning ground left behind by the boss's fire attacks: it ticks damage-over-time to the player standing in it, visibly fades over its lifetime, and cleans itself up — so hazards always expire and can never permanently wall off the arena.
 using System.Collections;
 using Signal.Combat.Data;
 using Signal.Combat.Interfaces;
@@ -5,12 +6,6 @@ using UnityEngine;
 
 namespace Signal.Combat.Boss
 {
-    /// <summary>
-    /// A patch of burning ground left behind by the boss's fire attacks: it ticks damage-over-time to the
-    /// player standing in it, visibly fades over its lifetime, and cleans itself up — so hazards always
-    /// expire and can never permanently wall off the arena. Patches are independent, so several can overlap.
-    /// Spawn one with <see cref="Spawn"/>; it builds its own flame VFX and needs no prefab.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class BurningGround : MonoBehaviour
     {
@@ -25,7 +20,6 @@ namespace Signal.Combat.Boss
         private Transform _playerT;
         private float _tickTimer;
 
-        /// <summary>Creates a burning patch at a world position. Ticks ~4×/sec for <paramref name="dps"/> damage.</summary>
         public static BurningGround Spawn(Vector3 position, float radius, float dps, float lifetime, GameObject instigator)
         {
             var go = new GameObject("BurningGround");
@@ -56,7 +50,6 @@ namespace Signal.Combat.Boss
                 age += Time.deltaTime;
                 float remaining = 1f - age / _lifetime;
 
-                // Fade the fire out over the back half so it visibly dies before it's gone.
                 if (_flames != null)
                 {
                     ParticleSystem.EmissionModule emission = _flames.emission;

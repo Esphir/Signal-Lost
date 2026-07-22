@@ -1,18 +1,9 @@
+// Decision-making for the Plummeter: chase the player into slam range, then trigger the SlamAttackAbility.
 using UnityEngine;
 using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Enemies
 {
-    /// <summary>
-    /// Decision-making for the Plummeter: chase the player into slam range, then trigger the
-    /// <see cref="SlamAttackAbility"/>. Movement is delegated to <see cref="EnemyMotor"/>
-    /// (which already yields to stun/knockback), the attack to the ability component —
-    /// this class only decides.
-    ///
-    /// It closes the distance in small hops rather than gliding: a creature whose whole identity is
-    /// leaping into the air shouldn't slide along the floor to get there, and it shares the boss's arc
-    /// solve so the two read as the same kind of motion at different scales.
-    /// </summary>
     [RequireComponent(typeof(EnemyMotor), typeof(SlamAttackAbility))]
     public class PlummeterAI : MonoBehaviour
     {
@@ -28,7 +19,7 @@ namespace Signal.Combat.Enemies
 
         private EnemyMotor _motor;
         private SlamAttackAbility _slam;
-        private IStunnable _stunnable; // optional — stun-immune variants just omit it
+        private IStunnable _stunnable;
         private Transform _target;
         private float _nextTargetSearch;
 
@@ -55,8 +46,6 @@ namespace Signal.Combat.Enemies
                 _motor.Stop();
                 _motor.FaceTowards(_target.position);
 
-                // Never start the leap mid-hop: the slam takes its own ground height from wherever it
-                // launches, so committing in the air would land it hovering.
                 if (_slam.CooldownReady && !_motor.Airborne)
                     _slam.TryExecute(_target.position);
                 return;
@@ -70,7 +59,7 @@ namespace Signal.Combat.Enemies
             if (_target != null) return true;
             if (Time.time < _nextTargetSearch) return false;
 
-            _nextTargetSearch = Time.time + 1f; // cheap periodic re-scan
+            _nextTargetSearch = Time.time + 1f;
             GameObject found = GameObject.FindGameObjectWithTag(targetTag);
             if (found != null) _target = found.transform;
             return _target != null;

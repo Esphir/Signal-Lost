@@ -1,24 +1,10 @@
+// Attack 2 — Bottle Spin Flame Spray (the signature).
 using System.Collections;
 using Signal.Combat.Telegraphs;
 using UnityEngine;
 
 namespace Signal.Combat.Boss
 {
-    /// <summary>
-    /// Attack 2 — Bottle Spin Flame Spray (the signature). Heavily telegraphed with a ground ring, the boss
-    /// topples onto its side, spins like a rolling bottle, and sprays a continuous flame stream out of its
-    /// cap that sweeps a full circle — a rotating hazard the player must stay ahead of (or slip behind).
-    /// After the rotation it pushes itself upright, leaving a moment of recovery.
-    ///
-    /// The sweep burns from the boss outward and splashes across its own footprint, so hugging a spinning
-    /// flamethrower is the worst place in the room rather than the safest, and it lays burning ground at
-    /// two radii so it can't be answered by picking one distance and standing there.
-    ///
-    /// The tip is a real rotation of the boss transform, not a cosmetic child, so the model visibly lies
-    /// down and the flame leaves the cap rather than the roof. Because a tipped collider would fall, drift,
-    /// or shove itself back upright, the attack takes the rigidbody kinematic for its duration and animates
-    /// the whole pose — tilt, spin and the settle onto the floor — itself.
-    /// </summary>
     public sealed class BottleSpinAttack : BossAttack
     {
         [Header("Telegraph")]
@@ -66,7 +52,6 @@ namespace Signal.Combat.Boss
 
         public override float WeightAt(float distance, BossContext ctx)
         {
-            // A room-covering attack — strong at close/mid range where it's hardest to escape, always usable.
             return distance <= range ? 4f : 2f;
         }
 
@@ -76,9 +61,8 @@ namespace Signal.Combat.Boss
             float duration = spinDuration * ctx.FlameDurationMultiplier;
             float yaw = ctx.Boss.eulerAngles.y;
             float standY = ctx.Boss.position.y;
-            float drop = settleToGround ? GroundDrop(ctx) : 0f;   // measured upright, before any squash
+            float drop = settleToGround ? GroundDrop(ctx) : 0f;
 
-            // Heavy telegraph: a ground ring at the boss marking the danger radius, and a crouch into it.
             ShowTelegraph(ctx);
             ctx.Anim?.Anticipate(0.45f);
             yield return Wait(telegraph, ctx);
@@ -88,9 +72,6 @@ namespace Signal.Combat.Boss
             yield return Tip(ctx, yaw, standY, drop, onSide: true);
             ctx.Anim?.Pulse(0.7f);
 
-            // The jet lives in world space and is aimed by the sweep, so the boss's own scale and tilt can't
-            // skew the flame or point it into the floor. Being unparented, it's ours to clean up — including
-            // when the boss dies mid-spin and this coroutine simply stops.
             _jet = new GameObject("FlameJet");
             ParticleSystem flames = FlameVfx.BuildJet(_jet, range, coneHalfAngle);
             flames.Play();
@@ -111,8 +92,6 @@ namespace Signal.Combat.Boss
                 Vector3 forward = Quaternion.Euler(0f, yaw + sweptDeg, 0f) * Vector3.forward;
                 _jet.transform.SetPositionAndRotation(Nozzle(ctx, forward), Quaternion.LookRotation(forward));
 
-                // Damage is measured from the boss itself, not from the cap out in front of it — a cone
-                // hung off the nozzle leaves the ground under the boss completely safe.
                 bool burning = ctx.Player != null &&
                                FlameDamage.InFlame(ctx.Boss.position, forward, coneHalfAngle, range, splashRadius, ctx.Player.position);
                 float due = ticker.Tick(burning, Time.deltaTime, tick);
@@ -121,8 +100,7 @@ namespace Signal.Combat.Boss
                 if (sweptDeg >= nextPatchDeg && patchDps > 0f)
                 {
                     nextPatchDeg += patchEvery;
-                    // Alternate near and far so the spin leaves a hostile floor at every radius, instead of
-                    // one distant ring with a clean circle to stand in at the boss's feet.
+
                     float reach = range * ((patchIndex++ % 2 == 0) ? 0.3f : 0.75f);
                     Vector3 spot = ctx.Boss.position + forward * reach;
                     spot.y = ctx.Boss.position.y;
@@ -138,7 +116,6 @@ namespace Signal.Combat.Boss
 
             DestroyJet();
 
-            // Push upright — the clear "you can hit me now" recovery beat.
             ctx.Anim?.Anticipate(0.4f);
             yield return Tip(ctx, yaw + sweptDeg, standY, drop, onSide: false);
             ReleasePhysics();
@@ -146,7 +123,6 @@ namespace Signal.Combat.Boss
             ctx.Anim?.Relax();
         }
 
-        /// <summary>Rolls the boss between upright and flat over time, sinking it as it goes over.</summary>
         private IEnumerator Tip(BossContext ctx, float yaw, float standY, float drop, bool onSide)
         {
             float time = (onSide ? tipOverTime : uprightTime) / Mathf.Max(0.1f, ctx.SpeedMultiplier);
@@ -160,7 +136,6 @@ namespace Signal.Combat.Boss
             SetPose(ctx, yaw, onSide ? standY - drop : standY, onSide ? 1f : 0f);
         }
 
-        /// <summary>Poses the boss at a yaw and a tilt, where tip 0 is standing and 1 is flat on its side.</summary>
         private void SetPose(BossContext ctx, float yaw, float y, float tip)
         {
             Quaternion spin = Quaternion.Euler(0f, yaw, 0f);
@@ -168,7 +143,7 @@ namespace Signal.Combat.Boss
 
             if (visual != null)
             {
-                ctx.Boss.rotation = spin;      // a rigged model tips its mesh and leaves the collider standing
+                ctx.Boss.rotation = spin;
                 visual.localRotation = tilt;
             }
             else
@@ -181,19 +156,12 @@ namespace Signal.Combat.Boss
             ctx.Boss.position = position;
         }
 
-        /// <summary>Nozzle position for the current sweep direction — the cap, out at the front of the bottle.</summary>
         private Vector3 Nozzle(BossContext ctx, Vector3 forward)
         {
             Vector3 right = Vector3.Cross(Vector3.up, forward);
             return ctx.Boss.position + right * nozzleOffset.x + Vector3.up * nozzleOffset.y + forward * nozzleOffset.z;
         }
 
-        /// <summary>
-        /// How far the bottle sinks as it lies down. Standing, the model's pivot rides a full body-height
-        /// above the floor; lying, it only needs to clear the bottle's own thickness — the difference is the
-        /// settle. Measured from the pivot rather than the bounds centre, so a model whose origin isn't in
-        /// the middle doesn't sink through the floor.
-        /// </summary>
         private static float GroundDrop(BossContext ctx)
         {
             Bounds bounds = default;
@@ -211,7 +179,6 @@ namespace Signal.Combat.Boss
             return Mathf.Max(0f, standingClearance - lyingRadius);
         }
 
-        /// <summary>Takes the body kinematic so gravity and depenetration can't fight the animated tip.</summary>
         private void HoldPhysics(BossContext ctx)
         {
             _held = ctx.Boss.GetComponent<Rigidbody>();
@@ -257,7 +224,6 @@ namespace Signal.Combat.Boss
             if (_telegraph != null) _telegraph.Hide();
         }
 
-        // Dying mid-spin stops the coroutine wherever it stands, so hand the body and the flame back here too.
         private void OnDisable() { HideTelegraph(); ReleasePhysics(); DestroyJet(); }
         private void OnDestroy() { ReleasePhysics(); DestroyJet(); if (_telegraph != null) Destroy(_telegraph.gameObject); }
     }

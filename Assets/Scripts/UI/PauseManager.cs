@@ -1,3 +1,4 @@
+// Owns pause state during gameplay: toggles on Escape / gamepad Start, freezes the game with Time.timeScale = 0, deactivates player input, frees the cursor, and drives the PauseMenuUI and (as a sub-menu) the SettingsUI sharing this GameObject.
 using Signal.Run;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -5,12 +6,6 @@ using UnityEngine.SceneManagement;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Owns pause state during gameplay: toggles on Escape / gamepad Start, freezes the game with
-    /// Time.timeScale = 0, deactivates player input, frees the cursor, and drives the
-    /// <see cref="PauseMenuUI"/> and (as a sub-menu) the <see cref="SettingsUI"/> sharing this
-    /// GameObject. Refuses to open over another full-screen UI via <see cref="UiModalState"/>.
-    /// </summary>
     [RequireComponent(typeof(PauseMenuUI))]
     public class PauseManager : MonoBehaviour
     {
@@ -48,7 +43,6 @@ namespace Signal.UI
         {
             if (!PausePressedThisFrame()) return;
 
-            // Escape backs out of Settings first, so it acts as a sub-menu of Pause.
             if (_settings != null && _settings.IsOpen)
             {
                 _settings.Close();

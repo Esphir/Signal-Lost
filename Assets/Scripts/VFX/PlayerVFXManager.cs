@@ -1,3 +1,4 @@
+// Attack type reported by PlayerCombat so the VFX manager can pick the matching effect.
 using Signal.Combat.Data;
 using Signal.Combat.Health;
 using Signal.World;
@@ -5,16 +6,8 @@ using UnityEngine;
 
 namespace Signal.VFX
 {
-    /// <summary>Attack type reported by PlayerCombat so the VFX manager can pick the matching effect.</summary>
     public enum PlayerAttackKind { Light, Heavy, Bash }
 
-    /// <summary>
-    /// The single owner of player visual effects. Gameplay scripts only *notify* it (via their
-    /// events); it never lives inside them. It resolves each cue against a <see cref="PlayerVFXDatabase"/>
-    /// and spawns through the pooled <see cref="VfxPool"/> — gameplay code never touches a particle
-    /// system. Adding a future effect is a database entry + optional Play method here; the core
-    /// <see cref="Play"/> path never changes.
-    /// </summary>
     public class PlayerVFXManager : MonoBehaviour
     {
         [Header("Data")]
@@ -61,7 +54,7 @@ namespace Signal.VFX
                 _controller.Landed += OnLanded;
             }
             if (_dodge != null) _dodge.DodgeStarted += PlayDodge;
-            // Impact frame, not attack start, so the slash lands with the animation.
+
             if (_combat != null) _combat.AttackImpact += OnAttackImpact;
             if (_health != null)
             {
@@ -89,7 +82,6 @@ namespace Signal.VFX
 
         private void Start()
         {
-            // RespawnManager is created by the systems bootstrap; by Start it exists.
             _respawn = RespawnManager.Instance;
             if (_respawn != null) _respawn.PlayerRespawned += OnRespawned;
         }
@@ -98,8 +90,6 @@ namespace Signal.VFX
         {
             if (_respawn != null) _respawn.PlayerRespawned -= OnRespawned;
         }
-
-        // ── Notification handlers ─────────────────────────────────────────────
 
         private void OnLanded(float speed)
         {
@@ -121,8 +111,6 @@ namespace Signal.VFX
         private void OnDamaged(DamageInfo info) => PlayDamage();
         private void OnRespawned(GameObject player) => PlayRespawn();
 
-        // ── Public API ────────────────────────────────────────────────────────
-
         public void PlayJump() => Play(PlayerVfxCue.Jump);
         public void PlayDoubleJump() => Play(PlayerVfxCue.DoubleJump);
         public void PlayLand() => Play(PlayerVfxCue.Land);
@@ -134,7 +122,6 @@ namespace Signal.VFX
         public void PlayDeath() => Play(PlayerVfxCue.Death);
         public void PlayRespawn() => Play(PlayerVfxCue.Respawn);
 
-        /// <summary>Spawns the effect for a cue via the pool. The single spawn path all cues share.</summary>
         public void Play(PlayerVfxCue cue, float extraScale = 1f)
         {
             if (database == null || !database.TryGet(cue, out PlayerVFXDatabase.Entry entry)) return;

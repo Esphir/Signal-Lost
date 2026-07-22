@@ -1,3 +1,4 @@
+// Loot rarity tiers, ordered worst to best.
 namespace Signal.Run
 {
     public enum ItemRarity

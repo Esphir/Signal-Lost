@@ -1,3 +1,4 @@
+// Composition root for player combat.
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -12,13 +13,6 @@ using Signal.Combat.Detection;
 using Signal.Combat.Interfaces;
 using Signal.Run;
 
-/// <summary>
-/// Composition root for player combat. Owns no attack logic itself: it wires up the
-/// <see cref="ICombatInputSource"/>, an <see cref="IAttackHitDetector"/> and a
-/// <see cref="CombatHitResolver"/> into an <see cref="AttackExecutionContext"/>, then hands control
-/// each frame to whichever <see cref="IAttackStrategy"/> reports it can run. Adding an attack type
-/// means a new IAttackStrategy + config and one array slot here — no existing attack code changes.
-/// </summary>
 public class PlayerCombat : MonoBehaviour, IAttacker
 {
     [Header("Attack Configs")]
@@ -68,13 +62,10 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     public bool IsAttacking { get; private set; }
     public event Action<int> AttackLanded;
 
-    /// <summary>Raised with the damage dealt each time an attack sweep connects (life steal hooks in here).</summary>
     public event Action<float> DamageDealt;
 
-    /// <summary>Raised when an attack begins, with its kind, so VFX/audio can react without touching combat internals.</summary>
     public event Action<Signal.VFX.PlayerAttackKind> AttackStarted;
 
-    /// <summary>Raised at the attack's impact frame (animation-synced), with its kind. Impact VFX hook here.</summary>
     public event Action<Signal.VFX.PlayerAttackKind> AttackImpact;
 
     private Signal.VFX.PlayerAttackKind _currentAttackKind;
@@ -139,13 +130,11 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             OnAttackLanded = hits => AttackLanded?.Invoke(hits)
         };
 
-        // Layer index must be resolved before trigger/state validation can check HasState.
         InitializeUpperBodyLayer();
         InitializeBashLayer();
         WarnAboutMissingTriggers();
         _context.AttackTriggerHashes = CollectAttackTriggerHashes();
 
-        // Each strategy owns its own input check, so order only sets priority-of-read; bash first by convention.
         _strategies = new IAttackStrategy[]
         {
             new BashStrategy(bashConfig),
@@ -159,11 +148,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
         SpineProxyGate.SetSuspended(_spineProxy, this, false);
     }
 
-    /// <summary>
-    /// Aborts any in-progress attack and hit-stop and clears buffered input, releasing the attack
-    /// lock so control returns immediately (used on respawn). StopAllCoroutines skips the RunAttack
-    /// finally, so IsAttacking is cleared here directly.
-    /// </summary>
     public void CancelAttack()
     {
         StopAllCoroutines();
@@ -189,7 +173,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
 
         if (IsAttacking)
         {
-            // Remember presses made mid-attack so they fire the frame the current attack unlocks.
             for (int i = 0; i < _strategies.Length; i++)
             {
                 if (_strategies[i].CanExecute(_input))
@@ -203,7 +186,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             return;
         }
 
-        // A press buffered during the previous attack's tail wins over fresh input this frame.
         if (_bufferedStrategyIndex >= 0)
         {
             int buffered = _bufferedStrategyIndex;
@@ -243,7 +225,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
         }
         finally
         {
-            // Always release the lock even if a strategy throws, or combat stays stuck disabled.
             IsAttacking = false;
             CombatLog.Info($"Attack finished: {strategy.GetType().Name}", this);
         }
@@ -280,10 +261,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
         return hashes;
     }
 
-    /// <summary>
-    /// Distinct, valid trigger hashes across the whole moveset, used to clear stale queued triggers
-    /// before each swing so spam-clicking can't stack phantom attacks.
-    /// </summary>
     private int[] CollectAttackTriggerHashes()
     {
         var hashes = new HashSet<int>();
@@ -313,8 +290,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
 
     private void WarnAboutMissingTriggers()
     {
-        // Walk the combo chain (bounded against an accidental cycle) so a bad trigger on a later
-        // step is reported at startup, not several swings into a fight.
         LightAttackConfigSO step = lightAttackConfig;
         for (int i = 0; step != null && i < 16; i++)
         {
@@ -328,7 +303,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
         ReportBashVariantState();
     }
 
-    // Covers what the shared trigger/state checks miss: the moving-variant state and routing bool.
     private void ReportBashVariantState()
     {
         if (bashConfig == null || _animator == null) return;
@@ -393,8 +367,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             return;
         }
 
-        // Controller authors this Override layer at weight 1 (CombatIdle would permanently replace
-        // the top half of locomotion); start at 0 and blend up only while attacking.
         _animator.SetLayerWeight(_upperBodyLayerIndex, 0f);
     }
 
@@ -402,8 +374,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     {
         if (_upperBodyLayerIndex < 0) return;
 
-        // A dodge roll owns the whole body: drop the upper-body override and its post-attack hold so
-        // a lingering combat stance can't play over the roll. Resumes when an attack next starts.
         bool rolling = _dodge != null && _dodge.IsRolling;
 
         if (rolling) _upperBodyHoldTimer = 0f;
@@ -435,8 +405,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             return;
         }
 
-        // Must idle at weight 0 or this Override layer's Empty state forces the rig to T-pose.
-        // Raised only during the standing bash; the moving bash lives on the Upper Body layer.
         _animator.SetLayerWeight(_bashLayerIndex, 0f);
     }
 
@@ -444,8 +412,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
     {
         if (_bashLayerIndex < 0 || bashConfig == null) return;
 
-        // Only the standing variant uses this full-body layer; the moving one rides Upper Body.
-        // Drop back to 0 by exit so the layer returns to its pass-through Empty state.
         bool showing = bashConfig.StandingVariantSelected
                        && _context.TryGetAttackNormalizedTime(bashConfig, out float t)
                        && t < bashConfig.exitNormalizedTime;
@@ -458,8 +424,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             _animator.SetLayerWeight(_bashLayerIndex, current);
         }
 
-        // Suspend the SpineProxy while the standing bash owns the rig, else it stomps the clip's
-        // spine every LateUpdate. Weight-driven, so it resumes as the layer blends back out.
         if (_spineProxy != null)
             SpineProxyGate.SetSuspended(_spineProxy, this, current >= spineProxySuspendWeight);
     }
@@ -481,7 +445,6 @@ public class PlayerCombat : MonoBehaviour, IAttacker
 
     private void OnDrawGizmosSelected()
     {
-        // red = light, orange = heavy (full-charge radius), blue = bash.
         Vector3 origin = transform.position + Vector3.up * 0.8f;
         DrawAttackRangeGizmo(lightAttackConfig, Color.red, origin);
         DrawAttackRangeGizmo(heavyAttackConfig, new Color(1f, 0.5f, 0f), origin);

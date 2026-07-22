@@ -1,3 +1,4 @@
+// One rolled upgrade choice, ready for UI display and run application.
 using System;
 using System.Collections.Generic;
 using Signal.Stats;
@@ -5,7 +6,6 @@ using UnityEngine;
 
 namespace Signal.Run.Upgrades
 {
-    /// <summary>One rolled upgrade choice, ready for UI display and run application.</summary>
     public readonly struct UpgradeOption
     {
         public readonly StatType Stat;
@@ -28,7 +28,6 @@ namespace Signal.Run.Upgrades
             DisplayAsPercent = displayAsPercent;
         }
 
-        /// <summary>e.g. "+7 Attack Damage" or "+10% Attack Speed".</summary>
         public string Label => $"+{Value:0.#}{(DisplayAsPercent || Mode == StatModifierMode.Percent ? "%" : "")} {DisplayName}";
 
         public RunUpgrade ToRunUpgrade() => new RunUpgrade
@@ -39,11 +38,6 @@ namespace Signal.Run.Upgrades
         };
     }
 
-    /// <summary>
-    /// Upgrade generator data: which stats can roll and how strong each is per rarity.
-    /// <see cref="GetRandomOptions"/> is virtual so future tables (weighted stats, rarity-gated
-    /// stats, …) can subclass without touching the UI or loot code.
-    /// </summary>
     [CreateAssetMenu(menuName = "Run/Upgrade Table", fileName = "UpgradeTable")]
     public class UpgradeTableSO : ScriptableObject
     {
@@ -71,7 +65,6 @@ namespace Signal.Run.Upgrades
 
         private static readonly List<int> IndexScratch = new List<int>();
 
-        /// <summary>Fills <paramref name="results"/> with up to <paramref name="count"/> options, each for a distinct stat.</summary>
         public virtual void GetRandomOptions(ItemRarity rarity, int count, List<UpgradeOption> results)
         {
             results.Clear();

@@ -1,8 +1,8 @@
+// Completes once the player has moved a configurable horizontal distance from where the step began.
 using UnityEngine;
 
 namespace Signal.Tutorial
 {
-    /// <summary>Completes once the player has moved a configurable horizontal distance from where the step began.</summary>
     public class MovementStep : TutorialStep
     {
         [SerializeField, Min(0.5f)] private float minDistance = 4f;
@@ -29,7 +29,7 @@ namespace Signal.Tutorial
 
             Vector3 delta = _player.position - _start;
             delta.y = 0f;
-            // Ticking the objective is what finishes the step (TutorialStep auto-completes).
+
             if (delta.magnitude >= minDistance) _moveObjective.Complete();
         }
     }

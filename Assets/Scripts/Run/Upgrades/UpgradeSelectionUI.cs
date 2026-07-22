@@ -1,3 +1,4 @@
+// The "choose one of three upgrades" overlay shown when loot is collected.
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -7,11 +8,6 @@ using UnityEngine.UI;
 
 namespace Signal.Run.Upgrades
 {
-    /// <summary>
-    /// The "choose one of three upgrades" overlay shown when loot is collected. Built from code so
-    /// no prefab or scene canvas is needed. Optionally pauses gameplay while open. Picking a card
-    /// applies the upgrade to the current run immediately and closes the overlay.
-    /// </summary>
     public class UpgradeSelectionUI : MonoBehaviour
     {
         [SerializeField] private UpgradeTableSO upgradeTable;
@@ -39,12 +35,10 @@ namespace Signal.Run.Upgrades
             if (debugHotkey && !IsOpen && Keyboard.current != null && Keyboard.current.uKey.wasPressedThisFrame)
                 Open((ItemRarity)Random.Range(0, 5), Color.white);
 
-            // Guard against other systems (hit-stop) restoring timeScale mid-choice.
             if (IsOpen && pauseDuringChoice && Time.timeScale != 0f)
                 Time.timeScale = 0f;
         }
 
-        /// <summary>Rolls the choices for the given rarity and shows the overlay.</summary>
         public void Open(ItemRarity rarity, Color accent)
         {
             if (IsOpen) return;
@@ -149,8 +143,6 @@ namespace Signal.Run.Upgrades
                 if (first == null) first = card;
             }
 
-            // Focus the first card so a controller can pick an upgrade — this overlay is unskippable, so
-            // without a selection a pad player would be stuck here.
             if (first != null) EventSystem.current?.SetSelectedGameObject(first.gameObject);
         }
 
@@ -165,8 +157,6 @@ namespace Signal.Run.Upgrades
             UpgradeOption captured = option;
             button.onClick.AddListener(() => Choose(captured));
 
-            // Thicker than a menu button's: these cards are large and sit side by side, so the border has
-            // to carry which one is picked from across the screen.
             Signal.UI.SelectionHighlight.Attach(card.gameObject, 6f);
 
             var layout = card.gameObject.AddComponent<VerticalLayoutGroup>();

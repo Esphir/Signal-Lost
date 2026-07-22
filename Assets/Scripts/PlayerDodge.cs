@@ -1,13 +1,8 @@
+// Dodge roll with i-frames and perfect-dodge slow-mo.
 using System.Collections;
 using UnityEngine;
 using Signal.Combat.Interfaces;
 
-/// <summary>
-/// Dodge roll with i-frames and perfect-dodge slow-mo.
-/// Reads input from PlayerInputHandler.
-/// Implements IInvulnerabilityGate so HealthComponent automatically ignores damage during i-frames
-/// without any direct reference between the two systems.
-/// </summary>
 public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
 {
     [Header("Roll Settings")]
@@ -38,22 +33,20 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
     public bool IsRolling    { get; private set; }
     public bool IsInvincible { get; private set; }
 
-    /// <summary>Raised once when a dodge roll begins.</summary>
     public event System.Action DodgeStarted;
 
     bool IInvulnerabilityGate.IsInvulnerable => IsInvincible;
 
     private PlayerController      _controller;
     private PlayerInputHandler    _input;
-    private PlayerMovementAnimator _movementAnimator; // optional — resolves which roll clip plays
+    private PlayerMovementAnimator _movementAnimator;
 
     private float   _cooldownTimer;
     private float   _rollTimer;
-    private float   _activeRollDuration; // real duration of the current roll (animation length when available)
-    private float   _easedProgress;   // 0..1 fraction of rollDistance already covered
+    private float   _activeRollDuration;
+    private float   _easedProgress;
     private Vector3 _rollDirection;
     private bool    _perfectActive;
-
 
     private void Awake()
     {
@@ -77,7 +70,7 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
     {
         Vector3 dir = _controller.GetMoveDirection();
         if (dir.sqrMagnitude < 0.01f)
-            dir = transform.forward; // no input → default to a forward roll
+            dir = transform.forward;
 
         _rollDirection = dir.normalized;
         IsRolling      = true;
@@ -85,14 +78,6 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
         _easedProgress = 0f;
         DodgeStarted?.Invoke();
 
-        // Facing is intentionally preserved (no rotation snap) so the directional roll
-        // animations — chosen relative to current facing — read correctly, e.g. strafing
-        // side-rolls while locked onto a target.
-        //
-        // The dodge paces itself to the actual roll clip so movement and animation stay in sync —
-        // but the gameplay lock ends at controlExitNormalized, before the clip's recovery-frame
-        // tail, so control returns the moment the roll visually finishes. The serialized
-        // rollDuration is only a fallback when no animation is available.
         _activeRollDuration = rollDuration;
         if (_movementAnimator != null &&
             _movementAnimator.TryPlayRoll(_rollDirection, out float animationDuration))
@@ -107,9 +92,6 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
     {
         _rollTimer += Time.deltaTime;
 
-        // Lerp the roll: SmoothStep-eased progress along the full distance, applied as per-frame
-        // deltas through the CharacterController so collision still works. The same total
-        // distance is spread over the whole animation, keeping movement and visuals in sync.
         float t     = Mathf.Clamp01(_rollTimer / _activeRollDuration);
         float eased = Mathf.SmoothStep(0f, 1f, t);
         _controller.ApplyRootMotion(_rollDirection * ((eased - _easedProgress) * rollDistance));
@@ -118,17 +100,14 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
         if (t >= 1f)
         {
             IsRolling = false;
-            _cooldownTimer = rollCooldown; // cooldown begins when the roll completes
+            _cooldownTimer = rollCooldown;
 
-            // Clear stale smoothed movement so held input takes effect instantly instead of
-            // fighting the pre-roll velocity for the first few frames.
             _controller.ResetHorizontalMomentum();
         }
     }
 
     private IEnumerator IFrameWindow()
     {
-        // Invincibility covers the middle of the roll (the tuck), not the wind-up or recovery.
         float start = _activeRollDuration * Mathf.Min(iFrameStart, iFrameEnd);
         float end   = _activeRollDuration * Mathf.Max(iFrameStart, iFrameEnd);
 
@@ -146,7 +125,6 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
         return true;
     }
 
-    /// <summary>Aborts an in-progress roll and its i-frame/slow-mo coroutines — used on respawn.</summary>
     public void CancelDodge()
     {
         StopAllCoroutines();

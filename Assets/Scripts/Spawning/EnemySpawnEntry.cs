@@ -1,13 +1,9 @@
+// One enemy type's spawn configuration inside an EnemySpawnProfile.
 using System;
 using UnityEngine;
 
 namespace Signal.Spawning
 {
-    /// <summary>
-    /// One enemy type's spawn configuration inside an <see cref="EnemySpawnProfile"/>. Pure data:
-    /// how likely the enemy is, and how many of it a single section may hold. Adding a new enemy
-    /// type means adding a row to a profile asset — no code changes anywhere.
-    /// </summary>
     [Serializable]
     public class EnemySpawnEntry
     {
@@ -37,18 +33,15 @@ namespace Signal.Spawning
                  "harder or more annoying type (e.g. Supporters) back until players have a run or two under their belt.")]
         public int minRunNumber = 1;
 
-        /// <summary>A row with no prefab assigned is inert rather than an error.</summary>
         public bool IsValid => prefab != null;
 
         public string Label => string.IsNullOrWhiteSpace(displayName)
             ? (prefab != null ? prefab.name : "<no prefab>")
             : displayName;
 
-        /// <summary>The cap actually applied per section: <see cref="canSpawnMultiple"/> collapses it to 1.</summary>
         public int EffectiveMaxCount =>
             canSpawnMultiple ? Mathf.Max(0, maxCount) : Mathf.Min(1, Mathf.Max(0, maxCount));
 
-        /// <summary>Guaranteed copies, never exceeding the effective cap.</summary>
         public int EffectiveMinCount => Mathf.Min(Mathf.Max(0, minCount), EffectiveMaxCount);
     }
 }

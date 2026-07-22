@@ -1,15 +1,10 @@
+// Player-side bridge between the RunManager and existing systems: pushes final max health into HealthComponent, drives the animator's AttackSpeed multiplier, and ends the run on death.
 using Signal.Combat.Health;
 using Signal.Stats;
 using UnityEngine;
 
 namespace Signal.Run
 {
-    /// <summary>
-    /// Player-side bridge between the RunManager and existing systems: pushes final max health
-    /// into <see cref="HealthComponent"/>, drives the animator's AttackSpeed multiplier, and ends
-    /// the run on death. Base values are captured once at startup, so run modifiers never
-    /// permanently edit them.
-    /// </summary>
     [DisallowMultipleComponent]
     public class PlayerRunStats : MonoBehaviour
     {
@@ -21,7 +16,6 @@ namespace Signal.Run
         private float _baseMaxHealth;
         private bool _animatorHasAttackSpeed;
 
-        // Start, not Awake: base max health must be read after HealthComponent.Awake ran.
         private void Start()
         {
             _health = GetComponent<HealthComponent>();
@@ -59,7 +53,6 @@ namespace Signal.Run
             if (RunManager.HasInstance) RunManager.Instance.StatsChanged -= ApplyStats;
         }
 
-        // Life steal: heal for the configured percent of damage dealt. Heal() clamps to max health.
         private void OnDamageDealt(float amount)
         {
             if (_health == null || !_health.IsAlive) return;

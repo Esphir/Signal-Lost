@@ -1,16 +1,8 @@
+// Stops enemies from stacking into a totem.
 using UnityEngine;
 
 namespace Signal.Combat.Enemies
 {
-    /// <summary>
-    /// Stops enemies from stacking into a totem. Two enemies that leap or hop can land one on top of the
-    /// other, and since both freeze their rotation and steer horizontally, nothing ever topples the pile —
-    /// the one on top just rides around. This notices being the upper half of that and shoves itself off.
-    ///
-    /// Only the enemy on top acts: the contact normal points up out of whatever is underneath, so the one
-    /// underneath sees a downward normal and does nothing. That keeps a single small nudge from becoming
-    /// two enemies shoving each other apart at twice the speed.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     public sealed class EnemyStackBreaker : MonoBehaviour
@@ -38,11 +30,9 @@ namespace Signal.Combat.Enemies
 
         private void OnCollisionStay(Collision collision)
         {
-            if (_rb == null || _rb.isKinematic) return;          // a scripted leap owns its own position
+            if (_rb == null || _rb.isKinematic) return;
             if (Time.time < _nextNudgeAt) return;
 
-            // Resolve through the rigidbody: enemies carry colliders on untagged child meshes, and the tag
-            // (and the position worth pushing away from) lives on the root.
             Transform other = collision.rigidbody != null ? collision.rigidbody.transform : collision.transform;
             if (!other.CompareTag(enemyTag)) return;
             if (!StandingOn(collision)) return;
@@ -50,7 +40,6 @@ namespace Signal.Combat.Enemies
             Vector3 away = transform.position - other.position;
             away.y = 0f;
 
-            // Dead centre on top of each other gives no direction to leave in — pick one.
             if (away.sqrMagnitude < 0.0001f)
             {
                 Vector2 random = Random.insideUnitCircle.normalized;

@@ -1,14 +1,9 @@
+// A place a section may put an enemy.
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Signal.Spawning
 {
-    /// <summary>
-    /// A place a section may put an enemy. Owns placement only: it turns its radius into a validated
-    /// world pose and draws itself in the Scene view — it never decides *what* spawns. Registers with
-    /// the section above it in the hierarchy automatically, so dropping one under a section is all
-    /// the wiring required.
-    /// </summary>
     [DisallowMultipleComponent]
     public class EnemySpawnPoint : MonoBehaviour
     {
@@ -41,11 +36,6 @@ namespace Signal.Spawning
             if (_section != null) _section.Unregister(this);
         }
 
-        /// <summary>
-        /// Finds a valid pose within this point's radius. Returns false when the point is currently
-        /// unusable — no ground, buried in geometry, or crowded by enemies — which lets the section
-        /// move on to another point rather than spawning something into a wall.
-        /// </summary>
         public bool TryGetSpawnPose(SpawnValidationSettings settings, IReadOnlyList<Vector3> reserved,
             out Vector3 position, out Quaternion rotation)
         {
@@ -87,7 +77,6 @@ namespace Signal.Spawning
             DrawArrow(transform.position, GizmoFacing());
         }
 
-        /// <summary>Facing shown in the Scene view; player-facing can't be previewed at edit time.</summary>
         private Vector3 GizmoFacing()
         {
             Vector3 forward = overrideFacing ? transform.TransformDirection(forwardDirection) : transform.forward;

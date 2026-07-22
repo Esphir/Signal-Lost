@@ -1,19 +1,13 @@
+// Code-built fire particle effects (placeholder art, in the same spirit as the project's other procedural VFX).
 using UnityEngine;
 
 namespace Signal.Combat.Boss
 {
-    /// <summary>
-    /// Code-built fire particle effects (placeholder art, in the same spirit as the project's other
-    /// procedural VFX). Two shapes: a directional <see cref="BuildJet"/> that shoots flame along a host's
-    /// local +Z (the nozzle), and a <see cref="BuildPatch"/> of rising ground flame for burning ground.
-    /// No authored assets required; swap in real VFX prefabs later without touching gameplay.
-    /// </summary>
     public static class FlameVfx
     {
         private static readonly Color Hot = new Color(1f, 0.55f, 0.12f, 1f);
         private static readonly Color Cool = new Color(0.9f, 0.15f, 0.05f, 1f);
 
-        /// <summary>Cone of flame from the host, along its local +Z, reaching <paramref name="range"/>.</summary>
         public static ParticleSystem BuildJet(GameObject host, float range, float halfAngleDeg)
         {
             var ps = host.AddComponent<ParticleSystem>();
@@ -54,7 +48,6 @@ namespace Signal.Combat.Boss
             return ps;
         }
 
-        /// <summary>Rising ground flame filling a disc of <paramref name="radius"/> — for burning ground.</summary>
         public static ParticleSystem BuildPatch(GameObject host, float radius)
         {
             var ps = host.AddComponent<ParticleSystem>();
@@ -78,7 +71,7 @@ namespace Signal.Combat.Boss
             shape.shapeType = ParticleSystemShapeType.Circle;
             shape.radius = radius;
             shape.radiusThickness = 1f;
-            shape.rotation = new Vector3(90f, 0f, 0f); // flat on the ground, flames rise up
+            shape.rotation = new Vector3(90f, 0f, 0f);
 
             ParticleSystem.VelocityOverLifetimeModule vel = ps.velocityOverLifetime;
             vel.enabled = true;

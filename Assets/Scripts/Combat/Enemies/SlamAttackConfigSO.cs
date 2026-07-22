@@ -1,8 +1,8 @@
+// Designer data for the Plummeter's leap-and-slam attack.
 using UnityEngine;
 
 namespace Signal.Combat.Enemies
 {
-    /// <summary>Designer data for the Plummeter's leap-and-slam attack.</summary>
     [CreateAssetMenu(menuName = "Combat/Enemies/Slam Attack", fileName = "SlamAttack")]
     public class SlamAttackConfigSO : ScriptableObject
     {

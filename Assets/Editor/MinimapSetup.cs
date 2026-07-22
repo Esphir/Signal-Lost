@@ -1,3 +1,4 @@
+// One-click scaffold for the minimap: a screen-space Canvas with a masked, top-right viewport carrying the MinimapManager, plus a default MinimapDatabase pre-filled with Unity's built-in UI sprite and a distinct tint per room type, so it reads immediately and you swap in real art later.
 using System;
 using Signal.Generation;
 using Signal.Minimap;
@@ -7,12 +8,6 @@ using UnityEngine.UI;
 
 namespace Signal.MinimapEditor
 {
-    /// <summary>
-    /// One-click scaffold for the minimap: a screen-space Canvas with a masked, top-right viewport
-    /// carrying the <see cref="MinimapManager"/>, plus a default <see cref="MinimapDatabase"/> pre-filled
-    /// with Unity's built-in UI sprite and a distinct tint per room type, so it reads immediately and you
-    /// swap in real art later. Everything the manager needs is wired; nothing is placed by hand.
-    /// </summary>
     public static class MinimapSetup
     {
         private const string DatabasePath = "Assets/Scripts/Minimap/MinimapDatabase.asset";
@@ -22,7 +17,6 @@ namespace Signal.MinimapEditor
         {
             MinimapDatabase db = CreateOrLoadDatabase();
 
-            // Replace any existing minimap so re-running is clean (e.g. to pick up new default sizes).
             foreach (GameObject root in UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects())
                 if (root.name == "Minimap Canvas") Undo.DestroyObjectImmediate(root);
 
@@ -36,7 +30,6 @@ namespace Signal.MinimapEditor
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 1f;
 
-            // Framed viewport, anchored top-right, clipping anything that scrolls out of view.
             var container = new GameObject("Minimap",
                 typeof(RectTransform), typeof(RectMask2D), typeof(MinimapManager));
             var crt = container.GetComponent<RectTransform>();
@@ -45,7 +38,6 @@ namespace Signal.MinimapEditor
             crt.sizeDelta = new Vector2(300f, 300f);
             crt.anchoredPosition = new Vector2(-12f, -12f);
 
-            // Tiles + connections live here; the manager slides it to keep the current room centred.
             var content = new GameObject("Content", typeof(RectTransform));
             var conRt = content.GetComponent<RectTransform>();
             conRt.SetParent(crt, false);
@@ -84,13 +76,7 @@ namespace Signal.MinimapEditor
             db.visitedRoom = ui;
             db.currentRoom = ui;
             db.connection = ui;
-            // Border and current-room indicator are left empty: the built-in square would just cover the
-            // tile. The current room already reads via scale + full brightness (+ pulse). Drop in a frame
-            // and a glow/ring sprite here whenever you want them.
 
-            // One icon entry per existing room type, sprite = the built-in square tinted per type, so the
-            // map is colour-coded out of the box. Shop/Secret are future RoomType values — add them here
-            // once the enum has them, no code change to the minimap itself.
             var so = new SerializedObject(db);
             SerializedProperty list = so.FindProperty("icons");
             var types = (RoomType[])Enum.GetValues(typeof(RoomType));

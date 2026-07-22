@@ -1,3 +1,4 @@
+// One-shot scaffold: turns Level 1 into the procedural reference scene — the hand-built floor and spawn sections give way to a LevelGenerator that builds the level on Play.
 using System.Linq;
 using Signal.Generation;
 using UnityEditor;
@@ -5,10 +6,6 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-/// <summary>
-/// One-shot scaffold: turns Level 1 into the procedural reference scene — the hand-built floor and
-/// spawn sections give way to a LevelGenerator that builds the level on Play. Safe to re-run.
-/// </summary>
 public static class BuildLevel1Generation
 {
     private const string ScenePath = "Assets/Scenes/Level 1.unity";
@@ -18,8 +15,6 @@ public static class BuildLevel1Generation
     {
         Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
 
-        // The hand-built demo is superseded by room prefabs, which now carry the spawn sections.
-        // The Sewage stays: rooms don't own hazards, and it proves hazards still work here.
         string[] retired = { "Floor", "Spawn Section A", "Spawn Section B", "Checkpoint", "LevelGenerator" };
         foreach (GameObject root in scene.GetRootGameObjects())
             if (retired.Contains(root.name)) Object.DestroyImmediate(root);

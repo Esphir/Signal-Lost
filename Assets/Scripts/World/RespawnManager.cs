@@ -1,3 +1,4 @@
+// Owns respawning for the current scene: the active checkpoint, the default spawn fallback, and the actual teleport + state reset.
 using System;
 using System.Collections;
 using Signal.UI;
@@ -7,12 +8,6 @@ using UnityEngine.InputSystem;
 
 namespace Signal.World
 {
-    /// <summary>
-    /// Owns respawning for the current scene: the active checkpoint, the default spawn fallback, and
-    /// the actual teleport + state reset. Systems (hazards) request a respawn through
-    /// <see cref="TryRespawn"/>; it prevents overlapping respawns and notifies listeners via
-    /// <see cref="PlayerRespawned"/>. One per scene (instantiated by the systems bootstrap).
-    /// </summary>
     public sealed class RespawnManager : MonoBehaviour
     {
         [Header("Spawn")]
@@ -38,16 +33,13 @@ namespace Signal.World
 
         public static RespawnManager Instance { get; private set; }
 
-        /// <summary>Raised after the player has been repositioned and reset.</summary>
         public event Action<GameObject> PlayerRespawned;
 
         public Checkpoint ActiveCheckpoint { get; private set; }
         public bool IsRespawning { get; private set; }
 
-        /// <summary>True during the post-respawn grace window; hazards ignore the player while it holds.</summary>
         public bool InRespawnGrace => Time.time < _graceUntil;
 
-        /// <summary>True when a fresh respawn may begin hazards check this before firing splash + respawn.</summary>
         public bool CanRespawn => !IsRespawning && !InRespawnGrace;
 
         private GameObject _player;
@@ -69,7 +61,6 @@ namespace Signal.World
 
         private void Start() => CaptureDefaultSpawn();
 
-        /// <summary>Makes <paramref name="checkpoint"/> the active spawn, deactivating the previous one.</summary>
         public void SetActiveCheckpoint(Checkpoint checkpoint)
         {
             if (checkpoint == null || checkpoint == ActiveCheckpoint) return;
@@ -85,12 +76,6 @@ namespace Signal.World
             if (ActiveCheckpoint == checkpoint) ActiveCheckpoint = null;
         }
 
-        /// <summary>
-        /// Requests a respawn after <paramref name="delay"/> seconds. Returns false (and does nothing)
-        /// if a respawn is already running or the grace window is active, so hazards can't stack
-        /// respawns. <paramref name="afterRespawn"/> runs once the player is repositioned (hazards
-        /// apply their damage there); <paramref name="graceTime"/> keeps hazards off the player after.
-        /// </summary>
         public bool TryRespawn(float delay, float graceTime, Action<GameObject> afterRespawn = null)
         {
             if (IsRespawning || InRespawnGrace) return false;
@@ -103,22 +88,19 @@ namespace Signal.World
             IsRespawning = true;
             GameObject player = ResolvePlayer();
 
-            // Lock control and drop the fall pose immediately, then fade with no pre-delay so the
-            // player never hangs visibly in mid-air waiting to respawn.
             SetPlayerControl(player, false);
 
             ScreenFadeController fade = ScreenFadeController.Instance;
             if (fade != null) yield return fade.FadeOut();
 
-            // Any hazard "delay before respawn" now passes under black — never a visible freeze.
             if (delay > 0f) yield return new WaitForSecondsRealtime(delay);
 
             if (player != null)
             {
                 GetSpawnPose(out Vector3 pos, out Quaternion rot);
-                TeleportPlayer(player, pos, rot);   // teleport + state reset + camera warp
-                afterRespawn?.Invoke(player);        // hazard damage
-                PlayRespawnVfx(pos, rot);            // respawn VFX (checkpoint may override)
+                TeleportPlayer(player, pos, rot);
+                afterRespawn?.Invoke(player);
+                PlayRespawnVfx(pos, rot);
                 PlayerRespawned?.Invoke(player);
             }
 
@@ -128,7 +110,6 @@ namespace Signal.World
                 yield return fade.FadeIn();
             }
 
-            // Control only returns once the screen is fully back.
             SetPlayerControl(player, true);
             _graceUntil = Time.time + Mathf.Max(0f, graceTime);
             IsRespawning = false;
@@ -154,9 +135,6 @@ namespace Signal.World
                 else input.DeactivateInput();
             }
 
-            // While control is locked, stop the movement animator too — otherwise it keeps driving
-            // the fall/land layer off the frozen airborne data. Snap it grounded first so the fall
-            // pose doesn't hang during the fade.
             var movementAnimator = player.GetComponent<PlayerMovementAnimator>();
             if (!enabled) movementAnimator?.SnapToGrounded();
 
@@ -173,14 +151,12 @@ namespace Signal.World
 
         private void TeleportPlayer(GameObject player, Vector3 pos, Quaternion rot)
         {
-            // A respawn is a hard reset land in normal time even if a hit-stop / slow-mo was mid-flight.
             Time.timeScale = 1f;
             Time.fixedDeltaTime = 0.02f;
 
             Quaternion finalRot = preserveFacing ? player.transform.rotation : rot;
             Vector3 delta = pos - player.transform.position;
 
-            // CharacterController overrides transform writes unless disabled around the teleport.
             var controller = player.GetComponent<CharacterController>();
             if (controller != null) controller.enabled = false;
             player.transform.SetPositionAndRotation(pos, finalRot);
@@ -193,8 +169,6 @@ namespace Signal.World
                 rb.angularVelocity = Vector3.zero;
             }
 
-            // Refresh grounded state + the animator at the new position so locomotion resumes at
-            // once — no lingering fall/land driven by the old airborne velocity/grounded data.
             player.GetComponent<PlayerController>()?.SnapToGround();
             player.GetComponent<PlayerMovementAnimator>()?.SnapToGrounded();
             player.GetComponent<PlayerDodge>()?.CancelDodge();

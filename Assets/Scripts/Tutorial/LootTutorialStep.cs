@@ -1,3 +1,4 @@
+// Loot tutorial beat.
 using Signal.Combat.Health;
 using Signal.Loot;
 using Signal.Run;
@@ -6,14 +7,6 @@ using UnityEngine;
 
 namespace Signal.Tutorial
 {
-    /// <summary>
-    /// Loot tutorial beat. Once the prompt is dismissed it spawns a single stationary, non-attacking
-    /// training dummy with low HP that is <b>guaranteed</b> to drop exactly one loot item. It only
-    /// completes after the player has killed the dummy, collected the loot, chosen an upgrade and
-    /// closed the selection UI — so the following step never begins mid-choice. Reuses the existing
-    /// TrainingDummy prefab and loot pipeline; the drop guarantee is applied to this one spawned
-    /// dummy at runtime and never touches the normal loot system.
-    /// </summary>
     public class LootTutorialStep : TutorialStep
     {
         [Header("Loot Encounter")]
@@ -54,7 +47,6 @@ namespace Signal.Tutorial
             _collectObjective = AddObjective(collectObjectiveText);
             _upgradeObjective = AddObjective(upgradeObjectiveText);
 
-            // Subscribe before anything can be collected so we never miss the pick.
             RunManager.Instance.UpgradeAcquired += OnUpgradeAcquired;
             RunManager.Instance.LootCollected += OnLootCollected;
 
@@ -68,13 +60,13 @@ namespace Signal.Tutorial
             Vector3 pos = spawnPoint != null ? spawnPoint.position : transform.position;
             Quaternion rot = spawnPoint != null ? spawnPoint.rotation : transform.rotation;
             _dummy = Instantiate(dummyPrefab, pos, rot);
-            // The step can't finish until this dies, so it must not be knockable out of reach.
+
             Signal.Spawning.EnemySafetyNets.Attach(_dummy, pos, null);
 
             _dummyHealth = _dummy.GetComponent<HealthComponent>();
             if (_dummyHealth != null)
             {
-                _dummyHealth.SetMaxHealth(dummyHealth, healByIncrease: false); // dies in a few hits
+                _dummyHealth.SetMaxHealth(dummyHealth, healByIncrease: false);
                 _dummyHealth.Died += OnDummyDied;
             }
             else
@@ -82,8 +74,6 @@ namespace Signal.Tutorial
                 Debug.LogWarning($"[Tutorial] Loot dummy '{_dummy.name}' has no HealthComponent — cannot track its death.", this);
             }
 
-            // Guarantee the drop on THIS dummy only. Added at runtime and configured directly, so no
-            // prefab carries the guarantee and normal enemies keep rolling the usual drop chance.
             LootDropper dropper = _dummy.GetComponent<LootDropper>();
             if (dropper == null) dropper = _dummy.AddComponent<LootDropper>();
             dropper.Configure(lootSettings, guaranteed: true);
@@ -103,11 +93,6 @@ namespace Signal.Tutorial
             _upgradeObjective.Complete();
         }
 
-        /// <summary>
-        /// All three boxes are ticked, but the choice overlay may still be on screen — hold the step
-        /// open until it closes so the next prompt never lands mid-choice. Update (not a coroutine)
-        /// because the overlay pauses time while it's up.
-        /// </summary>
         protected override void OnAllObjectivesComplete() { }
 
         private void Update()

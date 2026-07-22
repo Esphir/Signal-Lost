@@ -1,15 +1,10 @@
+// Third-person player controller mimicking Into the Unwell's movement feel.
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Signal.Run;
 using Signal.Stats;
 
-/// <summary>
-/// Third-person player controller mimicking Into the Unwell's movement feel.
-/// Uses Unity's new Input System.
-/// Requires: CharacterController on the same GameObject.
-/// Pairs with: PlayerDodge.cs, PlayerLockOn.cs, PlayerCombat.cs, PlayerInputHandler.cs
-/// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
@@ -50,11 +45,10 @@ public class PlayerController : MonoBehaviour
     public float CurrentSpeed { get; private set; }
     public Vector3 Velocity => _velocity;
 
-    /// <summary>Raised when a ground jump leaves the ground.</summary>
     public event Action Jumped;
-    /// <summary>Raised when an air (double) jump fires.</summary>
+
     public event Action DoubleJumped;
-    /// <summary>Raised on touchdown, with the downward speed (m/s) at impact.</summary>
+
     public event Action<float> Landed;
 
     private CharacterController _cc;
@@ -67,13 +61,12 @@ public class PlayerController : MonoBehaviour
 
     private Vector3 _velocity;
     private Vector3 _moveVelocity;
-    private Vector3 _moveVelocityRef;   // SmoothDamp internal state
+    private Vector3 _moveVelocityRef;
     private float _coyoteTimer;
     private float _jumpBufferTimer;
     private int _airJumpsRemaining;
     private float _jumpGraceTimer;
     private bool _wasGrounded;
-
 
     private void Awake()
     {
@@ -102,9 +95,6 @@ public class PlayerController : MonoBehaviour
 
     private void CheckGround()
     {
-        // Briefly after a jump, force "airborne" so the still-overlapping ground check can't
-        // re-ground the player and refresh coyote time / air jumps (which would turn a fast
-        // second tap into another ground jump).
         if (_jumpGraceTimer > 0f)
         {
             _jumpGraceTimer -= Time.deltaTime;
@@ -117,7 +107,6 @@ public class PlayerController : MonoBehaviour
         bool grounded = Physics.CheckSphere(origin, groundCheckRadius, groundMask,
                                             QueryTriggerInteraction.Ignore);
 
-        // Fire once on the airborne → grounded transition, with the impact speed.
         if (grounded && !_wasGrounded && _velocity.y < -0.1f)
             Landed?.Invoke(-_velocity.y);
 
@@ -156,13 +145,11 @@ public class PlayerController : MonoBehaviour
         Vector3 input = new Vector3(move.x, 0f, move.y);
         if (input.sqrMagnitude > 1f) input.Normalize();
 
-        // Strip pitch from camera — use only yaw for movement direction
         float camYaw = cameraTransform.eulerAngles.y;
         Vector3 camForward = Quaternion.Euler(0f, camYaw, 0f) * Vector3.forward;
         Vector3 camRight = Quaternion.Euler(0f, camYaw, 0f) * Vector3.right;
         Vector3 wishDir = camForward * input.z + camRight * input.x;
 
-        // Run move-speed upgrades scale the base speeds; bases themselves never change.
         float targetSpeed = RunManager.QueryStat(StatType.MoveSpeed, IsSprinting ? sprintSpeed : moveSpeed);
         float smoothTime = wishDir.sqrMagnitude > 0f ? accelerationTime : decelerationTime;
 
@@ -183,7 +170,7 @@ public class PlayerController : MonoBehaviour
         if (!groundJump)
         {
             if (_airJumpsRemaining <= 0) return;
-            _airJumpsRemaining--; // double jump (resets on landing)
+            _airJumpsRemaining--;
         }
 
         float height = groundJump ? jumpHeight : jumpHeight * airJumpHeightMultiplier;
@@ -228,14 +215,13 @@ public class PlayerController : MonoBehaviour
             lookDir = _moveVelocity;
         }
 
-        // Always flatten Y — the player model must never pitch up or down
         lookDir.y = 0f;
 
         if (lookDir.sqrMagnitude > 0.001f)
         {
             float yaw = Quaternion.LookRotation(lookDir).eulerAngles.y;
             Quaternion targetRot = Quaternion.Euler(0f, yaw, 0f);
-            // Exponential smoothing — feels weighted rather than mechanical
+
             float t = 1f - Mathf.Exp(-turnSpeed * 0.01f * Time.deltaTime);
             transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, t);
         }
@@ -243,10 +229,6 @@ public class PlayerController : MonoBehaviour
 
     public void ApplyRootMotion(Vector3 delta) => _cc.Move(delta);
 
-    /// <summary>
-    /// Zeroes all movement state (vertical + horizontal velocity, smoothing, jump timers) so the
-    /// player lands in a clean, controllable state after a teleport/respawn.
-    /// </summary>
     public void ResetMotionState()
     {
         _velocity = Vector3.zero;
@@ -258,28 +240,18 @@ public class PlayerController : MonoBehaviour
         _airJumpsRemaining = maxAirJumps;
     }
 
-    /// <summary>
-    /// Post-teleport reset: clears motion state, re-checks grounded at the NEW position, and pushes
-    /// the locomotion Speed param to 0, so Idle/Run resumes immediately instead of lingering in a
-    /// fall/land pose driven by stale airborne data. Works even while this component is disabled.
-    /// </summary>
     public void SnapToGround()
     {
         ResetMotionState();
 
         Vector3 origin = transform.position + Vector3.up * groundCheckOffset;
         IsGrounded = Physics.CheckSphere(origin, groundCheckRadius, groundMask, QueryTriggerInteraction.Ignore);
-        _wasGrounded = IsGrounded; // suppress a phantom Landed on the frame control resumes
+        _wasGrounded = IsGrounded;
         if (IsGrounded) _velocity.y = -2f;
 
         if (_animator != null) _animator.SetFloat(HashSpeed, 0f);
     }
 
-    /// <summary>
-    /// Clears the smoothed horizontal movement state so control resumes cleanly after external
-    /// motion (e.g. a dodge roll) — held input re-accelerates immediately instead of blending
-    /// out of a stale pre-roll velocity.
-    /// </summary>
     public void ResetHorizontalMomentum()
     {
         _moveVelocity = Vector3.zero;
@@ -292,7 +264,6 @@ public class PlayerController : MonoBehaviour
         Vector3 input = new Vector3(move.x, 0f, move.y);
         if (input.sqrMagnitude > 1f) input.Normalize();
 
-        // Use only the flat yaw of the camera — ignore pitch entirely
         float camYaw = cameraTransform.eulerAngles.y;
         Vector3 camForward = Quaternion.Euler(0f, camYaw, 0f) * Vector3.forward;
         Vector3 camRight = Quaternion.Euler(0f, camYaw, 0f) * Vector3.right;

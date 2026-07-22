@@ -1,3 +1,4 @@
+// A boss-summoned minion: a low-health chaser that harasses the player with contact burn damage.
 using Signal.Combat.Data;
 using Signal.Combat.Health;
 using Signal.Combat.Interfaces;
@@ -5,12 +6,6 @@ using UnityEngine;
 
 namespace Signal.Combat.Boss
 {
-    /// <summary>
-    /// A boss-summoned minion: a low-health chaser that harasses the player with contact burn damage. It's
-    /// deliberately simple — steer toward the player, tick damage on touch — and self-sufficient so it works
-    /// on an otherwise-empty prefab (it ensures its own rigidbody, collider and health). It despawns when its
-    /// summoner dies, so clearing the fight is about the boss, not chasing every last pepper.
-    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     public sealed class GhostPepperAI : MonoBehaviour
@@ -28,7 +23,6 @@ namespace Signal.Combat.Boss
         private float _tickTimer;
         private bool _dead;
 
-        /// <summary>Called by the summoner right after spawn to set up stats and its owner.</summary>
         public void Configure(Transform boss, float health, float dps, float speed)
         {
             _boss = boss;
@@ -74,7 +68,6 @@ namespace Signal.Combat.Boss
         {
             if (_dead) return;
 
-            // The fight ends on the boss — no summoner, no minion.
             if (_boss == null) { Destroy(gameObject); return; }
             if (!ResolvePlayer()) return;
 

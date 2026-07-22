@@ -1,13 +1,10 @@
+// All designer-facing loot tuning in one asset: drop chance, the loot prefab, and per-rarity weight + material.
 using System;
 using Signal.Run;
 using UnityEngine;
 
 namespace Signal.Loot
 {
-    /// <summary>
-    /// All designer-facing loot tuning in one asset: drop chance, the loot prefab, and per-rarity
-    /// weight + material. Rarity behavior is data in the entries list — no switch statements.
-    /// </summary>
     [CreateAssetMenu(menuName = "Run/Loot Settings", fileName = "LootSettings")]
     public class LootSettingsSO : ScriptableObject
     {
@@ -36,14 +33,8 @@ namespace Signal.Loot
                  "(1 + Bias × difficulty tier × the rarity's rank), so only the higher rarities gain.")]
         private float difficultyRarityBias = 0.5f;
 
-        /// <summary>Weighted random rarity roll, unbiased (difficulty tier 0).</summary>
         public ItemRarity RollRarity() => RollRarity(0);
 
-        /// <summary>
-        /// Weighted random rarity roll, biased toward higher rarities by a difficulty tier (the room's
-        /// tier plus any per-enemy bonus). Tier 0 rolls exactly as the flat weights; each tier above
-        /// lifts the rarer entries, so tough rooms and elites yield better loot without a hard cutoff.
-        /// </summary>
         public ItemRarity RollRarity(int difficultyTier)
         {
             if (rarities == null || rarities.Length == 0) return ItemRarity.Common;
@@ -61,7 +52,6 @@ namespace Signal.Loot
             return rarities[rarities.Length - 1].rarity;
         }
 
-        // Common (rank 0) is never boosted; each rarity rank above it gains weight as difficulty climbs.
         private float BiasedWeight(int index, int difficultyTier)
         {
             RarityEntry entry = rarities[index];
@@ -76,7 +66,6 @@ namespace Signal.Loot
             return null;
         }
 
-        /// <summary>Accent color for UI/VFX, taken from the rarity material so visuals stay consistent.</summary>
         public Color GetColor(ItemRarity rarity)
         {
             Material material = GetMaterial(rarity);

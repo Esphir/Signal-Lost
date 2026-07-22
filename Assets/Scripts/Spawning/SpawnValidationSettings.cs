@@ -1,29 +1,20 @@
+// The physics rules for deciding whether a candidate position can hold an enemy.
 using System;
 using UnityEngine;
 
 namespace Signal.Spawning
 {
-    /// <summary>
-    /// The physics rules for deciding whether a candidate position can hold an enemy. Lives on the
-    /// section rather than on every point, so one setup covers a whole pocket of the level and
-    /// placing a spawn point stays a drag-and-drop job. Applied by <see cref="SpawnValidator"/>.
-    /// </summary>
     [Serializable]
     public class SpawnValidationSettings
     {
-        // Layer indices come from ProjectSettings/TagManager: 0 Default, 3 Enemy Hit Mask, 6 Ground,
-        // 7 Wall. Written as literals rather than LayerMask.GetMask(...) because Unity forbids
-        // NameToLayer inside a field initializer — it throws while the component is being constructed
-        // and leaves every mask at 0, which silently stops all spawning.
-
         [Tooltip("Layers that count as ground. A candidate with nothing beneath it is rejected, which is what keeps enemies off ledges and out of pits.")]
-        public LayerMask groundMask = 1 << 6;                  // Ground
+        public LayerMask groundMask = 1 << 6;
 
         [Tooltip("Layers that block a spawn: walls and level geometry. An enemy that would overlap these is rejected.")]
-        public LayerMask obstacleMask = (1 << 7) | (1 << 0);   // Wall + Default
+        public LayerMask obstacleMask = (1 << 7) | (1 << 0);
 
         [Tooltip("Layers other enemies live on, so a spawn never lands on top of an existing enemy.")]
-        public LayerMask enemyMask = 1 << 3;                   // Enemy Hit Mask
+        public LayerMask enemyMask = 1 << 3;
 
         [Min(0.1f)]
         [Tooltip("Radius the enemy needs clear of geometry and other enemies. Roughly the enemy's body radius.")]

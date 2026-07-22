@@ -1,8 +1,8 @@
+// Persistent "have they finished the tutorial?" flag (PlayerPrefs).
 using UnityEngine;
 
 namespace Signal.Tutorial
 {
-    /// <summary>Persistent "have they finished the tutorial?" flag (PlayerPrefs). Reset to replay.</summary>
     public static class TutorialState
     {
         private const string Key = "tutorial-completed";

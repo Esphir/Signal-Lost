@@ -1,3 +1,4 @@
+// Reacts to RunEnded: when a run ends by death (or a future victory), freezes the game and shows the RunEndScreenUI on this GameObject, then handles its Restart / Main Menu / Quit choices.
 using Signal.UI;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -5,12 +6,6 @@ using UnityEngine.SceneManagement;
 
 namespace Signal.Run
 {
-    /// <summary>
-    /// Reacts to <see cref="RunManager.RunEnded"/>: when a run ends by death (or a future victory),
-    /// freezes the game and shows the <see cref="RunEndScreenUI"/> on this GameObject, then handles
-    /// its Restart / Main Menu / Quit choices. A return-to-menu end is ignored — that path already
-    /// loads the menu scene.
-    /// </summary>
     [RequireComponent(typeof(RunEndScreenUI))]
     public class RunEndManager : MonoBehaviour
     {
@@ -44,10 +39,8 @@ namespace Signal.Run
 
         private void OnRunEnded(RunStats stats, RunEndReason reason)
         {
-            // Victory runs through the End room's completion screen; a menu return needs no screen here.
             if (reason != RunEndReason.PlayerDied) return;
 
-            // Permadeath: dying clears the continue save, so the next Play starts fresh.
             RunSaveSystem.Delete();
 
             Time.timeScale = 0f;

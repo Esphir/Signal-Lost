@@ -1,12 +1,9 @@
+// Attach next to an enemy's HealthComponent: spawns its world-space health bar on startup so every enemy instance (scene-placed or runtime-spawned) gets one automatically.
 using Signal.Combat.Health;
 using UnityEngine;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Attach next to an enemy's HealthComponent: spawns its world-space health bar on startup so
-    /// every enemy instance (scene-placed or runtime-spawned) gets one automatically.
-    /// </summary>
     public class EnemyHealthBarSpawner : MonoBehaviour
     {
         [SerializeField] private EnemyHealthBarUI barPrefab;

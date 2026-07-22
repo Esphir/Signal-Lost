@@ -1,3 +1,4 @@
+// Flashes every renderer a solid color for a very short time whenever the sibling IHealth actually takes damage (mitigated-to-zero hits don't flash).
 using System.Collections.Generic;
 using UnityEngine;
 using Signal.Combat.Data;
@@ -5,13 +6,6 @@ using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Feedback
 {
-    /// <summary>
-    /// Flashes every renderer a solid color for a very short time whenever the sibling
-    /// <see cref="IHealth"/> actually takes damage (mitigated-to-zero hits don't flash).
-    /// Uses MaterialPropertyBlocks no material instances are ever created and restores each
-    /// renderer's previous property block afterwards, so it coexists with other MPB users
-    /// (e.g. BuffIndicator tints). Drop on any damageable object, player or enemy.
-    /// </summary>
     public class DamageFlash : MonoBehaviour
     {
         [SerializeField, Min(0.01f)]
@@ -24,8 +18,8 @@ namespace Signal.Combat.Feedback
         [Tooltip("Renderers to flash. Leave empty to auto-collect all child Mesh/SkinnedMesh renderers.")]
         private Renderer[] renderers;
 
-        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor"); // URP Lit
-        private static readonly int ColorId = Shader.PropertyToID("_Color");         // legacy/unlit
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         private IHealth _health;
         private MaterialPropertyBlock _flashBlock;
@@ -76,13 +70,13 @@ namespace Signal.Combat.Feedback
         private void HandleDamaged(DamageInfo damageInfo)
         {
             _flashUntil = Time.unscaledTime + flashDuration;
-            if (_flashing) return; // already red — just extend the timer
+            if (_flashing) return;
 
             _flashing = true;
             for (int i = 0; i < renderers.Length; i++)
             {
                 if (renderers[i] == null) continue;
-                renderers[i].GetPropertyBlock(_restoreBlocks[i]); // remember what was there
+                renderers[i].GetPropertyBlock(_restoreBlocks[i]);
                 renderers[i].SetPropertyBlock(_flashBlock);
             }
         }
@@ -99,7 +93,7 @@ namespace Signal.Combat.Feedback
             for (int i = 0; i < renderers.Length; i++)
             {
                 if (renderers[i] == null) continue;
-                // Setting an empty block clears the override; a captured block restores it.
+
                 renderers[i].SetPropertyBlock(_restoreBlocks[i]);
             }
         }

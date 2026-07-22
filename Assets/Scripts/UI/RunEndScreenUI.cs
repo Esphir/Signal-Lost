@@ -1,3 +1,4 @@
+// Builds the run-end summary overlay ("Run Over" + statistics + Restart / Main Menu / Quit) from code, in the project's UI style.
 using System;
 using Signal.Run;
 using UnityEngine;
@@ -6,11 +7,6 @@ using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Builds the run-end summary overlay ("Run Over" + statistics + Restart / Main Menu / Quit)
-    /// from code, in the project's UI style. Raises an event per button; <see cref="RunEndManager"/>
-    /// owns the behavior. Registers as a modal so pause can't open over it.
-    /// </summary>
     public class RunEndScreenUI : MonoBehaviour
     {
         public event Action RestartRequested;

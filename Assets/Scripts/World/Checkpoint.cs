@@ -1,13 +1,9 @@
+// A respawn checkpoint.
 using UnityEngine;
 using UnityEngine.Events;
 
 namespace Signal.World
 {
-    /// <summary>
-    /// A respawn checkpoint. The player activates it by entering its trigger; the RespawnManager
-    /// keeps exactly one active at a time. Hook lights / materials / VFX / audio to the
-    /// <see cref="Activated"/> and <see cref="Deactivated"/> UnityEvents in the Inspector.
-    /// </summary>
     [DisallowMultipleComponent]
     public class Checkpoint : MonoBehaviour
     {

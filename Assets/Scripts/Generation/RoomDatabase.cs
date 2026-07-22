@@ -1,14 +1,10 @@
+// The pool of rooms a level may draw from.
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Signal.Generation
 {
-    /// <summary>
-    /// The pool of rooms a level may draw from. Stores entries and nothing else — no selection, no
-    /// placement (Single Responsibility). Adding a room to a level is one row here; that is the whole
-    /// workflow, and it needs no code change.
-    /// </summary>
     [CreateAssetMenu(menuName = "Signal Lost/Generation/Room Database", fileName = "RoomDatabase")]
     public class RoomDatabase : ScriptableObject
     {
@@ -29,7 +25,6 @@ namespace Signal.Generation
             [Tooltip("Latest room index this may appear at. 0 = no limit.")]
             public int maxRoomIndex;
 
-            /// <summary>Cached from the prefab so selection never instantiates to ask a question.</summary>
             [NonSerialized] public RoomDefinition Definition;
 
             public bool IsValid => prefab != null && Definition != null;
@@ -43,10 +38,6 @@ namespace Signal.Generation
 
         private bool _resolved;
 
-        /// <summary>
-        /// Reads each prefab's RoomDefinition once. Done lazily rather than serialized so the database
-        /// can't drift out of sync with a prefab that was re-typed or re-tiered.
-        /// </summary>
         public void Resolve()
         {
             if (_resolved) return;
@@ -62,7 +53,6 @@ namespace Signal.Generation
             _resolved = true;
         }
 
-        /// <summary>Every usable room of a type, honouring each entry's room-index window.</summary>
         public List<Entry> Query(RoomType type, int roomIndex, List<Entry> results = null)
         {
             Resolve();

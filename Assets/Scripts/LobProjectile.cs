@@ -1,3 +1,4 @@
+// A physics-driven explosive projectile.
 using System;
 using UnityEngine;
 using Signal.Combat;
@@ -5,14 +6,6 @@ using Signal.Combat.Detection;
 using Signal.Combat.Projectiles;
 using Signal.Combat.Telegraphs;
 
-/// <summary>
-/// A physics-driven explosive projectile. All gameplay data comes from a
-/// <see cref="ProjectileConfigSO"/> — this component only executes it.
-/// Explodes once on collision (or despawns quietly at end of lifetime), damaging every
-/// IDamageable inside the explosion radius via the shared combat resolver.
-/// Supports pooling: when a despawn handler is set (by <see cref="ProjectilePool"/>) the
-/// projectile is released instead of destroyed.
-/// </summary>
 [RequireComponent(typeof(Rigidbody))]
 public class LobProjectile : MonoBehaviour
 {
@@ -43,7 +36,7 @@ public class LobProjectile : MonoBehaviour
         _rb = GetComponent<Rigidbody>();
         _rb.interpolation = RigidbodyInterpolation.Interpolate;
         _rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        // Gravity is applied manually so the config's gravity scale works.
+
         _rb.useGravity = false;
 
         if (config == null)
@@ -56,16 +49,8 @@ public class LobProjectile : MonoBehaviour
         _detector = new OverlapSphereHitDetector(config.maxExplosionTargets);
     }
 
-    /// <summary>Set by ProjectilePool so despawning releases instead of destroying. Optional.</summary>
     public void SetDespawnHandler(Action<LobProjectile> handler) => _despawnHandler = handler;
 
-    /// <summary>
-    /// Teleports the projectile to a spawn pose, fully clearing the previous flight's physics
-    /// state. Pooled Rigidbodies keep their last pose, momentum, and interpolation history; setting
-    /// only <c>transform.position</c> leaves that history intact, so the first rendered frames smear
-    /// from the previous landing point (often inside the floor). Teleporting through the Rigidbody
-    /// and dropping the interpolation buffer guarantees the shot always starts exactly here.
-    /// </summary>
     public void PlaceAt(Vector3 position, Quaternion rotation)
     {
         if (_rb == null) _rb = GetComponent<Rigidbody>();
@@ -74,7 +59,7 @@ public class LobProjectile : MonoBehaviour
         _rb.angularVelocity = Vector3.zero;
 
         RigidbodyInterpolation previous = _rb.interpolation;
-        _rb.interpolation = RigidbodyInterpolation.None; // drops the stale interpolation buffer
+        _rb.interpolation = RigidbodyInterpolation.None;
         _rb.position = position;
         _rb.rotation = rotation;
         transform.SetPositionAndRotation(position, rotation);
@@ -85,13 +70,8 @@ public class LobProjectile : MonoBehaviour
         _despawned = false;
     }
 
-    /// <summary>Launches with the given velocity and resets all per-flight state (pool-safe). No landing indicator.</summary>
     public void Launch(Vector3 velocity) => Launch(velocity, default, -1f);
 
-    /// <summary>
-    /// Launch with the predicted landing point and flight time from the shooter's OWN ballistic
-    /// solution — the landing indicator is placed there, so it always matches the real trajectory.
-    /// </summary>
     public void Launch(Vector3 velocity, Vector3 predictedLanding, float flightTime)
     {
         _launched = true;
@@ -109,7 +89,6 @@ public class LobProjectile : MonoBehaviour
     {
         if (flightTime <= 0f || !config.showLandingIndicator) return;
 
-        // One telegraph per projectile, created once and reused across pool cycles.
         if (_indicator == null)
             _indicator = AoeTelegraph.Create(config.landingIndicatorPrefab);
 
@@ -136,27 +115,23 @@ public class LobProjectile : MonoBehaviour
     private void Update()
     {
         if (_launched && !_exploded && Time.time >= _despawnAt)
-            Despawn(); // timed out mid-air — vanish without exploding
+            Despawn();
     }
 
     private void OnCollisionEnter(Collision collision)
     {
         if (_exploded || !_launched) return;
-        // Ignore contacts in the first 100ms to prevent self-collision on spawn.
+
         if (Time.time - _launchTime < 0.1f) return;
 
         Explode(collision.GetContact(0).point);
     }
 
-    /// <summary>
-    /// Raised at the detonation point, once per flight. Audio/VFX listen; this projectile stays
-    /// unaware of both.
-    /// </summary>
     public event Action<Vector3> Exploded;
 
     private void Explode(Vector3 point)
     {
-        _exploded = true; // hard guard: one explosion per flight
+        _exploded = true;
         Exploded?.Invoke(point);
 
         int count = _detector.Detect(point, config.explosionRadius, config.damageMask);
@@ -176,13 +151,9 @@ public class LobProjectile : MonoBehaviour
         _despawned = true;
         _launched = false;
 
-        // Clear momentum before returning to the pool so a reused instance can't carry the last
-        // flight's velocity into its next spawn (PlaceAt resets again on reuse — belt and braces).
         _rb.linearVelocity = Vector3.zero;
         _rb.angularVelocity = Vector3.zero;
 
-        // Covers every end-of-flight path: explosion (incl. early terrain hits), mid-air timeout,
-        // and pool release — the indicator can never outlive its projectile's flight.
         if (_indicator != null) _indicator.Hide();
 
         if (_despawnHandler != null) _despawnHandler(this);

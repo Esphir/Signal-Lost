@@ -1,3 +1,4 @@
+// Runtime control rebinding: lists the current bindings of the action map per control scheme (Mouse &amp; Keyboard / Controller tabs), rebinds interactively on click, and persists overrides through InputBindingStorage.
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -5,12 +6,6 @@ using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Runtime control rebinding: lists the current bindings of the action map per control scheme
-    /// (Mouse &amp; Keyboard / Controller tabs), rebinds interactively on click, and persists
-    /// overrides through <see cref="InputBindingStorage"/>. Bindings come straight from the
-    /// referenced Input Actions asset — nothing is hardcoded.
-    /// </summary>
     public class RebindUI : MonoBehaviour
     {
         [SerializeField] private InputActionAsset actions;
@@ -34,13 +29,11 @@ namespace Signal.UI
 
         private void Awake()
         {
-            // Show saved rebinds even before any gameplay scene loaded them.
             InputBindingStorage.Load(actions);
         }
 
         private void OnDestroy() => CancelActiveOperation();
 
-        /// <summary>Builds the Controls section into the settings panel's content area.</summary>
         public void BuildSection(Transform parent)
         {
             if (actions == null)
@@ -68,7 +61,6 @@ namespace Signal.UI
             ((RectTransform)reset.transform).sizeDelta = new Vector2(220f, 44f);
             reset.onClick.AddListener(ResetToDefaults);
 
-            // Rows live inside a scroll view so the list can grow past the panel height.
             ScrollRect scroll = UiBuilder.CreateScrollView(parent, "ControlsScroll", out RectTransform content);
             var scrollRect = (RectTransform)scroll.transform;
             scrollRect.anchorMin = new Vector2(0f, 0f);
@@ -80,7 +72,6 @@ namespace Signal.UI
             Rebuild();
         }
 
-        /// <summary>Called by the settings panel when it closes, so a pending rebind can't outlive the UI.</summary>
         public void OnSectionClosed()
         {
             CancelActiveOperation();
@@ -121,9 +112,6 @@ namespace Signal.UI
                 return;
             }
 
-            // A Vector2 composite (Move) authors two bindings per part — WASD and the arrow-key
-            // mirror, both in the same scheme. Keep the first occurrence of each (action, part) so
-            // only WASD shows; the arrow-key duplicates are skipped.
             var seenParts = new HashSet<string>();
 
             foreach (InputAction action in map.actions)
@@ -171,8 +159,6 @@ namespace Signal.UI
             CancelActiveOperation();
             bindText.text = "Waiting for input… (Esc cancels)";
 
-            // Interactive rebinding requires the action to be disabled; re-enable afterwards only
-            // if it was live (in-game). In the menu the map is already disabled, so this is a no-op.
             InputActionMap map = action.actionMap;
             bool wasEnabled = map.enabled;
             map.Disable();
@@ -185,9 +171,6 @@ namespace Signal.UI
                 .OnComplete(op => FinishRebind(op, map, wasEnabled, save: true))
                 .OnCancel(op => FinishRebind(op, map, wasEnabled, save: false));
 
-            // Keep each tab's rebinds on-scheme: the controller tab only accepts gamepad controls,
-            // the keyboard/mouse tab accepts anything except a gamepad. (Binding a control to BOTH
-            // "<Keyboard>" and "<Mouse>" at once — as before — matches nothing and never completes.)
             if (_activeGroup == gamepadGroup)
                 rebind.WithControlsHavingToMatchPath("<Gamepad>");
             else
@@ -216,8 +199,6 @@ namespace Signal.UI
 
         private void CancelActiveOperation()
         {
-            // Cancel() synchronously fires OnCancel → FinishRebind, which disposes and nulls the
-            // operation. The fallback covers the rare case no callback ran.
             _operation?.Cancel();
             if (_operation != null)
             {

@@ -1,14 +1,10 @@
+// Screen-space player health bar with a "current / max" label.
 using Signal.Combat.Health;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Screen-space player health bar with a "current / max" label. Binds to the assigned
-    /// <see cref="HealthComponent"/>, or finds the object tagged "Player" when left empty —
-    /// generic enough to point at a boss or ally later.
-    /// </summary>
     public class PlayerHealthBarUI : HealthBarBase
     {
         [SerializeField]

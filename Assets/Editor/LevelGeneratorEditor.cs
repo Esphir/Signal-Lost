@@ -1,13 +1,10 @@
+// Regenerate / Clear buttons plus a read-out of the last run.
 using Signal.Generation;
 using UnityEditor;
 using UnityEngine;
 
 namespace Signal.GenerationEditor
 {
-    /// <summary>
-    /// Regenerate / Clear buttons plus a read-out of the last run. Works in Edit Mode too, so a
-    /// designer can eyeball layouts without entering Play.
-    /// </summary>
     [CustomEditor(typeof(LevelGenerator))]
     public class LevelGeneratorEditor : Editor
     {
@@ -28,8 +25,6 @@ namespace Signal.GenerationEditor
                 if (GUILayout.Button("Clear")) generator.Clear();
             }
 
-            // Reproduce a specific layout by seed — the fast way to re-check a seed that misbehaved.
-            // Feeds LevelGenerator.PendingSeed, which Generate() consumes exactly like the save/resume flow.
             int seed = EditorPrefs.GetInt(SeedPrefKey, 12345);
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -51,7 +46,6 @@ namespace Signal.GenerationEditor
                 return;
             }
 
-            // The seed is the useful artefact here: it's how a designer keeps a layout they liked.
             EditorGUILayout.LabelField("Last Seed", generator.LastSeed.ToString());
             if (GUILayout.Button("Copy Seed To Clipboard")) EditorGUIUtility.systemCopyBuffer = generator.LastSeed.ToString();
 

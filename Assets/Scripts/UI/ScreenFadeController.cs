@@ -1,15 +1,10 @@
+// Reusable full-screen fade to/from black.
 using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Reusable full-screen fade to/from black. Persists across scene loads so it can also cover
-    /// scene transitions later. Builds its own overlay canvas + <see cref="CanvasGroup"/> unless one
-    /// is assigned. Durations are configurable; callers await <see cref="FadeOut"/> / <see cref="HoldBlack"/>
-    /// / <see cref="FadeIn"/>. Uses unscaled time so it works while gameplay is paused or slowed.
-    /// </summary>
     public sealed class ScreenFadeController : MonoBehaviour
     {
         [SerializeField, Min(0f)] private float fadeOutDuration = 0.35f;
@@ -48,7 +43,6 @@ namespace Signal.UI
             if (holdBlackDuration > 0f) yield return new WaitForSecondsRealtime(holdBlackDuration);
         }
 
-        /// <summary>Instantly sets the overlay (true = black, false = clear).</summary>
         public void SetBlack(bool black) => SetAlpha(black ? 1f : 0f);
 
         private IEnumerator FadeTo(float target, float duration)
@@ -81,7 +75,7 @@ namespace Signal.UI
 
             var canvas = go.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 1000; // above all gameplay UI
+            canvas.sortingOrder = 1000;
 
             var group = go.GetComponent<CanvasGroup>();
             group.interactable = false;

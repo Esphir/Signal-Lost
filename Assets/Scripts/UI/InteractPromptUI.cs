@@ -1,14 +1,9 @@
+// A small, non-modal HUD prompt shown near the bottom of the screen — e.g.
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// A small, non-modal HUD prompt shown near the bottom of the screen — e.g. "Press E to open the
-    /// exit". Unlike the tutorial prompt it never pauses the game or takes input focus; it just displays
-    /// a line of text while something (the exit gate) asks for it. Owns its own canvas; create and update
-    /// through the static <see cref="Show"/>/<see cref="Hide"/> API.
-    /// </summary>
     public sealed class InteractPromptUI : MonoBehaviour
     {
         private static InteractPromptUI _instance;
@@ -16,7 +11,6 @@ namespace Signal.UI
         private Text _label;
         private string _current;
 
-        /// <summary>Shows the prompt (or updates its text if already showing).</summary>
         public static void Show(string text)
         {
             if (_instance == null)
@@ -34,7 +28,6 @@ namespace Signal.UI
             }
         }
 
-        /// <summary>Hides the prompt. Safe to call when nothing is showing.</summary>
         public static void Hide()
         {
             if (_instance != null && _instance.gameObject.activeSelf) _instance.gameObject.SetActive(false);
@@ -47,7 +40,7 @@ namespace Signal.UI
 
             Image bg = UiBuilder.NewChild<Image>(canvas.transform, "PromptBg");
             bg.color = new Color(0.05f, 0.05f, 0.08f, 0.82f);
-            bg.raycastTarget = false; // never eat gameplay clicks — this is display-only
+            bg.raycastTarget = false;
             RectTransform r = bg.rectTransform;
             r.anchorMin = new Vector2(0.5f, 0f);
             r.anchorMax = new Vector2(0.5f, 0f);

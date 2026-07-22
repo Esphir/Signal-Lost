@@ -1,14 +1,10 @@
+// Shared health bar behavior: builds its background/fill visuals in code (so prefabs stay a bare RectTransform + component), subscribes to HealthComponent events, and animates the fill toward the latest value.
 using Signal.Combat.Health;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Shared health bar behavior: builds its background/fill visuals in code (so prefabs stay a
-    /// bare RectTransform + component), subscribes to <see cref="HealthComponent"/> events, and
-    /// animates the fill toward the latest value. Subclasses add source discovery and extras.
-    /// </summary>
     public abstract class HealthBarBase : MonoBehaviour
     {
         [Header("Style")]
@@ -41,7 +37,6 @@ namespace Signal.UI
             ApplyFill();
         }
 
-        /// <summary>Attaches this bar to a health source; snaps the fill to the current value.</summary>
         public void Bind(HealthComponent health)
         {
             Unbind();
@@ -73,7 +68,6 @@ namespace Signal.UI
 
         private void HandleDied() => OnDied();
 
-        /// <summary>Raised on bind and on every health change with the raw values.</summary>
         protected virtual void OnHealthValues(float current, float max) { }
 
         protected virtual void OnDied() { }

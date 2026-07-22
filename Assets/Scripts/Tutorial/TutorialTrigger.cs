@@ -1,9 +1,9 @@
+// A trigger volume that raises PlayerEntered when the player walks in.
 using System;
 using UnityEngine;
 
 namespace Signal.Tutorial
 {
-    /// <summary>A trigger volume that raises <see cref="PlayerEntered"/> when the player walks in. Reusable by any step.</summary>
     public class TutorialTrigger : MonoBehaviour
     {
         [SerializeField] private Vector3 size = new Vector3(3f, 3f, 3f);

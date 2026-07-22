@@ -1,13 +1,8 @@
+// Temporary code-configured particle effect (placeholder art).
 using UnityEngine;
 
 namespace Signal.World
 {
-    /// <summary>
-    /// Temporary code-configured particle effect (placeholder art). Purely presentation: it builds a
-    /// simple Particle System on Awake per <see cref="Style"/> so no hand-authored VFX asset is
-    /// needed. Gameplay only ever references the prefab, never this class — swap prefabs for real VFX
-    /// later. Add a new look by adding a Style entry; no gameplay code changes.
-    /// </summary>
     public class PlaceholderVfx : MonoBehaviour
     {
         public enum Style
@@ -63,7 +58,7 @@ namespace Signal.World
                     shape.angle = 20f;
                     shape.rotation = new Vector3(-90f, 0f, 0f);
                     break;
-                case ShapeMode.RingUp: // wide, flat cone reads as a dust ring
+                case ShapeMode.RingUp:
                     shape.shapeType = ParticleSystemShapeType.Cone;
                     shape.angle = 80f;
                     shape.rotation = new Vector3(-90f, 0f, 0f);
@@ -101,7 +96,6 @@ namespace Signal.World
 
         private static Preset GetPreset(Style style) => style switch
         {
-            //                       dur   lifeMin lifeMax spdMin spdMax szMin szMax  grav burst shape             radius
             Style.Splash      => new(0.6f, 0.35f, 0.7f,  3f,   6f,   0.06f, 0.14f, 1.2f, 24, ShapeMode.Up,      0.15f),
             Style.Respawn     => new(1f,   0.6f,  1f,    1.5f, 3f,   0.08f, 0.18f, -0.2f, 30, ShapeMode.Sphere, 0.30f),
             Style.Jump        => new(0.5f, 0.3f,  0.5f,  1.5f, 2.5f, 0.05f, 0.12f, 0.3f, 12, ShapeMode.RingUp,  0.15f),

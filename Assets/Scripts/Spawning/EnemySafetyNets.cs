@@ -1,19 +1,12 @@
+// The protections every enemy gets the moment it exists, wherever it came from: a way back if physics throws it out of the level, and a way off another enemy's head.
 using Signal.Combat.Enemies;
 using Signal.Generation;
 using UnityEngine;
 
 namespace Signal.Spawning
 {
-    /// <summary>
-    /// The protections every enemy gets the moment it exists, wherever it came from: a way back if physics
-    /// throws it out of the level, and a way off another enemy's head. One place, because "however this
-    /// enemy was created" turned out to be four different code paths — the level spawner, the tutorial, the
-    /// tutorial's loot dummy and the boss's summons — and an enemy that misses out is a stranded enemy that
-    /// can hold a combat-locked door shut forever.
-    /// </summary>
     public static class EnemySafetyNets
     {
-        /// <summary>Attaches the nets, keeping the enemy inside <paramref name="room"/>. Null room = work it out.</summary>
         public static void Attach(GameObject enemy, Vector3 home, RoomDefinition room)
         {
             if (enemy == null) return;
@@ -21,7 +14,6 @@ namespace Signal.Spawning
             Breaker(enemy);
         }
 
-        /// <summary>Attaches the nets against an explicit world-space area, for scenes with no rooms.</summary>
         public static void Attach(GameObject enemy, Vector3 home, Bounds arena)
         {
             if (enemy == null) return;

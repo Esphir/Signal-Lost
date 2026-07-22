@@ -1,13 +1,10 @@
+// Adds Spawn / Reset buttons to the section Inspector.
 using Signal.Spawning;
 using UnityEditor;
 using UnityEngine;
 
 namespace Signal.SpawningEditor
 {
-    /// <summary>
-    /// Adds Spawn / Reset buttons to the section Inspector. Both are gated to Play Mode on purpose:
-    /// spawning at edit time would instantiate enemies straight into the saved scene.
-    /// </summary>
     [CustomEditor(typeof(EnemySpawnSection))]
     public class EnemySpawnSectionEditor : Editor
     {

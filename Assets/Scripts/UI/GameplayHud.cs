@@ -1,11 +1,8 @@
+// Gameplay HUD bootstrap: hosts (or creates) the HUD canvas and instantiates the player health bar prefab onto it.
 using UnityEngine;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Gameplay HUD bootstrap: hosts (or creates) the HUD canvas and instantiates the player
-    /// health bar prefab onto it. Future HUD widgets get added here the same way.
-    /// </summary>
     public class GameplayHud : MonoBehaviour
     {
         [SerializeField] private PlayerHealthBarUI playerHealthBarPrefab;

@@ -1,26 +1,21 @@
+// Persistent player-facing settings, backed by PlayerPrefs.
 using System;
 using UnityEngine;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Persistent player-facing settings, backed by PlayerPrefs. Systems read the current value
-    /// (e.g. the camera reads <see cref="MouseSensitivity"/>) instead of hardcoding it, so a change
-    /// here takes effect everywhere immediately and survives restarts.
-    /// </summary>
     public static class SettingsStore
     {
         public const float DefaultMouseSensitivity = 1f;
-        /// <summary>Right shoulder — the conventional default for a third-person camera.</summary>
+
         public const int DefaultCameraSide = 1;
 
         private const string MouseSensitivityKey = "settings-mouse-sensitivity";
         private const string CameraSideKey = "settings-camera-side";
 
         private static float _mouseSensitivity = float.NaN;
-        private static int _cameraSide; // 0 = not yet loaded from prefs
+        private static int _cameraSide;
 
-        /// <summary>Look-sensitivity multiplier (1 = the camera's tuned default feel).</summary>
         public static float MouseSensitivity
         {
             get
@@ -38,10 +33,6 @@ namespace Signal.UI
             }
         }
 
-        /// <summary>
-        /// Which shoulder the camera sits over: 1 = right, -1 = left. The camera multiplies its
-        /// tuned shoulder distance by this, so the two sides stay mirror images automatically.
-        /// </summary>
         public static int CameraSide
         {
             get

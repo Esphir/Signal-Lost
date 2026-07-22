@@ -1,13 +1,9 @@
+// Serializable snapshot of an in-progress run — enough to rebuild the same floor and restore the player's progression.
 using System;
 using System.Collections.Generic;
 
 namespace Signal.Run
 {
-    /// <summary>
-    /// Serializable snapshot of an in-progress run — enough to rebuild the same floor and restore the
-    /// player's progression. Plain fields only, so JsonUtility round-trips it to a save file. The layout
-    /// itself isn't stored; the <see cref="seed"/> regenerates it exactly (see LevelGenerator.PendingSeed).
-    /// </summary>
     [Serializable]
     public class RunSaveData
     {
@@ -16,7 +12,6 @@ namespace Signal.Run
         public float playerHealth;
         public float playerMaxHealth;
 
-        // RunStats, flattened (RunStats itself isn't marked serializable).
         public int enemiesKilled;
         public int lootDropped;
         public int lootCollected;

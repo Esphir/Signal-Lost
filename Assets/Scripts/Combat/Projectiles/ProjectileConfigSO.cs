@@ -1,11 +1,8 @@
+// All data for one projectile type.
 using UnityEngine;
 
 namespace Signal.Combat.Projectiles
 {
-    /// <summary>
-    /// All data for one projectile type. The projectile component reads everything from here,
-    /// so balancing (and creating new projectile variants) is pure asset work.
-    /// </summary>
     [CreateAssetMenu(menuName = "Combat/Projectiles/Projectile Config", fileName = "ProjectileConfig")]
     public class ProjectileConfigSO : ScriptableObject
     {
@@ -40,7 +37,6 @@ namespace Signal.Combat.Projectiles
         [Tooltip("Pulses per second of the indicator's breathing animation. 0 = no pulse.")]
         public float indicatorPulseSpeed = 2f;
 
-        /// <summary>Gravity magnitude this projectile actually experiences (for ballistic prediction).</summary>
         public float EffectiveGravity => Mathf.Abs(Physics.gravity.y) * gravityScale;
     }
 }

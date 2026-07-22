@@ -1,17 +1,8 @@
+// How a dropped key behaves once it exists: it falls, settles on the floor, then hovers and spins as an objective marker — the same read as a loot drop, so both look like something to walk over.
 using UnityEngine;
 
 namespace Signal.Generation
 {
-    /// <summary>
-    /// How a dropped key behaves once it exists: it falls, settles on the floor, then hovers and spins as
-    /// an objective marker — the same read as a loot drop, so both look like something to walk over.
-    ///
-    /// The falling is the part that matters. An enemy can die in mid-air — a Plummeter spends its entire
-    /// attack up there — and a key left hanging at the height of the kill is unreachable, which leaves the
-    /// exit locked with nothing the player can do about it. Anything that could stop it reaching the floor
-    /// (no ground beneath it, a gap it slips through) falls back to the spot it was dropped at, which the
-    /// gate has already placed on solid ground.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class KeySpinner : MonoBehaviour
     {
@@ -48,7 +39,7 @@ namespace Signal.Generation
             if (_rigidbody == null) _rigidbody = gameObject.AddComponent<Rigidbody>();
             _rigidbody.isKinematic = false;
             _rigidbody.useGravity = true;
-            _rigidbody.freezeRotation = true; // it spins itself; a physics tumble would fight that
+            _rigidbody.freezeRotation = true;
 
             EnsureCollider();
 
@@ -56,7 +47,6 @@ namespace Signal.Generation
             _rigidbody.AddForce(new Vector3(sideways.x, 0.5f, sideways.y) * popImpulse, ForceMode.Impulse);
         }
 
-        /// <summary>A key with only a trigger (or nothing) would drop straight through the floor.</summary>
         private void EnsureCollider()
         {
             foreach (Collider existing in GetComponentsInChildren<Collider>())

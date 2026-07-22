@@ -1,3 +1,4 @@
+// Turns a generated dungeon into a Binding of Isaac-style minimap and keeps it in step with play.
 using System.Collections.Generic;
 using Signal.Generation;
 using UnityEngine;
@@ -5,13 +6,6 @@ using UnityEngine.UI;
 
 namespace Signal.Minimap
 {
-    /// <summary>
-    /// Turns a generated dungeon into a Binding of Isaac-style minimap and keeps it in step with play.
-    /// It orchestrates only: the generator supplies rooms and grid cells, <see cref="MinimapRoom"/> holds
-    /// state, <see cref="MinimapRoomUI"/> renders a tile, <see cref="MinimapDatabase"/> holds the sprites.
-    /// This class listens for a new layout, builds the model + tiles once, then flips fog state as the
-    /// player crosses room bounds. Nothing here reads world position for *layout* — only grid cells.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class MinimapManager : MonoBehaviour
     {
@@ -68,7 +62,7 @@ namespace Signal.Minimap
             if (generator != null)
             {
                 generator.MapGenerated += Rebuild;
-                if (generator.Rooms.Count > 0) Rebuild();   // generation may already have happened on Awake
+                if (generator.Rooms.Count > 0) Rebuild();
             }
         }
 
@@ -94,9 +88,6 @@ namespace Signal.Minimap
             if (here != null && here != _current) EnterRoom(here);
         }
 
-        // ── Build ───────────────────────────────────────────────────────────────
-
-        /// <summary>Discards the old map and builds a fresh one from the generator's current rooms.</summary>
         public void Rebuild()
         {
             if (database == null || content == null || generator == null) return;
@@ -104,7 +95,6 @@ namespace Signal.Minimap
             ApplyContainerSettings();
             Clear();
 
-            // Hallways aren't shown — they'd just clutter the map and confuse. Only real rooms get a tile.
             foreach (RoomDefinition def in generator.Rooms)
             {
                 if (def == null || IsHallway(def)) continue;
@@ -118,8 +108,6 @@ namespace Signal.Minimap
             BuildTiles();
             BuildConnections();
 
-            // Start hidden, then "enter" the Start room so it and its neighbours reveal exactly as they
-            // would mid-run — no special-casing, just the same path every room takes.
             _current = null;
             if (_rooms.Count > 0) EnterRoom(_rooms[0]);
             else RefreshAll();
@@ -133,9 +121,8 @@ namespace Signal.Minimap
                 {
                     if (connector == null || !connector.IsOccupied) continue;
                     ConnectorDirection dir = connector.WorldDirection;
-                    if (dir.IsVertical()) continue;   // one floor for now — vertical links wait for multi-floor
+                    if (dir.IsVertical()) continue;
 
-                    // See through any hallway to the real room on its far side, so bridged rooms link directly.
                     RoomDefinition otherDef = RealRoomThrough(connector);
                     if (otherDef == null || !_byDefinition.TryGetValue(otherDef, out MinimapRoom other)) continue;
 
@@ -145,11 +132,6 @@ namespace Signal.Minimap
             }
         }
 
-        /// <summary>
-        /// Re-packs the real rooms onto a clean grid: a breadth-first walk from Start that steps through
-        /// hidden hallways as if they weren't there, so two rooms a hallway apart end up adjacent — the
-        /// map reads like Isaac's, with no hallway cells or gaps between them.
-        /// </summary>
         private void AssignCollapsedGrid()
         {
             if (_rooms.Count == 0) return;
@@ -157,7 +139,7 @@ namespace Signal.Minimap
             var placed = new HashSet<MinimapRoom>();
             var queue = new Queue<MinimapRoom>();
 
-            MinimapRoom start = _rooms[0]; // generator.Rooms[0] is Start, and Start is never a hallway
+            MinimapRoom start = _rooms[0];
             start.GridPosition = Vector2Int.zero;
             placed.Add(start);
             queue.Enqueue(start);
@@ -180,8 +162,6 @@ namespace Signal.Minimap
             }
         }
 
-        /// <summary>The real (non-hallway) room reached through <paramref name="connector"/>, stepping over
-        /// any hallways in between. Null if it dead-ends in a hallway or runs off the graph.</summary>
         private RoomDefinition RealRoomThrough(RoomConnector connector)
         {
             RoomConnector current = connector;
@@ -192,7 +172,7 @@ namespace Signal.Minimap
                 if (owner == null) return null;
                 if (!IsHallway(owner)) return owner;
 
-                current = OtherOccupiedConnector(owner, partner); // continue out the hallway's far door
+                current = OtherOccupiedConnector(owner, partner);
                 if (current == null) return null;
             }
             return null;
@@ -231,20 +211,20 @@ namespace Signal.Minimap
             {
                 foreach (MinimapRoom other in room.Neighbours)
                 {
-                    if (drawn.Contains((other, room))) continue;   // each edge once
+                    if (drawn.Contains((other, room))) continue;
                     drawn.Add((room, other));
 
                     var go = new GameObject("Connection", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
                     var rt = go.GetComponent<RectTransform>();
                     rt.SetParent(content, false);
                     rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
-                    rt.SetAsFirstSibling();   // behind the tiles
+                    rt.SetAsFirstSibling();
 
                     Vector2 a = (Vector2)room.GridPosition * roomSpacing;
                     Vector2 b = (Vector2)other.GridPosition * roomSpacing;
                     rt.anchoredPosition = (a + b) * 0.5f;
                     bool horizontal = Mathf.Abs(a.x - b.x) > Mathf.Abs(a.y - b.y);
-                    // Span the real gap, so a link that loops back across more than one cell still connects.
+
                     float length = Mathf.Max(roomSpacing, horizontal ? Mathf.Abs(a.x - b.x) : Mathf.Abs(a.y - b.y));
                     rt.sizeDelta = horizontal
                         ? new Vector2(length, connectionWidth)
@@ -268,8 +248,6 @@ namespace Signal.Minimap
             _connections.Clear();
             _current = null;
         }
-
-        // ── Fog of war ──────────────────────────────────────────────────────────
 
         private void EnterRoom(MinimapRoom room)
         {
@@ -304,8 +282,6 @@ namespace Signal.Minimap
             content.anchoredPosition = -(Vector2)_current.GridPosition * roomSpacing;
         }
 
-        // ── Player tracking ───────────────────────────────────────────────────────
-
         private Vector3 PlayerPosition()
         {
             if (_player == null)
@@ -316,7 +292,6 @@ namespace Signal.Minimap
             return _player != null ? _player.position : Vector3.positiveInfinity;
         }
 
-        /// <summary>The room whose world bounds hold the point; on overlaps (a doorway) the nearest wins.</summary>
         private MinimapRoom FindRoomAt(Vector3 worldPoint)
         {
             MinimapRoom best = null;

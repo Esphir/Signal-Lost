@@ -1,3 +1,4 @@
+// Fast melee attack.
 using System.Collections;
 using UnityEngine;
 using Signal.Combat.Configs;
@@ -7,13 +8,6 @@ using Signal.Stats;
 
 namespace Signal.Combat.Attacks
 {
-    /// <summary>
-    /// Fast melee attack. Owns a <see cref="ComboSequencer"/> so repeated presses walk through the
-    /// configured combo chain; expanding the combo requires only adding more
-    /// <see cref="LightAttackConfigSO"/> assets, not touching this class.
-    /// Timing rides the actual animator state (impact/active/exit as normalized clip time) via the
-    /// <see cref="AttackExecutionContext"/> helpers.
-    /// </summary>
     public sealed class LightAttackStrategy : IAttackStrategy
     {
         private readonly ComboSequencer _combo;
@@ -42,8 +36,6 @@ namespace Signal.Combat.Attacks
             bool feedbackFired = false;
             ctx.Resolver.BeginSwing();
 
-            // Active frames: sweep the hit volume every frame until the clip passes the
-            // active-end mark (degrades to a single pulse without animation data).
             while (true)
             {
                 Vector3 hitCenter = ctx.Origin.position + ctx.Origin.forward * step.hitOffset + Vector3.up * 0.8f;

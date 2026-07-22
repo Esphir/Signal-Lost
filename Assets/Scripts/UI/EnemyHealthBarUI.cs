@@ -1,14 +1,9 @@
+// World-space health bar that floats above an enemy, billboards toward the camera, and hides at full health (configurable) and on death.
 using Signal.Combat.Health;
 using UnityEngine;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// World-space health bar that floats above an enemy, billboards toward the camera, and hides
-    /// at full health (configurable) and on death. Destroys itself when its target is destroyed.
-    /// Spawned and bound by <see cref="EnemyHealthBarSpawner"/> — reusable for bosses via a bigger
-    /// prefab variant.
-    /// </summary>
     public class EnemyHealthBarUI : HealthBarBase
     {
         [Header("Visibility")]
@@ -30,10 +25,9 @@ namespace Signal.UI
             _canvas = gameObject.AddComponent<Canvas>();
             _canvas.renderMode = RenderMode.WorldSpace;
             base.Awake();
-            _canvas.enabled = false; // hidden until bound
+            _canvas.enabled = false;
         }
 
-        /// <summary>Binds the bar to an enemy: health source, transform to follow, and world-space height.</summary>
         public void Bind(HealthComponent health, Transform followTarget, float heightOffset, Camera cameraOverride)
         {
             _followTarget = followTarget;
@@ -51,7 +45,7 @@ namespace Signal.UI
         {
             if (_followTarget == null)
             {
-                Destroy(gameObject); // enemy was destroyed
+                Destroy(gameObject);
                 return;
             }
 

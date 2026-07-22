@@ -1,15 +1,10 @@
+// Locks a room's doorways for the duration of a fight: when a spawn section in this room fires, the used doors slam shut, and they reopen the instant every spawned enemy is dead.
 using System.Collections.Generic;
 using Signal.Spawning;
 using UnityEngine;
 
 namespace Signal.Generation
 {
-    /// <summary>
-    /// Locks a room's doorways for the duration of a fight: when a spawn section in this room fires, the
-    /// used doors slam shut, and they reopen the instant every spawned enemy is dead. Added automatically
-    /// by the generator to any placed room that has spawn sections, so combat rooms get it with no setup.
-    /// Only the room's occupied connectors are touched — sealed dead-ends stay sealed.
-    /// </summary>
     [DisallowMultipleComponent]
     public sealed class CombatLockController : MonoBehaviour
     {
@@ -36,7 +31,7 @@ namespace Signal.Generation
 
         private void OnCombatStart()
         {
-            if (_active || _room == null || TotalAlive() == 0) return; // nothing to fight = no lockdown
+            if (_active || _room == null || TotalAlive() == 0) return;
             _active = true;
             _locked.Clear();
 

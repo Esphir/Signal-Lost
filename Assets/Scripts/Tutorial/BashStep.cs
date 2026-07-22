@@ -1,3 +1,4 @@
+// Bash tutorial: spawns an invulnerable training dummy in a small arena with a wall behind it and completes once the player Bashes the dummy into that wall and it becomes stunned.
 using System.Collections;
 using System.Collections.Generic;
 using Signal.Combat.Interfaces;
@@ -5,13 +6,6 @@ using UnityEngine;
 
 namespace Signal.Tutorial
 {
-    /// <summary>
-    /// Bash tutorial: spawns an invulnerable training dummy in a small arena with a wall behind it
-    /// and completes once the player Bashes the dummy into that wall and it becomes stunned. Both
-    /// checklist lines tick together, because a bash into the wall is exactly what causes the stun.
-    /// Deliberately does NOT depend on damage or death — the dummy can't die — so the step is always
-    /// completable and can't be short-circuited by killing the target first.
-    /// </summary>
     public class BashStep : TutorialStep
     {
         [SerializeField] private TutorialEnemySpawner spawner;
@@ -38,7 +32,6 @@ namespace Signal.Tutorial
             _bashObjective = AddObjective(bashObjectiveText);
             _stunObjective = AddObjective(stunObjectiveText);
 
-            // Event-driven off the shared stun system rather than polling IsStunned each frame.
             foreach (GameObject go in spawner.Instances)
             {
                 IStunnable stunnable = go != null ? go.GetComponent<IStunnable>() : null;
@@ -54,7 +47,6 @@ namespace Signal.Tutorial
             }
         }
 
-        // The bash into the wall is what produced the stun, so both lines are satisfied at once.
         private void OnStunned()
         {
             _bashObjective.Complete();

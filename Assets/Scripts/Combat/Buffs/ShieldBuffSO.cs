@@ -1,8 +1,8 @@
+// Grants a temporary flat damage-absorption shield.
 using UnityEngine;
 
 namespace Signal.Combat.Buffs
 {
-    /// <summary>Grants a temporary flat damage-absorption shield.</summary>
     [CreateAssetMenu(menuName = "Combat/Buffs/Shield", fileName = "ShieldBuff")]
     public class ShieldBuffSO : BuffSO
     {

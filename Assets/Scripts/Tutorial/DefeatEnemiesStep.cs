@@ -1,16 +1,10 @@
+// Spawns a wave through a TutorialEnemySpawner when it begins and builds one "Defeat the X" objective per spawned enemy, each ticked by that enemy's own death — so the checklist names exactly what is on the field.
 using System.Text;
 using Signal.Combat.Health;
 using UnityEngine;
 
 namespace Signal.Tutorial
 {
-    /// <summary>
-    /// Spawns a wave through a <see cref="TutorialEnemySpawner"/> when it begins and builds one
-    /// "Defeat the X" objective per spawned enemy, each ticked by that enemy's own death — so the
-    /// checklist names exactly what is on the field. Reused for the Dodge, Plummeter and Support
-    /// waves: the enemy names come from the spawner's entries, and an optional dodge objective adds
-    /// the "Dodge a Lobber projectile" / "Dodge the Plummeter slam" line per instance.
-    /// </summary>
     public class DefeatEnemiesStep : TutorialStep
     {
         [SerializeField] private TutorialEnemySpawner spawner;
@@ -34,7 +28,6 @@ namespace Signal.Tutorial
             AddDodgeObjective();
             AddDefeatObjectives();
 
-            // A misconfigured spawner must not trap the player behind an empty checklist.
             if (Objectives.Count == 0)
             {
                 Debug.LogWarning($"[Tutorial] '{name}' produced no objectives — skipping the step.", this);
@@ -46,13 +39,13 @@ namespace Signal.Tutorial
         {
             if (string.IsNullOrWhiteSpace(dodgeObjectiveText)) return;
 
-            _dodgeObjective = AddObjective(dodgeObjectiveText); // listed first, above the defeat lines
+            _dodgeObjective = AddObjective(dodgeObjectiveText);
 
             GameObject player = GameObject.FindWithTag("Player");
             _dodge = player != null ? player.GetComponent<PlayerDodge>() : null;
 
             if (_dodge != null) _dodge.DodgeStarted += OnDodged;
-            else _dodgeObjective.Complete(); // nothing can ever tick it — don't block the step
+            else _dodgeObjective.Complete();
         }
 
         private void AddDefeatObjectives()
@@ -66,8 +59,6 @@ namespace Signal.Tutorial
                 string label = i < spawner.InstanceNames.Count ? Prettify(spawner.InstanceNames[i]) : "enemy";
                 TutorialObjective objective = AddObjective(string.Format(defeatObjectiveFormat, label));
 
-                // Each enemy ticks its own line. The handler dies with the enemy, so no unsubscribe
-                // is needed — the spawner destroys every instance in OnEnd.
                 health.Died += () => objective.Complete();
             }
         }
@@ -80,7 +71,6 @@ namespace Signal.Tutorial
             if (spawner != null) spawner.Clear();
         }
 
-        /// <summary>"TrainingDummy" → "Training Dummy", so prefab names read as prose in the checklist.</summary>
         private static string Prettify(string raw)
         {
             if (string.IsNullOrEmpty(raw)) return "enemy";

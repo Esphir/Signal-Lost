@@ -1,3 +1,4 @@
+// Drives the tutorial as an ordered list of TutorialSteps.
 using Signal.UI;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -7,12 +8,6 @@ using UnityEngine.UI;
 
 namespace Signal.Tutorial
 {
-    /// <summary>
-    /// Drives the tutorial as an ordered list of <see cref="TutorialStep"/>s. Event-driven: it begins
-    /// a step, shows its prompt, and advances only when the step raises Completed — no polling of step
-    /// internals. Steps are assigned in the Inspector, so adding one is drag-and-drop. On finishing it
-    /// records <see cref="TutorialState.Completed"/> and shows the completion screen.
-    /// </summary>
     public class TutorialManager : MonoBehaviour
     {
         [SerializeField] private TutorialStep[] steps;
@@ -49,15 +44,11 @@ namespace Signal.Tutorial
             ShowStartPrompt();
         }
 
-        /// <summary>
-        /// Asks up front whether to play the tutorial or skip to the first level. Skipping marks the
-        /// tutorial done, so it isn't asked again — a later Play goes straight to the level.
-        /// </summary>
         private void ShowStartPrompt()
         {
             UiBuilder.EnsureEventSystem();
             Time.timeScale = 0f;
-            UiModalState.Push(); // suspends player input, and holds the camera still behind the panel
+            UiModalState.Push();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
 
@@ -104,7 +95,6 @@ namespace Signal.Tutorial
             UiModalState.Pop();
             Time.timeScale = 1f;
 
-            // Hand back the locked gameplay cursor; each step's prompt frees and re-locks it from here.
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
 
@@ -133,30 +123,21 @@ namespace Signal.Tutorial
 
             step.Completed += OnStepCompleted;
 
-            // Show the prompt (which pauses gameplay) FIRST, and only begin the step's active work
-            // — spawning enemies, watching input — once the player presses Continue and gameplay has
-            // resumed. This keeps every step on one path and guarantees nothing acts while reading.
             if (promptUI != null)
                 promptUI.Show(step.Title, step.Description, () => BeginStepGameplay(step));
             else
                 BeginStepGameplay(step);
         }
 
-        /// <summary>
-        /// Starts the step's watchers/spawns, then shows its checklist. Order matters: the step
-        /// declares its objectives in Begin, so the UI must read them after.
-        /// </summary>
         private void BeginStepGameplay(TutorialStep step)
         {
             step.Begin();
-            // A step that finished inside Begin (misconfigured/nothing to do) has already handed off
-            // to the next one — don't paint its stale checklist over that.
+
             if (step.IsActive) objectiveUI?.Show(step);
         }
 
         private void OnStepCompleted() => BeginStep(_index + 1);
 
-        /// <summary>Jump directly to a step (0-based). Exposed for testing / debug keys.</summary>
         public void GoToStep(int index)
         {
             if (steps == null || steps.Length == 0) return;
@@ -184,11 +165,8 @@ namespace Signal.Tutorial
             if (_completeUI != null) return;
             UiBuilder.EnsureEventSystem();
 
-            // Freeze the game behind the panel, the way every other full-screen menu does. A controller
-            // makes the omission obvious: a stick doesn't recentre itself, so the player carries on
-            // walking around under the "complete" screen.
             Time.timeScale = 0f;
-            UiModalState.Push(); // also suspends player input, so the confirm button can't reach the player
+            UiModalState.Push();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -220,14 +198,9 @@ namespace Signal.Tutorial
             Button first = AddButton(buttons.transform, "Continue", () => Leave(continueSceneName));
             AddButton(buttons.transform, "Return to Main Menu", () => Leave(mainMenuSceneName));
 
-            EventSystem.current?.SetSelectedGameObject(first.gameObject); // controller focus
+            EventSystem.current?.SetSelectedGameObject(first.gameObject);
         }
 
-        /// <summary>
-        /// Leaves the tutorial. Unfreezing has to happen here: loading a scene resets neither the time
-        /// scale nor the modal count, so skipping it would drop the player into a frozen level with the
-        /// pause menu convinced a full-screen UI is still open.
-        /// </summary>
         private void Leave(string sceneName)
         {
             UiModalState.Pop();

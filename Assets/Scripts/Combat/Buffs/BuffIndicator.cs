@@ -1,12 +1,8 @@
+// Shows a visual while any buff is active on this GameObject's BuffReceiver.
 using UnityEngine;
 
 namespace Signal.Combat.Buffs
 {
-    /// <summary>
-    /// Shows a visual while any buff is active on this GameObject's <see cref="BuffReceiver"/>.
-    /// Assign any child object (particle system, ring mesh, …) as the indicator; if none is
-    /// assigned, a small floating tinted sphere is auto-created so the state is always visible.
-    /// </summary>
     [RequireComponent(typeof(BuffReceiver))]
     public class BuffIndicator : MonoBehaviour
     {

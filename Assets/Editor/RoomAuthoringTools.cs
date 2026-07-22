@@ -1,3 +1,4 @@
+// The bridge between a hand-built room prefab and the connector-graph generator.
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -8,23 +9,11 @@ using UnityEngine;
 
 namespace Signal.GenerationEditor
 {
-    /// <summary>
-    /// The bridge between a hand-built room prefab and the connector-graph generator. It reads the
-    /// doorways an artist already placed (any child whose name contains "Door" — e.g. a "Blocked Door"
-    /// panel) and wires a <see cref="RoomConnector"/> onto each, so the prefab becomes generator-ready
-    /// without touching a line of runtime code. Re-runnable: it owns a single "Connectors" child and
-    /// rebuilds it every pass, so nothing accumulates.
-    ///
-    /// The whole authoring loop is therefore: duplicate a prefab, drop your geometry and Door panels in,
-    /// pick a RoomType on its RoomDefinition, run "Setup Connectors", run "Populate Database". Done.
-    /// </summary>
     public static class RoomAuthoringTools
     {
         private const string RoomsFolder = "Assets/Prefabs/Rooms";
         private const string ContainerName = "Connectors";
         private const float SameSpotEpsilon = 0.5f;
-
-        // ── Menus ───────────────────────────────────────────────────────────────
 
         [MenuItem("Tools/Signal Lost/Rooms/Setup Connectors (Selected Prefabs)")]
         public static void SetupSelected()
@@ -86,8 +75,6 @@ namespace Signal.GenerationEditor
             Validate();
         }
 
-        // ── Connector setup ─────────────────────────────────────────────────────
-
         private static void RunSetup(List<string> paths)
         {
             var sb = new StringBuilder();
@@ -104,18 +91,12 @@ namespace Signal.GenerationEditor
                 $"Processed {paths.Count} prefab(s). See Console for the per-room log.", "OK");
         }
 
-        /// <summary>
-        /// Loads the prefab in isolation, (re)builds one connector per door marker, and saves. Runs on
-        /// prefab CONTENTS rather than an instance, so it never disturbs a scene and is safe to re-run.
-        /// </summary>
         internal static string SetupPrefab(string path)
         {
             var log = new StringBuilder();
             GameObject root = PrefabUtility.LoadPrefabContents(path);
             try
             {
-                // One RoomDefinition, on the root. A stray one on a child (a common duplicate-prefab
-                // mistake) confuses the generator, so it's removed here.
                 RoomDefinition def = root.GetComponent<RoomDefinition>();
                 if (def == null) { def = root.AddComponent<RoomDefinition>(); log.AppendLine("  + added RoomDefinition to root"); }
                 foreach (RoomDefinition d in root.GetComponentsInChildren<RoomDefinition>(true))
@@ -136,7 +117,6 @@ namespace Signal.GenerationEditor
                 if (doors.Count == 0)
                     log.AppendLine("  ! no children named 'Door' / 'Blocked Door' found — add door markers, then re-run");
 
-                // Rebuild our own container so re-runs never stack duplicates.
                 Transform old = root.transform.Find(ContainerName);
                 if (old != null) Object.DestroyImmediate(old.gameObject);
                 var container = new GameObject(ContainerName);
@@ -146,10 +126,6 @@ namespace Signal.GenerationEditor
                 var placed = new List<(ConnectorDirection dir, Vector3 pos)>();
                 foreach (Transform door in doors)
                 {
-                    // Work from the door mesh's actual world centre, NOT its transform pivot — a ProBuilder
-                    // panel's pivot is often nowhere near the panel itself. The wall that centre is nearest
-                    // decides direction and where the connector snaps; snapping onto that boundary face is
-                    // what guarantees rooms tile without overlapping.
                     Vector3 doorCenter = DoorMeshCenter(door);
                     ResolveOpening(doorCenter, door.name, worldBounds, out ConnectorDirection dir,
                                    out Vector3 cardinal, out Vector3 snapped, out string note);
@@ -162,8 +138,8 @@ namespace Signal.GenerationEditor
 
                     var go = new GameObject($"Connector_{dir}");
                     go.transform.SetParent(container.transform, false);
-                    go.transform.position = snapped;                             // exactly on the wall face
-                    go.transform.rotation = Quaternion.LookRotation(cardinal);   // +Z points OUT
+                    go.transform.position = snapped;
+                    go.transform.rotation = Quaternion.LookRotation(cardinal);
                     WireConnector(go.AddComponent<RoomConnector>(), dir, door.gameObject);
 
                     perDirection.TryGetValue(dir, out int n);
@@ -175,10 +151,6 @@ namespace Signal.GenerationEditor
                     if (kv.Value > 1)
                         log.AppendLine($"  ! {kv.Value} doors face {kv.Key}; that's fine only if they're on different walls at different spots");
 
-                // Tighten the collision footprint to the doors. Geometry that overhangs past a door — a
-                // wall that sticks out beyond its own opening — must not count as occupied space, or a
-                // neighbour mating at that door would overlap-reject against thin air. Each door pulls its
-                // own wall face in to the door; walls without a door keep the full renderer extent.
                 Bounds footprint = worldBounds;
                 Vector3 fMin = footprint.min, fMax = footprint.max;
                 foreach ((ConnectorDirection dir, Vector3 pos) in placed)
@@ -211,8 +183,6 @@ namespace Signal.GenerationEditor
             so.FindProperty("blockingWall").objectReferenceValue = blockingWall;
             so.ApplyModifiedPropertiesWithoutUndo();
         }
-
-        // ── Database ────────────────────────────────────────────────────────────
 
         private static int AddRoomsToDatabase(RoomDatabase db, List<string> paths, out int skipped)
         {
@@ -249,8 +219,6 @@ namespace Signal.GenerationEditor
             AssetDatabase.SaveAssets();
             return added;
         }
-
-        // ── Validation ──────────────────────────────────────────────────────────
 
         private static int ValidatePrefab(string path, StringBuilder sb)
         {
@@ -303,9 +271,6 @@ namespace Signal.GenerationEditor
             return problems;
         }
 
-        // ── Helpers ─────────────────────────────────────────────────────────────
-
-        /// <summary>Topmost children whose name contains "door", so a door mesh with sub-parts counts once.</summary>
         internal static List<Transform> FindDoorMarkers(GameObject root)
         {
             var matched = new List<Transform>();
@@ -328,16 +293,11 @@ namespace Signal.GenerationEditor
             return topmost;
         }
 
-        /// <summary>
-        /// Reads a cardinal from the door's name — the authoritative source when present. Accepts a
-        /// trailing token like Door_N / Door_South, and ignores any trailing " (1)" Unity adds to copies.
-        /// </summary>
         private static bool TryDirectionFromName(string name, out ConnectorDirection dir, out Vector3 cardinal)
         {
             dir = default;
             cardinal = default;
 
-            // Drop a trailing "(1)", digits and spaces so "Door_N (2)" still ends in the direction token.
             string n = Regex.Replace(name.ToLowerInvariant(), @"[\s\(\)\d]+$", "");
 
             if (n.EndsWith("north") || n.EndsWith("_n")) { dir = ConnectorDirection.North; cardinal = Vector3.forward; return true; }
@@ -347,12 +307,6 @@ namespace Signal.GenerationEditor
             return false;
         }
 
-        /// <summary>
-        /// Resolves a door into a connector by the wall it's on. The connector snaps onto the nearest of
-        /// the room's four side faces, which is what makes rooms tile without overlap — the mating point
-        /// is always on the boundary, never inside. The name (Door_N…) only breaks ties at corners and
-        /// flags mismatches; geometry wins, because the real hole is wherever the door actually sits.
-        /// </summary>
         private static void ResolveOpening(Vector3 p, string doorName, Bounds bounds, out ConnectorDirection dir,
                                            out Vector3 cardinal, out Vector3 snapped, out string note)
         {
@@ -370,8 +324,6 @@ namespace Signal.GenerationEditor
             for (int i = 1; i < faces.Length; i++)
                 if (faces[i].dist < faces[best].dist) best = i;
 
-            // A named direction wins when it's about as near as the geometric best (a corner door); if it
-            // clearly disagrees, keep the geometry and warn — the connector belongs where the hole is.
             if (TryDirectionFromName(doorName, out ConnectorDirection named, out _))
             {
                 int idx = System.Array.FindIndex(faces, f => f.d == named);
@@ -383,10 +335,6 @@ namespace Signal.GenerationEditor
             dir = chosen.d;
             cardinal = chosen.card;
 
-            // Snap onto the wall to clean up sub-unit float error, but only when the door is essentially
-            // on it. A door set well back from the bounds (the room's geometry overhangs past its own
-            // door) must keep its real position — otherwise the opening drifts off the door and leaves a
-            // gap where the next room meets it.
             const float onWall = 2f;
             float perp = chosen.axisX ? p.x : p.z;
             float coord = chosen.dist <= onWall ? chosen.coord : perp;
@@ -410,12 +358,6 @@ namespace Signal.GenerationEditor
             return any;
         }
 
-        /// <summary>
-        /// Where a door's opening actually is, in world space: horizontally the centre of the door mesh,
-        /// vertically its base (the threshold). ProBuilder pivots often sit nowhere near the mesh, so the
-        /// renderer bounds are the real location; anchoring at the base means two rooms line up floor-to-
-        /// floor when they mate, whatever their door heights. Falls back to the pivot if nothing renders.
-        /// </summary>
         private static Vector3 DoorMeshCenter(Transform door)
         {
             Renderer[] renderers = door.GetComponentsInChildren<Renderer>();

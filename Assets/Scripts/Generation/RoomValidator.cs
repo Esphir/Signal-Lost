@@ -1,23 +1,15 @@
+// Decides whether a placement is legal, and audits the finished level.
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Signal.Generation
 {
-    /// <summary>
-    /// Decides whether a placement is legal, and audits the finished level. Pure checks — it places
-    /// nothing and chooses nothing (Single Responsibility), so the overlap rule can be reasoned about
-    /// on its own.
-    /// </summary>
     public class RoomValidator
     {
         private readonly float _tolerance;
 
         public RoomValidator(float overlapTolerance) => _tolerance = overlapTolerance;
 
-        /// <summary>
-        /// True when a room at its current pose clears every already-placed room. Bounds are shrunk by
-        /// the tolerance so neighbours may share a wall at a doorway without reading as an overlap.
-        /// </summary>
         public bool IsClear(RoomDefinition candidate, IReadOnlyList<RoomDefinition> placed, RoomDefinition ignore = null)
         {
             Bounds a = Shrink(candidate.WorldBounds);
@@ -30,18 +22,6 @@ namespace Signal.Generation
             return true;
         }
 
-        /// <summary>
-        /// Whether two connectors may be joined.
-        ///
-        /// Both must be free and of the same <see cref="ConnectionType"/>. Direction is where rotation
-        /// changes the answer: without it, the candidate's authored direction must already be the
-        /// opposite of the opening's (North↔South, East↔West). With rotation allowed, any horizontal
-        /// pair can mate, because the generator simply turns the room until it does — that is what
-        /// lets an East door become a North door.
-        ///
-        /// Vertical connectors never mate with horizontal ones: rooms rotate about Y only, so no
-        /// amount of turning points a floor hatch at a wall.
-        /// </summary>
         public static bool CanMate(RoomConnector source, RoomConnector target, bool allowRotation)
         {
             if (source == null || target == null) return false;
@@ -51,17 +31,12 @@ namespace Signal.Generation
             bool sourceVertical = source.Direction.IsVertical();
             if (sourceVertical != target.Direction.IsVertical()) return false;
 
-            // Vertical pairs must genuinely oppose: yaw can't turn Up into Down.
             if (sourceVertical || !allowRotation)
                 return target.Direction == source.Direction.Opposite();
 
             return true;
         }
 
-        /// <summary>
-        /// Post-generation audit. Reports problems rather than throwing, so a bad database yields a
-        /// diagnosable level instead of a silent failure.
-        /// </summary>
         public GenerationReport Audit(IReadOnlyList<RoomDefinition> placed, bool allowOpenEnds)
         {
             var report = new GenerationReport { RoomCount = placed.Count };
@@ -71,7 +46,6 @@ namespace Signal.Generation
                 RoomDefinition room = placed[i];
                 if (room == null) { report.Problems.Add($"Room #{i} is null."); continue; }
 
-                // Overlap: every pair, against the same rule used during placement.
                 for (int j = i + 1; j < placed.Count; j++)
                 {
                     if (placed[j] == null) continue;
@@ -82,7 +56,6 @@ namespace Signal.Generation
                     }
                 }
 
-                // Connectivity: every room past the start must be mated to something.
                 bool connected = false;
                 int open = 0;
                 foreach (RoomConnector connector in room.Connectors)
@@ -103,7 +76,6 @@ namespace Signal.Generation
                 if (room.SpawnSections is { Length: > 0 }) report.SpawnSectionRooms++;
             }
 
-            // An unsealed doorway is a dead end. Fine for a corridor stub, not for a shipped level.
             if (!allowOpenEnds && report.OpenConnectors > 0)
                 report.Problems.Add($"{report.OpenConnectors} connector(s) left open (unintentional dead ends).");
 
@@ -114,11 +86,6 @@ namespace Signal.Generation
             return report;
         }
 
-        /// <summary>
-        /// Flood-fills the connector graph from the Start room. "Has a connection" isn't the same as
-        /// "reachable" — a branch could in principle close into an island — so this walks the actual
-        /// edges rather than counting them.
-        /// </summary>
         private static int CountUnreachable(IReadOnlyList<RoomDefinition> placed)
         {
             if (placed.Count == 0) return 0;
@@ -155,7 +122,6 @@ namespace Signal.Generation
         }
     }
 
-    /// <summary>Outcome of an audit — surfaced in the log and the generator's Inspector.</summary>
     public class GenerationReport
     {
         public int RoomCount;

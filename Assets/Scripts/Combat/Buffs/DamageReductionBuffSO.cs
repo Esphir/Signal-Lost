@@ -1,8 +1,8 @@
+// Grants temporary percentage damage reduction.
 using UnityEngine;
 
 namespace Signal.Combat.Buffs
 {
-    /// <summary>Grants temporary percentage damage reduction.</summary>
     [CreateAssetMenu(menuName = "Combat/Buffs/Damage Reduction", fileName = "DamageReductionBuff")]
     public class DamageReductionBuffSO : BuffSO
     {

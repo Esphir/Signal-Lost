@@ -1,12 +1,9 @@
+// Minimal object pool for loot pickups, keyed by prefab.
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Signal.Loot
 {
-    /// <summary>
-    /// Minimal object pool for loot pickups, keyed by prefab. Released instances are deactivated
-    /// and reused by later spawns; destroyed instances (scene unloads) are skipped on pop.
-    /// </summary>
     public static class LootPool
     {
         private static readonly Dictionary<LootPickup, Stack<LootPickup>> Pools =
@@ -21,7 +18,7 @@ namespace Signal.Loot
 
             LootPickup instance = null;
             while (pool.Count > 0 && instance == null)
-                instance = pool.Pop(); // destroyed instances pop out as null
+                instance = pool.Pop();
 
             if (instance == null)
             {

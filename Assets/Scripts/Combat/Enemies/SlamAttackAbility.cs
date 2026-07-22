@@ -1,3 +1,4 @@
+// The Plummeter's signature move: leap above the target point, hang for anticipation, crash down, and emit an expanding AoE shockwave that damages each target exactly once as the front reaches them.
 using System;
 using System.Collections;
 using UnityEngine;
@@ -6,13 +7,6 @@ using Signal.Combat.Telegraphs;
 
 namespace Signal.Combat.Enemies
 {
-    /// <summary>
-    /// The Plummeter's signature move: leap above the target point, hang for anticipation, crash
-    /// down, and emit an expanding AoE shockwave that damages each target exactly once as the
-    /// front reaches them. Pure ability component — the AI decides *when*, this executes *how*.
-    /// Reuses the shared hit detector/resolver, so damage flows through IDamageable like every
-    /// other attack in the game.
-    /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public class SlamAttackAbility : MonoBehaviour
     {
@@ -21,19 +15,17 @@ namespace Signal.Combat.Enemies
         [Tooltip("Layers the shockwave can damage (typically the player's layer).")]
         private LayerMask hitMask;
 
-        /// <summary>True from leap start until the shockwave finishes expanding.</summary>
         public bool IsExecuting { get; private set; }
         public bool CooldownReady => !IsExecuting && Time.time >= _nextReadyTime;
 
-        /// <summary>Raised at ground impact with the impact point — hook extra VFX/camera shake here.</summary>
         public event Action<Vector3> Impacted;
 
         private Rigidbody _rb;
         private OverlapSphereHitDetector _detector;
         private readonly CombatHitResolver _resolver = new CombatHitResolver();
-        private AoeTelegraph _telegraph; // created once, reused per slam
+        private AoeTelegraph _telegraph;
         private float _nextReadyTime;
-        private float _liveShockwaveRadius; // for gizmos
+        private float _liveShockwaveRadius;
         private Vector3 _liveShockwaveCenter;
 
         private void Awake()
@@ -48,7 +40,6 @@ namespace Signal.Combat.Enemies
             _detector = new OverlapSphereHitDetector(config.maxTargets);
         }
 
-        /// <summary>Starts the slam toward the target's position at call time. False if on cooldown.</summary>
         public bool TryExecute(Vector3 targetPoint)
         {
             if (!CooldownReady || !enabled) return false;
@@ -62,15 +53,11 @@ namespace Signal.Combat.Enemies
             _nextReadyTime = Time.time + config.cooldown;
             CombatLog.Info($"'{name}' slam attack started (target {targetPoint}).", this);
 
-            // Scripted motion: physics is suspended for the leap so nothing fights the arc.
             bool wasKinematic = _rb.isKinematic;
             _rb.isKinematic = true;
 
             Vector3 start = transform.position;
-            // Land at the target's ground position; keep our own height as ground reference
-            // (flat-arena assumption — swap in a ground raycast here for uneven terrain).
-            // The landing point is locked HERE, when the leap commits — it never changes after
-            // the warning appears, so the telegraph is always truthful.
+
             Vector3 landing = new Vector3(targetPoint.x, start.y, targetPoint.z);
             Vector3 apex = landing + Vector3.up * config.jumpHeight;
 
@@ -78,7 +65,6 @@ namespace Signal.Combat.Enemies
 
             if (config.preJumpDelay > 0f) yield return new WaitForSeconds(config.preJumpDelay);
 
-            // Rise: smooth ease up and over the target.
             for (float t = 0f; t < config.riseDuration; t += Time.deltaTime)
             {
                 transform.position = Vector3.Lerp(start, apex, Mathf.SmoothStep(0f, 1f, t / config.riseDuration));
@@ -86,10 +72,8 @@ namespace Signal.Combat.Enemies
             }
             transform.position = apex;
 
-            // Anticipation hang at the apex.
             if (config.apexPause > 0f) yield return new WaitForSeconds(config.apexPause);
 
-            // Plummet: ease-in so it accelerates downward.
             for (float t = 0f; t < config.slamDuration; t += Time.deltaTime)
             {
                 float k = t / config.slamDuration;
@@ -107,7 +91,6 @@ namespace Signal.Combat.Enemies
 
         private void OnImpact(Vector3 point)
         {
-            // The warning must vanish the instant the slam lands.
             if (_telegraph != null) _telegraph.Hide();
 
             if (config.impactVfxPrefab != null)
@@ -117,11 +100,6 @@ namespace Signal.Combat.Enemies
             CombatLog.Info($"'{name}' slammed down at {point} — shockwave expanding.", this);
         }
 
-        /// <summary>
-        /// Grows the damage radius from 0 to max at the configured speed, sweeping an overlap
-        /// sphere each frame. The resolver's per-swing dedup guarantees each target is damaged
-        /// exactly once — the moment the front first reaches it.
-        /// </summary>
         private IEnumerator ExpandShockwave(Vector3 center)
         {
             _resolver.BeginSwing();
@@ -151,8 +129,6 @@ namespace Signal.Combat.Enemies
             if (_telegraph == null)
                 _telegraph = AoeTelegraph.Create(config.telegraphPrefab);
 
-            // Warning duration = the leap's full committed timeline, so the heat-up tint peaks
-            // exactly at impact: pre-jump + rise + apex hang + plummet.
             float warningDuration =
                 config.preJumpDelay + config.riseDuration + config.apexPause + config.slamDuration;
 
@@ -169,7 +145,6 @@ namespace Signal.Combat.Enemies
 
         private void OnDisable()
         {
-            // Coroutines die with the component — never leave a live warning behind.
             if (_telegraph != null) _telegraph.Hide();
         }
 

@@ -1,14 +1,9 @@
+// Object pool for LobProjectile.
 using UnityEngine;
 using UnityEngine.Pool;
 
 namespace Signal.Combat.Projectiles
 {
-    /// <summary>
-    /// Object pool for <see cref="LobProjectile"/>. Attach next to a shooter (e.g. LobTurret);
-    /// the shooter uses it when present and falls back to Instantiate/Destroy when absent, so
-    /// pooling is opt-in per shooter. Spawned projectiles despawn back into the pool instead of
-    /// being destroyed.
-    /// </summary>
     public class ProjectilePool : MonoBehaviour
     {
         [SerializeField]
@@ -22,7 +17,6 @@ namespace Signal.Combat.Projectiles
 
         public bool HasPrefab => projectilePrefab != null;
 
-        /// <summary>Lets the shooter supply its prefab when none is assigned here.</summary>
         public void SetPrefab(LobProjectile prefab)
         {
             if (projectilePrefab == null) projectilePrefab = prefab;
@@ -40,8 +34,7 @@ namespace Signal.Combat.Projectiles
                 Create, OnGet, OnRelease, OnDestroyItem, false, defaultCapacity, maxSize);
 
             LobProjectile projectile = _pool.Get();
-            // PlaceAt (not transform.SetPositionAndRotation) so a reused instance can't inherit the
-            // previous flight's Rigidbody pose/velocity/interpolation state.
+
             projectile.PlaceAt(position, rotation);
             return projectile;
         }

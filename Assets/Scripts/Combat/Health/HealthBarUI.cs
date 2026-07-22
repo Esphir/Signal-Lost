@@ -1,14 +1,10 @@
+// Minimal example of UI binding to IHealth — subscribes to events rather than polling every frame.
 using UnityEngine;
 using UnityEngine.UI;
 using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Health
 {
-    /// <summary>
-    /// Minimal example of UI binding to <see cref="IHealth"/> — subscribes to events rather than
-    /// polling every frame. Point <see cref="healthSource"/> at any component implementing
-    /// <see cref="IHealth"/> (usually a <see cref="HealthComponent"/> on the player).
-    /// </summary>
     public class HealthBarUI : MonoBehaviour
     {
         [SerializeField] private Slider slider;

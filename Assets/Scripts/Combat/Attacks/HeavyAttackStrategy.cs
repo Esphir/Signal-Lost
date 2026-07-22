@@ -1,3 +1,4 @@
+// Heavy attack supporting both a single-click instant swing and a hold-to-charge swing whose damage/range scale with charge time, entirely driven by HeavyAttackConfigSO.
 using System.Collections;
 using UnityEngine;
 using Signal.Combat.Configs;
@@ -7,12 +8,6 @@ using Signal.Stats;
 
 namespace Signal.Combat.Attacks
 {
-    /// <summary>
-    /// Heavy attack supporting both a single-click instant swing and a hold-to-charge swing whose
-    /// damage/range scale with charge time, entirely driven by <see cref="HeavyAttackConfigSO"/>.
-    /// Swing timing rides the actual animator state via the <see cref="AttackExecutionContext"/>
-    /// helpers, so it stays in sync with the clip regardless of its length or playback speed.
-    /// </summary>
     public sealed class HeavyAttackStrategy : IAttackStrategy
     {
         private readonly HeavyAttackConfigSO _config;
@@ -49,7 +44,6 @@ namespace Signal.Combat.Attacks
                 }
                 chargeRatio = Mathf.Clamp01(held / _config.maxChargeTime);
 
-                // If the player kept holding past full charge, wait for release before swinging.
                 while (input.HeavyAttackHeld)
                     yield return null;
 

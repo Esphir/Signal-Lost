@@ -1,19 +1,10 @@
+// Attack 3 — Sauce Burst, the boss's answer to being hugged.
 using System.Collections;
 using Signal.Combat.Telegraphs;
 using UnityEngine;
 
 namespace Signal.Combat.Boss
 {
-    /// <summary>
-    /// Attack 3 — Sauce Burst, the boss's answer to being hugged. Every other attack points somewhere; this
-    /// one goes off underneath it. The bottle compresses, then erupts in a ring of scalding sauce that
-    /// covers its own footprint and leaves the floor around it burning, so a player who parks in melee and
-    /// swings can't simply stay there.
-    ///
-    /// Deliberately the shortest telegraph in the fight and the only attack with no safe inner pocket — but
-    /// the ring is drawn before it fires and the radius is small, so the counter is always "get out", and
-    /// getting out is always possible.
-    /// </summary>
     public sealed class SauceBurstAttack : BossAttack
     {
         [Header("Telegraph")]
@@ -45,21 +36,19 @@ namespace Signal.Combat.Boss
 
         public override float WeightAt(float distance, BossContext ctx)
         {
-            // Only exists to punish being in melee. Out of range it opts out entirely rather than competing
-            // with the fire attacks that own mid and long range.
             return distance <= radius * 1.1f ? 9f : 0f;
         }
 
         protected override IEnumerator Execute(BossContext ctx)
         {
             ShowTelegraph(ctx);
-            ctx.Anim?.Anticipate(0.7f); // compress — the whole bottle winds down into the burst
+            ctx.Anim?.Anticipate(0.7f);
             yield return Wait(telegraph, ctx);
             HideTelegraph();
 
             Burst(ctx);
 
-            ctx.Anim?.Anticipate(-0.35f); // and pops back out
+            ctx.Anim?.Anticipate(-0.35f);
             ctx.Anim?.Pulse(0.5f);
             yield return Wait(settle, ctx);
             ctx.Anim?.Relax();
@@ -74,8 +63,6 @@ namespace Signal.Combat.Boss
 
             if (patchDps <= 0f) return;
 
-            // A ring of fire just inside the burst, so the spot the player was standing in stays hostile for
-            // a moment and re-hugging costs something.
             float baseAngle = Random.value * 360f;
             for (int i = 0; i < patchCount; i++)
             {
@@ -95,7 +82,7 @@ namespace Signal.Combat.Boss
                 Radius = radius,
                 Color = telegraphColor,
                 ScaleMultiplier = 1f,
-                PulseSpeed = 4f, // faster than the other rings — this one is about to go off
+                PulseSpeed = 4f,
                 WarningDuration = telegraph / Mathf.Max(0.1f, ctx.SpeedMultiplier)
             });
         }

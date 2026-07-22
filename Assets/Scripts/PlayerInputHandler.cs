@@ -1,13 +1,10 @@
+// Central input reader.
 using UnityEngine;
 using UnityEngine.InputSystem;
 using Signal.Combat;
 using Signal.Combat.Interfaces;
 using Signal.UI;
 
-/// <summary>
-/// Central input reader. Attach to the player alongside a PlayerInput set to Send Messages.
-/// Implements <see cref="ICombatInputSource"/> so combat depends on that abstraction, not this type.
-/// </summary>
 [RequireComponent(typeof(PlayerInput))]
 public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
 {
@@ -15,11 +12,6 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
     public Vector2 LookInput             { get; private set; }
     public float   ScrollInput           { get; private set; }
 
-    /// <summary>
-    /// True when <see cref="LookInput"/> came from a stick rather than a mouse. The two mean different
-    /// things — a stick reports how far it is pushed (a rate), a mouse reports how far it moved (a delta) —
-    /// so whoever turns the camera has to integrate one over time and not the other.
-    /// </summary>
     public bool    LookIsAnalog          { get; private set; }
 
     public bool    JumpHeld              { get; private set; }
@@ -45,7 +37,6 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
     {
         PlayerInput playerInput = GetComponent<PlayerInput>();
 
-        // PlayerInput clones the actions asset per player, so saved rebinds must be loaded here too.
         InputBindingStorage.Load(playerInput.actions);
 
         _jumpAction        = playerInput.actions.FindAction("Jump");
@@ -59,8 +50,6 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
 
     private void Update()
     {
-        // Poll held states from the actions rather than trusting Send Messages 'canceled' callbacks:
-        // a missed release leaves a held flag stuck true, parking hold-to-charge attacks and sprint.
         if (_jumpAction != null)        JumpHeld        = _jumpAction.IsPressed();
         if (_sprintAction != null)      SprintHeld      = _sprintAction.IsPressed();
         if (_heavyAttackAction != null) HeavyAttackHeld = _heavyAttackAction.IsPressed();
@@ -68,13 +57,6 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
         ReadLook();
     }
 
-    /// <summary>
-    /// Look has to be polled, not received. Send Messages only fires when a value *changes*, and a stick
-    /// held at a constant angle stops changing the instant it gets there — so an event-driven read sees
-    /// one push and then silence, and the camera stalls while the player is still holding the stick.
-    /// Reading the action every frame gives the stick's current position instead, and a mouse still
-    /// reports its per-frame delta the same way it always did.
-    /// </summary>
     private void ReadLook()
     {
         if (_lookAction == null) return;
@@ -95,8 +77,7 @@ public class PlayerInputHandler : MonoBehaviour, ICombatInputSource
         BashPressedThisFrame     = false;
         LockOnPressedThisFrame   = false;
         ScrollInput              = 0f;
-        // LookInput isn't cleared here: it's polled fresh every Update, and zeroing it after the fact is
-        // what silently swallowed a held stick.
+
     }
 
     public void OnMove(InputValue value)

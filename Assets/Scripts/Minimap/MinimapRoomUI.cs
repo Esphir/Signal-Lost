@@ -1,14 +1,9 @@
+// One room's tile in the minimap.
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace Signal.Minimap
 {
-    /// <summary>
-    /// One room's tile in the minimap. Owns four stacked images — background, border, room icon, and a
-    /// current-room indicator — and animates its fade-in and highlight. It only renders state: it never
-    /// decides what state a room is in (that's the manager) nor where the tile sits (grid × spacing, set
-    /// by the manager). Builds its own children so no tile prefab has to be authored by hand.
-    /// </summary>
     [RequireComponent(typeof(RectTransform))]
     public sealed class MinimapRoomUI : MonoBehaviour
     {
@@ -17,7 +12,7 @@ namespace Signal.Minimap
         private Image _background, _border, _icon, _indicator;
         private MinimapIcon _iconDef;
 
-        private float _reveal;          // 0 = hidden, 1 = fully faded in
+        private float _reveal;
         private float _targetReveal;
         private float _scale = 1f;
         private float _targetScale = 1f;
@@ -31,8 +26,6 @@ namespace Signal.Minimap
             _rect = GetComponent<RectTransform>();
             _rect.sizeDelta = new Vector2(tileSize, tileSize);
 
-            // Child order is render order (last = on top): background at the back, then the current-room
-            // glow behind the icon, the icon, and finally the border frame over everything.
             _background = MakeImage("Background", tileSize);
             _indicator = MakeImage("Indicator", tileSize * 1.25f);
             _icon = MakeImage("Icon", iconSize);
@@ -55,12 +48,6 @@ namespace Signal.Minimap
             return img;
         }
 
-        /// <summary>
-        /// Pushes a room's current state onto the tile. When <paramref name="animate"/> is off (rebuilds,
-        /// debug reveal) everything snaps; otherwise the tile fades in and the highlight eases.
-        /// <paramref name="revealAll"/> is the debug override: show hidden rooms dimmed without changing
-        /// their real state, so turning it back off re-hides them cleanly.
-        /// </summary>
         public void SetState(MinimapRoom room, float opacity, bool animate, bool pulse, bool revealAll)
         {
             _opacity = opacity;
@@ -76,7 +63,6 @@ namespace Signal.Minimap
             gameObject.SetActive(true);
             _targetReveal = 1f;
 
-            // Fog brightness: only the visited/current rooms are full; discovered and debug-revealed dim.
             _brightness = room.IsVisited || room.IsCurrentRoom ? 1f : 0.45f;
             _targetScale = room.IsCurrentRoom ? 1.12f : 1f;
 

@@ -1,23 +1,18 @@
+// Which player action a VFX entry corresponds to.
 using System;
 using UnityEngine;
 
 namespace Signal.VFX
 {
-    /// <summary>Which player action a VFX entry corresponds to. Add new values freely for future effects.</summary>
     public enum PlayerVfxCue
     {
         Jump, DoubleJump, Land, Dodge, LightAttack, HeavyAttack, Bash, Damage, Death, Respawn,
-        // Future — add a matching database entry and (optionally) a convenience method; no core change.
+
         CriticalHit, ChargedHeavy, Healing, BuffApplied, LootPickup, CheckpointActivated, PerfectDodge, Ultimate
     }
 
-    /// <summary>Named attach points on the player. Resolved to a Transform by the manager, falling back to the player root.</summary>
     public enum PlayerVfxSpawnPoint { Root, Feet, Body, Weapon, Shield, Head }
 
-    /// <summary>
-    /// Data-driven table of player VFX: prefab, spawn point, offset, scale and whether it faces the
-    /// player. The manager looks effects up here, so adding a cue is pure data — no manager change.
-    /// </summary>
     [CreateAssetMenu(menuName = "VFX/Player VFX Database", fileName = "PlayerVFXDatabase")]
     public class PlayerVFXDatabase : ScriptableObject
     {

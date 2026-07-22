@@ -1,9 +1,6 @@
+// Instantiates gameplay-system prefabs (pause menu, run-end screen, …) when a gameplay scene loads, so each scene only needs this one object rather than every system placed by hand.
 using UnityEngine;
 
-/// <summary>
-/// Instantiates gameplay-system prefabs (pause menu, run-end screen, …) when a gameplay scene
-/// loads, so each scene only needs this one object rather than every system placed by hand.
-/// </summary>
 public class SystemsBootstrap : MonoBehaviour
 {
     [SerializeField]

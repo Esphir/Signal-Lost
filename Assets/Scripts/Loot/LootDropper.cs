@@ -1,3 +1,4 @@
+// Attach next to an enemy's HealthComponent: when it dies, rolls the configured drop chance and spawns a rarity-rolled loot pickup at the death position via the pool.
 using Signal.Combat.Interfaces;
 using Signal.Generation;
 using Signal.Run;
@@ -5,12 +6,6 @@ using UnityEngine;
 
 namespace Signal.Loot
 {
-    /// <summary>
-    /// Attach next to an enemy's HealthComponent: when it dies, rolls the configured drop chance
-    /// and spawns a rarity-rolled loot pickup at the death position via the pool. The rarity roll is
-    /// biased by difficulty — the tier of the room the enemy died in, plus this enemy's own bonus — so
-    /// harder rooms and tougher enemies drop rarer loot.
-    /// </summary>
     public class LootDropper : MonoBehaviour
     {
         [SerializeField] private LootSettingsSO settings;
@@ -22,7 +17,6 @@ namespace Signal.Loot
         [Tooltip("Extra loot difficulty this enemy adds on top of its room's tier — raise it for elites/bosses so they drop rarer loot. 0 for normal enemies.")]
         private int enemyDifficultyBonus = 0;
 
-        /// <summary>True when this dropper bypasses the random roll and always drops (tutorial loot).</summary>
         public bool IsGuaranteed => guaranteedDrop;
 
         private IHealth _health;
@@ -40,11 +34,6 @@ namespace Signal.Loot
             _health.Died += OnDied;
         }
 
-        /// <summary>
-        /// Wires a dropper added at runtime (e.g. the tutorial's guaranteed-loot dummy): assigns its
-        /// settings and drop guarantee and (re)subscribes to death, re-enabling if Awake had bailed
-        /// because settings weren't set yet. Leaves the normal loot flow untouched.
-        /// </summary>
         public void Configure(LootSettingsSO lootSettings, bool guaranteed)
         {
             if (_health == null) _health = GetComponent<IHealth>();
@@ -53,7 +42,7 @@ namespace Signal.Loot
 
             if (_health == null || settings == null) return;
             enabled = true;
-            _health.Died -= OnDied; // avoid a double subscribe if already wired
+            _health.Died -= OnDied;
             _health.Died += OnDied;
         }
 
@@ -66,7 +55,6 @@ namespace Signal.Loot
         {
             if (RunManager.HasInstance) RunManager.Instance.ReportEnemyKilled();
 
-            // Guaranteed droppers skip the chance roll and always drop exactly one.
             if (!guaranteedDrop && Random.value > settings.dropChance) return;
 
             int difficultyTier = RoomTierAt(transform.position) + enemyDifficultyBonus;
@@ -83,8 +71,6 @@ namespace Signal.Loot
             Debug.Log($"[Loot] '{name}' dropped {rarity} loot (difficulty tier {difficultyTier}).", loot);
         }
 
-        /// <summary>The difficulty tier of the generated room this point is in, or 0 when outside any room
-        /// (a hand-built scene or the tutorial). The generator is cached; a fresh layout re-finds it.</summary>
         private int RoomTierAt(Vector3 position)
         {
             if (_generator == null) _generator = FindFirstObjectByType<LevelGenerator>();

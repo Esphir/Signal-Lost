@@ -1,3 +1,4 @@
+// Spawns a configured set of enemy prefabs (the existing Lober/Plummeter/Supporter prefabs) at their spawn points and raises AllCleared once every spawned enemy has died.
 using System;
 using System.Collections.Generic;
 using Signal.Combat.Health;
@@ -7,11 +8,6 @@ using UnityEngine;
 
 namespace Signal.Tutorial
 {
-    /// <summary>
-    /// Spawns a configured set of enemy prefabs (the existing Lober/Plummeter/Supporter prefabs) at
-    /// their spawn points and raises <see cref="AllCleared"/> once every spawned enemy has died.
-    /// Steps call <see cref="SpawnAll"/> when they begin so enemies never appear early.
-    /// </summary>
     public class TutorialEnemySpawner : MonoBehaviour
     {
         [Serializable]
@@ -43,7 +39,6 @@ namespace Signal.Tutorial
 
         public IReadOnlyList<GameObject> Instances => _instances;
 
-        /// <summary>Display name per spawned instance, index-aligned with <see cref="Instances"/> (for objective text).</summary>
         public IReadOnlyList<string> InstanceNames => _instanceNames;
 
         public void SpawnAll()
@@ -90,7 +85,6 @@ namespace Signal.Tutorial
             if (_alive <= 0) AllCleared?.Invoke();
         }
 
-        /// <summary>World-space arena, or a zero-size box when none was authored.</summary>
         public Bounds ArenaBounds => arena.size.sqrMagnitude <= 0.001f
             ? new Bounds(transform.position, Vector3.zero)
             : new Bounds(transform.position + arena.center, arena.size);
@@ -103,12 +97,6 @@ namespace Signal.Tutorial
             Gizmos.DrawWireCube(b.center, b.size);
         }
 
-        /// <summary>
-        /// Switches off natural loot drops for a spawned tutorial enemy, leaving any deliberate
-        /// guaranteed-drop dropper intact. Destroys (not just disables) the component: it drops from
-        /// the HealthComponent.Died C# event, which keeps firing on a merely-disabled MonoBehaviour —
-        /// destroying it runs OnDestroy, which unsubscribes.
-        /// </summary>
         private static void DisableLoot(GameObject go)
         {
             foreach (LootDropper dropper in go.GetComponentsInChildren<LootDropper>(true))

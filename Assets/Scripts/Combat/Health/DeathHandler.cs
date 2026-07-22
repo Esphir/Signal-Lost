@@ -1,14 +1,9 @@
+// Composable death reaction: when the sibling IHealth dies, disables the configured behaviours (AI, shooting, movement) and all colliders so the corpse can neither act nor be hit, then destroys the GameObject after a delay.
 using UnityEngine;
 using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Health
 {
-    /// <summary>
-    /// Composable death reaction: when the sibling <see cref="IHealth"/> dies, disables the
-    /// configured behaviours (AI, shooting, movement) and all colliders so the corpse can neither
-    /// act nor be hit, then destroys the GameObject after a delay. Keeps HealthComponent free of
-    /// any destruction policy — swap this component for ragdolls, dissolve VFX, pooling, etc.
-    /// </summary>
     public class DeathHandler : MonoBehaviour
     {
         [Header("Death")]

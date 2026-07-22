@@ -1,27 +1,19 @@
+// TEMPORARY play-mode harness: verifies the lock-on indicator bounces and that killing the locked enemy retargets the nearest survivor / releases when none remain.
 using System.Collections;
 using System.Reflection;
 using Signal.Combat.Data;
 using Signal.Combat.Health;
 using UnityEngine;
 
-/// <summary>
-/// TEMPORARY play-mode harness: verifies the lock-on indicator bounces and that killing the locked
-/// enemy retargets the nearest survivor / releases when none remain. Deleted once it has run.
-///
-/// The component is left disabled so its input-driven Update never runs; the retarget path is fired
-/// for real through HealthComponent.Died, and driven via reflection on the private members.
-/// </summary>
 public class LockOnVerifyRunner : MonoBehaviour
 {
     private static readonly BindingFlags Priv = BindingFlags.NonPublic | BindingFlags.Instance;
 
     private IEnumerator Start()
     {
-        // A main camera, since PlayerLockOn.Awake reads Camera.main.
         var camGo = new GameObject("Main Camera", typeof(Camera)) { tag = "MainCamera" };
         camGo.transform.position = new Vector3(0f, 5f, -8f);
 
-        // The player + lock-on. Disabled so Update (which needs the input rig) never runs.
         var playerGo = new GameObject("Player");
         var indicator = GameObject.CreatePrimitive(PrimitiveType.Cube);
         indicator.name = "LockOnIndicator";
@@ -34,14 +26,12 @@ public class LockOnVerifyRunner : MonoBehaviour
         lockOn.bounceAmplitude = 0.15f;
         lockOn.bounceSpeed = 4f;
 
-        // Three enemies in a line: A nearest, then B, then C.
         HealthComponent a = MakeEnemy("EnemyA", new Vector3(2f, 0f, 0f));
         HealthComponent b = MakeEnemy("EnemyB", new Vector3(4f, 0f, 0f));
         HealthComponent c = MakeEnemy("EnemyC", new Vector3(6f, 0f, 0f));
         Physics.SyncTransforms();
         yield return null;
 
-        // ── Lock onto A ───────────────────────────────────────────────────────
         Invoke(lockOn, "SetTarget", a.transform);
         yield return null;
 
@@ -50,7 +40,6 @@ public class LockOnVerifyRunner : MonoBehaviour
                   $"parent={indicator.transform.parent?.name} {(target == a.transform && indicator.activeSelf ? "PASS" : "FAIL")}");
         if (target != a.transform) Debug.LogError("[LockOn] Did not lock onto A.");
 
-        // ── Bounce: localPosition.y must oscillate within the amplitude ─────────
         float min = float.MaxValue, max = float.MinValue;
         for (int i = 0; i < 40; i++)
         {
@@ -67,7 +56,6 @@ public class LockOnVerifyRunner : MonoBehaviour
         if (travel <= 0.05f) Debug.LogError("[LockOn] Indicator is not bouncing.");
         if (!inRange) Debug.LogError("[LockOn] Bounce left the configured amplitude band.");
 
-        // ── Kill A → should retarget to the nearest survivor (B) ────────────────
         a.TakeDamage(new DamageInfo(9999f, gameObject));
         yield return null;
 
@@ -78,7 +66,6 @@ public class LockOnVerifyRunner : MonoBehaviour
         if (target != b.transform) Debug.LogError("[LockOn] Did not retarget to nearest survivor B.");
         Debug.Log($"[LockOn] Indicator reparented to new target: {(indicator.transform.parent == b.transform ? "PASS" : "FAIL")}");
 
-        // ── Kill B → should retarget to C ───────────────────────────────────────
         b.TakeDamage(new DamageInfo(9999f, gameObject));
         yield return null;
 
@@ -86,7 +73,6 @@ public class LockOnVerifyRunner : MonoBehaviour
         Debug.Log($"[LockOn] Killed B: target now {Name(target)} (expect EnemyC) {(target == c.transform ? "PASS" : "FAIL")}");
         if (target != c.transform) Debug.LogError("[LockOn] Did not retarget to C.");
 
-        // ── Kill C (last one) → should drop the lock entirely ───────────────────
         c.TakeDamage(new DamageInfo(9999f, gameObject));
         yield return null;
 
@@ -109,7 +95,7 @@ public class LockOnVerifyRunner : MonoBehaviour
         go.transform.position = pos;
         go.AddComponent<BoxCollider>();
         var health = go.AddComponent<HealthComponent>();
-        go.AddComponent<DeathHandler>(); // subscribes to Died first — disables colliders on death
+        go.AddComponent<DeathHandler>();
         return health;
     }
 

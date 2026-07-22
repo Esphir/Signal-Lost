@@ -1,3 +1,4 @@
+// One piece of a stat bonus: +N flat or +N percent.
 using System;
 using UnityEngine;
 
@@ -9,7 +10,6 @@ namespace Signal.Stats
         Percent = 1,
     }
 
-    /// <summary>One piece of a stat bonus: +N flat or +N percent.</summary>
     [Serializable]
     public struct StatModifier
     {

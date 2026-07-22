@@ -1,14 +1,10 @@
+// A dropped loot instance.
 using Signal.Run;
 using Signal.Run.Upgrades;
 using UnityEngine;
 
 namespace Signal.Loot
 {
-    /// <summary>
-    /// A dropped loot instance. Pops out of the enemy with physics, settles into a kinematic
-    /// bob/spin, and opens the upgrade selection UI when the player walks into its trigger.
-    /// Pool-friendly: <see cref="Initialize"/> fully resets state on every spawn.
-    /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public class LootPickup : MonoBehaviour
     {
@@ -30,7 +26,6 @@ namespace Signal.Loot
 
         public ItemRarity Rarity { get; private set; }
 
-        // Pool bookkeeping, set by LootPool on first instantiation.
         internal LootPickup PoolPrefab;
 
         private LootSettingsSO _settings;
@@ -52,7 +47,6 @@ namespace Signal.Loot
             trigger.radius = pickupRadius / Mathf.Max(0.01f, scale);
         }
 
-        /// <summary>Called by the dropper on every (re)spawn: sets rarity visuals and restarts the drop physics.</summary>
         public void Initialize(ItemRarity rarity, LootSettingsSO settings)
         {
             Rarity = rarity;
@@ -104,7 +98,7 @@ namespace Signal.Loot
                 Debug.LogWarning("[Loot] No UpgradeSelectionUI found — loot cannot be picked up.", this);
                 return;
             }
-            if (ui.IsOpen) return; // finish the current choice first; the loot stays on the ground
+            if (ui.IsOpen) return;
 
             SpawnPickupVfx();
             if (RunManager.HasInstance) RunManager.Instance.ReportLootCollected(Rarity);
@@ -112,7 +106,6 @@ namespace Signal.Loot
             LootPool.Release(this);
         }
 
-        // Small rarity-colored burst, built in code so no VFX prefab is needed.
         private void SpawnPickupVfx()
         {
             var go = new GameObject("LootPickupVFX");

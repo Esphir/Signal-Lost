@@ -1,18 +1,10 @@
+// Stuns this enemy for a fixed duration if it collides with terrain/walls while still moving from a recent knockback.
 using System;
 using UnityEngine;
 using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Stun
 {
-    /// <summary>
-    /// Stuns this enemy for a fixed duration if it collides with terrain/walls while still moving
-    /// from a recent knockback. Attach alongside a component implementing <see cref="IKnockbackable"/>
-    /// (e.g. <see cref="Signal.Combat.Knockback.KnockbackReceiver"/>) and a <see cref="Rigidbody"/>.
-    ///
-    /// Bosses or other stun-immune enemies simply don't get this component — anything that requests
-    /// a stun does so via <c>GetComponent&lt;IStunnable&gt;()</c> and no-ops when it's null, so no
-    /// "immune" flag or branch is needed anywhere else in the codebase.
-    /// </summary>
     [RequireComponent(typeof(Rigidbody))]
     public class ImpactStunController : MonoBehaviour, IStunnable
     {
@@ -29,7 +21,6 @@ namespace Signal.Combat.Stun
 
         public bool IsStunned { get; private set; }
 
-        /// <summary>Raised when a stun begins/ends — hook up VFX, disable AI movement, etc.</summary>
         public event Action StunStarted;
         public event Action StunEnded;
 
@@ -72,9 +63,6 @@ namespace Signal.Combat.Stun
             if (Time.time > _knockbackActiveUntil) return;
             if ((solidCollisionMask.value & (1 << collision.gameObject.layer)) == 0) return;
 
-            // Use the collision's closing speed, NOT the rigidbody's current velocity: by the time
-            // this callback fires the solver has already killed the body's velocity against the wall,
-            // so reading rb.velocity almost always fell below the threshold and no stun happened.
             if (collision.relativeVelocity.magnitude < minImpactSpeed) return;
 
             Stun(stunDuration);
@@ -82,7 +70,7 @@ namespace Signal.Combat.Stun
 
         public void Stun(float duration)
         {
-            if (IsStunned) return; // ignore additional stun requests while already stunned
+            if (IsStunned) return;
 
             IsStunned = true;
             _stunTimer = duration;

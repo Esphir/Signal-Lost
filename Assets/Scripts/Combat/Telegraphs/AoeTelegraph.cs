@@ -1,35 +1,23 @@
+// Everything an AoeTelegraph needs for one warning.
 using UnityEngine;
 
 namespace Signal.Combat.Telegraphs
 {
-    /// <summary>
-    /// Everything an <see cref="AoeTelegraph"/> needs for one warning. Built by the caller from
-    /// its own config (projectile SO, slam SO, …) so the telegraph stays enemy-agnostic.
-    /// </summary>
     public struct AoeTelegraphSettings
     {
-        public float Radius;             // the REAL damage radius — ring matches it exactly at scale 1
+        public float Radius;
         public Color Color;
-        public float ScaleMultiplier;    // 1 = exact damage radius; scale up only for readability
-        public float PulseSpeed;         // pulses per second, 0 = none
-        public float WarningDuration;    // time until impact — drives the heat-up tint
-        public GameObject AppearVfx;     // optional hook, spawned at the telegraph position
+        public float ScaleMultiplier;
+        public float PulseSpeed;
+        public float WarningDuration;
+        public GameObject AppearVfx;
     }
 
-    /// <summary>
-    /// Reusable ground-marker warning for any AoE attack: an outer ring sized exactly to the
-    /// damage radius, a filled center marking the impact point, optional pulse, and a hotter tint
-    /// over the last quarter of the warning. Used by the Lobber's projectile landing indicator and
-    /// the Plummeter's slam telegraph; future enemies just call <see cref="Create"/> + <see cref="Show"/>.
-    ///
-    /// Instances are owned 1:1 by their attacker/projectile (created once, shown/hidden per use),
-    /// so telegraphs are pooled implicitly and never orphaned. No allocations after construction.
-    /// </summary>
     public class AoeTelegraph : MonoBehaviour
     {
         private const int RingSegments = 40;
-        private const float RingWidth = 0.08f;      // relative to a unit-radius circle
-        private const float CenterDotScale = 0.35f; // relative to a unit-radius circle
+        private const float RingWidth = 0.08f;
+        private const float CenterDotScale = 0.35f;
         private static readonly int ColorId = Shader.PropertyToID("_Color");
 
         private LineRenderer _ring;
@@ -39,10 +27,6 @@ namespace Signal.Combat.Telegraphs
         private AoeTelegraphSettings _settings;
         private float _shownAt;
 
-        /// <summary>
-        /// Creates a telegraph instance from a prefab (an AoeTelegraph is added if missing), or
-        /// builds the built-in procedural ring when no prefab is supplied. Returned inactive.
-        /// </summary>
         public static AoeTelegraph Create(GameObject prefab)
         {
             GameObject go = prefab != null ? Instantiate(prefab) : new GameObject("AoeTelegraph");
@@ -53,7 +37,6 @@ namespace Signal.Combat.Telegraphs
             return telegraph;
         }
 
-        /// <summary>Places and shows the warning at a world position and fires the appear VFX/SFX hooks.</summary>
         public void Show(Vector3 position, in AoeTelegraphSettings settings)
         {
             _settings = settings;
@@ -85,7 +68,6 @@ namespace Signal.Combat.Telegraphs
                 : 1f;
             ApplyScale(pulse);
 
-            // Heat up over the last quarter of the warning as a "get out" cue.
             float progress = Mathf.Clamp01(elapsed / _settings.WarningDuration);
             if (progress > 0.75f)
                 ApplyColor(Color.Lerp(_settings.Color, Color.red, (progress - 0.75f) / 0.25f));
@@ -110,7 +92,6 @@ namespace Signal.Combat.Telegraphs
             }
         }
 
-        /// <summary>Unit-radius ring + center quad, scaled to the damage radius via the transform.</summary>
         private void BuildProceduralVisual()
         {
             var material = new Material(Shader.Find("Sprites/Default"));

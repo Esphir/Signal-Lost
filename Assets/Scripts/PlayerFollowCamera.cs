@@ -1,7 +1,7 @@
+// Third-person Cinemachine camera rig: look, zoom, lock-on and shoulder offset.
 using UnityEngine;
 using Unity.Cinemachine;
 
-// Run before PlayerInputHandler clears look input this frame
 [DefaultExecutionOrder(-20)]
 public class PlayerFollowCamera : MonoBehaviour
 {
@@ -49,10 +49,8 @@ public class PlayerFollowCamera : MonoBehaviour
     private bool _lockOnActive;
     private Vector3 _lockOnWorldPoint;
 
-    // Smoothed target angles — we drive toward these each frame
     private float _targetYaw;
     private float _targetPitch;
-
 
     private void Start()
     {
@@ -68,8 +66,6 @@ public class PlayerFollowCamera : MonoBehaviour
         if (_orbital == null)
             Debug.LogWarning("PlayerFollowCamera: No CinemachineOrbitalFollow found.");
 
-        // Camera-space offset (applied after Aim) rather than the orbital's TargetOffset, which is
-        // in the *player's* local space and would swing the shoulder around as the character turns.
         if (vcam != null)
         {
             _cameraOffset = vcam.GetComponent<CinemachineCameraOffset>();
@@ -77,7 +73,6 @@ public class PlayerFollowCamera : MonoBehaviour
             _cameraOffset.ApplyAfter = CinemachineCore.Stage.Aim;
         }
 
-        // Start already on the chosen shoulder — no slide across on spawn/respawn.
         _currentShoulder = shoulderOffset * Signal.UI.SettingsStore.CameraSide;
         ApplyShoulderOffset();
 
@@ -85,7 +80,6 @@ public class PlayerFollowCamera : MonoBehaviour
         if (player != null)
             _input = player.GetComponent<PlayerInputHandler>();
 
-        // Seed smoothed targets from whatever Cinemachine starts at
         if (_orbital != null)
         {
             _targetYaw   = _orbital.HorizontalAxis.Value;
@@ -98,15 +92,10 @@ public class PlayerFollowCamera : MonoBehaviour
 
     private void LateUpdate()
     {
-        UpdateShoulder(); // independent of look input — keep it live even without a player
+        UpdateShoulder();
 
-        // The camera stays put behind any full-screen UI or whenever the game is frozen, whichever
-        // screen it is and whether or not that screen remembered to suspend player input.
         bool frozen = Signal.UI.UiModalState.AnyOpen || Time.timeScale <= 0f;
 
-        // Cinemachine's own axis controller binds the Look and zoom actions straight out of the actions
-        // asset and enables them itself, so suspending the player's PlayerInput never reaches it — left
-        // alone it keeps orbiting the camera behind an open menu. It has to be switched off by hand.
         if (_axisInput != null && _axisInput.enabled == frozen) _axisInput.enabled = !frozen;
 
         if (frozen || _orbital == null || _input == null) return;
@@ -118,7 +107,6 @@ public class PlayerFollowCamera : MonoBehaviour
 
         HandleZoom();
     }
-
 
     private void UpdateShoulder()
     {
@@ -133,7 +121,6 @@ public class PlayerFollowCamera : MonoBehaviour
         }
         else
         {
-            // Unscaled: the switch happens from the settings menu, which pauses the game.
             float t = 1f - Mathf.Exp(-shoulderSwitchSpeed * Time.unscaledDeltaTime);
             _currentShoulder = Mathf.Lerp(_currentShoulder, target, t);
             if (Mathf.Abs(target - _currentShoulder) < 0.001f) _currentShoulder = target;
@@ -150,14 +137,10 @@ public class PlayerFollowCamera : MonoBehaviour
         _cameraOffset.Offset = offset;
     }
 
-
     private void ApplyLookOrbit()
     {
         Vector2 look = _input.LookInput;
 
-        // A mouse delta is already "how far it moved this frame", so it converts straight to degrees. A
-        // stick is a held position — a turn *rate* — so it has to be integrated over the frame, or holding
-        // it steady contributes nothing at all.
         float sensitivity = _input.LookIsAnalog
             ? gamepadSensitivity * Time.deltaTime
             : mouseSensitivity;
@@ -166,12 +149,10 @@ public class PlayerFollowCamera : MonoBehaviour
         _targetYaw   += look.x * sensitivity;
         _targetPitch  = Mathf.Clamp(_targetPitch - look.y * sensitivity, minPitch, maxPitch);
 
-        // Smoothly drive Cinemachine axes toward the targets each frame
         float t = 1f - Mathf.Exp(-cameraSmoothing * Time.deltaTime);
         _orbital.HorizontalAxis.Value = Mathf.LerpAngle(_orbital.HorizontalAxis.Value, _targetYaw, t);
         _orbital.VerticalAxis.Value   = Mathf.Lerp(_orbital.VerticalAxis.Value, _targetPitch, t);
     }
-
 
     private void ApplyLockOnRotation()
     {
@@ -195,7 +176,6 @@ public class PlayerFollowCamera : MonoBehaviour
         _orbital.VerticalAxis.Value   = _targetPitch;
     }
 
-
     private void HandleZoom()
     {
         float scroll = _input.ScrollInput;
@@ -205,7 +185,6 @@ public class PlayerFollowCamera : MonoBehaviour
             _orbital.Radius - scroll * zoomSpeed,
             minRadius, maxRadius);
     }
-
 
     public void SetLockOnTarget(Vector3 worldPoint)
     {

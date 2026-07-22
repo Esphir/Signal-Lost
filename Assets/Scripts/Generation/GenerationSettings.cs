@@ -1,3 +1,4 @@
+// Prefab used to dress an unused doorway for a given treatment.
 using System;
 using System.Collections.Generic;
 using Signal.Loot;
@@ -5,7 +6,6 @@ using UnityEngine;
 
 namespace Signal.Generation
 {
-    /// <summary>Prefab used to dress an unused doorway for a given treatment.</summary>
     [Serializable]
     public class DeadEndCap
     {
@@ -15,10 +15,6 @@ namespace Signal.Generation
         public GameObject prefab;
     }
 
-    /// <summary>
-    /// All the knobs for one level's generation, as data. Holds no logic — the generator reads it
-    /// (Single Responsibility). Shared between levels, or one asset per level.
-    /// </summary>
     [CreateAssetMenu(menuName = "Signal Lost/Generation/Generation Settings", fileName = "GenerationSettings")]
     public class GenerationSettings : ScriptableObject
     {
@@ -164,7 +160,6 @@ namespace Signal.Generation
         public bool AllowRotation => allowRotation;
         public DeadEndTreatment DeadEndType => deadEndType;
 
-        /// <summary>Cap prefab for the configured treatment, or null to rely on the blocking wall.</summary>
         public GameObject DeadEndCapPrefab
         {
             get
@@ -196,7 +191,6 @@ namespace Signal.Generation
         public bool DrawGizmos => drawGizmos;
         public bool LogGeneration => logGeneration;
 
-        /// <summary>Target tier for a room at <paramref name="index"/> of <paramref name="total"/>.</summary>
         public int TargetTierFor(int index, int total)
         {
             float progress = total <= 1 ? 1f : Mathf.Clamp01(index / (float)(total - 1));

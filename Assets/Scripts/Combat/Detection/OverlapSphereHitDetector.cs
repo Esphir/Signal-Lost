@@ -1,12 +1,9 @@
+// Sphere-overlap based hit detection using a preallocated buffer (OverlapSphereNonAlloc) so repeated attack swings during combat never allocate.
 using UnityEngine;
 using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Detection
 {
-    /// <summary>
-    /// Sphere-overlap based hit detection using a preallocated buffer (<see cref="Physics.OverlapSphereNonAlloc"/>)
-    /// so repeated attack swings during combat never allocate.
-    /// </summary>
     public sealed class OverlapSphereHitDetector : IAttackHitDetector
     {
         public Collider[] Buffer { get; }

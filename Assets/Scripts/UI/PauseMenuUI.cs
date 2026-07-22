@@ -1,3 +1,4 @@
+// Builds the pause overlay (Resume / Settings / Return to Main Menu / Quit) from code, in the project's UI style.
 using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -5,10 +6,6 @@ using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// Builds the pause overlay (Resume / Settings / Return to Main Menu / Quit) from code, in the
-    /// project's UI style. Raises an event per button; <see cref="PauseManager"/> owns the behavior.
-    /// </summary>
     public class PauseMenuUI : MonoBehaviour
     {
         public event Action ResumeRequested;
@@ -55,7 +52,6 @@ namespace Signal.UI
             AddButton(buttons.transform, "Return to Main Menu", () => MainMenuRequested?.Invoke());
             AddButton(buttons.transform, "Quit Desktop", () => QuitRequested?.Invoke());
 
-            // Seed a selection so the controller/keyboard can navigate immediately.
             EventSystem.current.SetSelectedGameObject(first.gameObject);
         }
 

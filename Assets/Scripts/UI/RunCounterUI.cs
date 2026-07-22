@@ -1,3 +1,4 @@
+// A small "RUN N" readout in the top-left during gameplay, so advancing to the next level (which has no transition) reads as visible progress.
 using Signal.Generation;
 using Signal.Run;
 using UnityEngine;
@@ -6,12 +7,6 @@ using UnityEngine.UI;
 
 namespace Signal.UI
 {
-    /// <summary>
-    /// A small "RUN N" readout in the top-left during gameplay, so advancing to the next level (which
-    /// has no transition) reads as visible progress. Self-bootstrapping and persistent — it shows only
-    /// while a run is active in a generated level, and hides itself in the menu and tutorial. Reads the
-    /// number from <see cref="RunManager"/>; it owns none of the run state.
-    /// </summary>
     public sealed class RunCounterUI : MonoBehaviour
     {
         private Canvas _canvas;
@@ -31,12 +26,11 @@ namespace Signal.UI
         {
             Build();
             SceneManager.sceneLoaded += OnSceneLoaded;
-            _inLevel = FindFirstObjectByType<LevelGenerator>() != null; // the scene we bootstrapped into
+            _inLevel = FindFirstObjectByType<LevelGenerator>() != null;
         }
 
         private void OnDestroy() => SceneManager.sceneLoaded -= OnSceneLoaded;
 
-        // Gameplay = a generated level is present. Cheaper than checking every frame; re-evaluated per load.
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             _inLevel = FindFirstObjectByType<LevelGenerator>() != null;
@@ -65,7 +59,7 @@ namespace Signal.UI
 
             _label = UiBuilder.CreateText(_canvas.transform, "RunLabel", "RUN 1", 30, FontStyle.Bold, TextAnchor.UpperLeft);
             RectTransform rt = _label.rectTransform;
-            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f); // top-left
+            rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 1f);
             rt.anchoredPosition = new Vector2(24f, -18f);
             rt.sizeDelta = new Vector2(320f, 48f);
 

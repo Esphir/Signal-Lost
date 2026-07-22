@@ -1,3 +1,4 @@
+// One combat pocket of a level: a trigger volume, a set of spawn points, and the rules for what fills them.
 using System.Collections.Generic;
 using Signal.Combat.Enemies;
 using Signal.Combat.Interfaces;
@@ -7,15 +8,6 @@ using UnityEngine;
 
 namespace Signal.Spawning
 {
-    /// <summary>
-    /// One combat pocket of a level: a trigger volume, a set of spawn points, and the rules for what
-    /// fills them. Activates once when the player enters, asks <see cref="WeightedEnemySelector"/>
-    /// what to spawn, and places it through its points. It coordinates only — selection lives in the
-    /// selector, placement in the points, physics rules in the validator.
-    ///
-    /// Respawning is deliberately not implemented; <see cref="ResetSection"/> is the hook a future
-    /// respawn would build on.
-    /// </summary>
     [DisallowMultipleComponent]
     public class EnemySpawnSection : MonoBehaviour
     {
@@ -62,17 +54,10 @@ namespace Signal.Spawning
         [Header("Debug")]
         [SerializeField] private bool drawGizmos = true;
 
-        /// <summary>True once this section has fired. Guards against spawning twice.</summary>
         public bool HasSpawned { get; private set; }
 
-        /// <summary>Raised the moment this section spawns its enemies — the cue for a combat lockdown.</summary>
         public event System.Action Activated;
 
-        /// <summary>
-        /// Enemies from this section still alive right now. Counts by <see cref="IHealth.IsDead"/> so a
-        /// corpse lingering before it's destroyed doesn't read as alive — combat ends the instant the
-        /// last one's health hits zero.
-        /// </summary>
         public int AliveCount
         {
             get
@@ -88,13 +73,11 @@ namespace Signal.Spawning
             }
         }
 
-        /// <summary>Reserved: seconds to wait before spawning. Configurable but not applied yet.</summary>
         public float SpawnDelay => spawnDelay;
 
         public IReadOnlyList<EnemySpawnPoint> SpawnPoints => spawnPoints;
         public IReadOnlyList<GameObject> SpawnedEnemies => _spawned;
 
-        /// <summary>The room this section sits in — the bounds its enemies are kept inside. Null if standalone.</summary>
         public RoomDefinition Room
         {
             get
@@ -116,7 +99,7 @@ namespace Signal.Spawning
             if (triggerCollider == null) return;
 
             triggerCollider.isTrigger = true;
-            // OnTriggerEnter only fires on the collider's own object, so a child volume needs a relay.
+
             if (triggerCollider.gameObject != gameObject)
                 SpawnTriggerRelay.Attach(triggerCollider.gameObject, this);
         }
@@ -133,7 +116,6 @@ namespace Signal.Spawning
 
         private void OnTriggerEnter(Collider other) => HandleTriggerEnter(other);
 
-        /// <summary>Entry point for both this object's trigger and a relayed child volume.</summary>
         internal void HandleTriggerEnter(Collider other)
         {
             if (!autoSpawnOnTrigger || HasSpawned) return;
@@ -141,10 +123,6 @@ namespace Signal.Spawning
             Activate();
         }
 
-        /// <summary>
-        /// Spawns this section's enemies, once. Safe to call repeatedly — later calls do nothing
-        /// until <see cref="ResetSection"/> runs.
-        /// </summary>
         public void Activate()
         {
             if (HasSpawned) return;
@@ -153,10 +131,6 @@ namespace Signal.Spawning
             Activated?.Invoke();
         }
 
-        /// <summary>
-        /// Clears spawn state and removes this section's enemies so it can fire again. Intended for
-        /// debugging and as the hook a future respawn feature would use.
-        /// </summary>
         public void ResetSection()
         {
             foreach (GameObject enemy in _spawned)
@@ -171,11 +145,6 @@ namespace Signal.Spawning
             HasSpawned = false;
         }
 
-        /// <summary>
-        /// Requested alias for <see cref="ResetSection"/>. This doubles as Unity's editor Reset
-        /// message, which is harmless: at edit time the section has nothing spawned to clear, and
-        /// Unity still restores the serialized fields to their defaults around this call.
-        /// </summary>
         public void Reset() => ResetSection();
 
         private void SpawnEnemies()
@@ -189,8 +158,6 @@ namespace Signal.Spawning
                 return;
             }
 
-            // Scale the rolled count by the current run — eased on run 1, ramping after — and let the
-            // selector drop enemy types not yet unlocked at this run (e.g. Supporters held to run 2+).
             int run = RunDifficulty.CurrentRun;
             int total = RunDifficulty.ScaleEnemyCount(Random.Range(minEnemyCount, maxEnemyCount + 1));
             WeightedEnemySelector.Select(spawnProfile, total, _selection, run);
@@ -217,8 +184,6 @@ namespace Signal.Spawning
 
             if (points.Count == 0) return TryPlaceAtFallback(prefab, out enemy);
 
-            // Round-robin the starting point so enemies spread out instead of stacking on whichever
-            // point happens to validate first.
             for (int offset = 0; offset < points.Count; offset++)
             {
                 EnemySpawnPoint point = points[(index + offset) % points.Count];
@@ -231,7 +196,6 @@ namespace Signal.Spawning
             return false;
         }
 
-        /// <summary>Scatter around the section itself, for sections with no points placed yet.</summary>
         private bool TryPlaceAtFallback(GameObject prefab, out GameObject enemy)
         {
             enemy = null;
@@ -249,7 +213,6 @@ namespace Signal.Spawning
 
             EnemySafetyNets.Attach(enemy, position, Room);
 
-            // Push the new collider into the physics scene so the next candidate's overlap test sees it.
             Physics.SyncTransforms();
             return enemy;
         }
@@ -260,7 +223,7 @@ namespace Signal.Spawning
             foreach (EnemySpawnPoint point in spawnPoints)
                 if (point != null && point.isActiveAndEnabled) ordered.Add(point);
 
-            for (int i = ordered.Count - 1; i > 0; i--) // Fisher-Yates
+            for (int i = ordered.Count - 1; i > 0; i--)
             {
                 int j = Random.Range(0, i + 1);
                 (ordered[i], ordered[j]) = (ordered[j], ordered[i]);
@@ -303,8 +266,8 @@ namespace Signal.Spawning
             if (volume == null) return;
 
             Gizmos.color = HasSpawned
-                ? new Color(0.45f, 0.45f, 0.45f, 0.7f)   // spent
-                : new Color(0.2f, 0.85f, 1f, 0.85f);     // armed
+                ? new Color(0.45f, 0.45f, 0.45f, 0.7f)
+                : new Color(0.2f, 0.85f, 1f, 0.85f);
 
             Gizmos.matrix = volume.transform.localToWorldMatrix;
             switch (volume)

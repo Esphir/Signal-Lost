@@ -1,12 +1,8 @@
+// A pooled one-shot VFX instance.
 using UnityEngine;
 
 namespace Signal.World
 {
-    /// <summary>
-    /// A pooled one-shot VFX instance. Plays its particle systems on <see cref="Play"/> and returns
-    /// itself to the <see cref="VfxPool"/> once the effect finishes. The pool adds this automatically
-    /// if the prefab doesn't already carry it.
-    /// </summary>
     public class PooledVfx : MonoBehaviour
     {
         [SerializeField, Min(0.05f)]
@@ -31,16 +27,11 @@ namespace Signal.World
             Invoke(nameof(ReturnToPool), _lifetime);
         }
 
-        /// <summary>
-        /// Plays looping/sustained with NO automatic return — the effect runs until the caller calls
-        /// <see cref="StopAndRelease"/>. Used for duration-driven effects (e.g. a stun aura that must
-        /// last exactly as long as the stun and stop the instant it ends).
-        /// </summary>
         public void PlaySustained()
         {
             EnsureSystems();
 
-            CancelInvoke(); // cancel any auto-return scheduled by a prior Play()
+            CancelInvoke();
             foreach (ParticleSystem ps in _systems)
             {
                 ps.Clear(true);
@@ -48,7 +39,6 @@ namespace Signal.World
             }
         }
 
-        /// <summary>Stops emission immediately and returns to the pool. Pairs with <see cref="PlaySustained"/>.</summary>
         public void StopAndRelease()
         {
             CancelInvoke();
@@ -59,7 +49,6 @@ namespace Signal.World
             VfxPool.Release(this);
         }
 
-        // Lazily gathered so effects whose particle systems are built at runtime are still found.
         private void EnsureSystems()
         {
             if (_systems != null) return;

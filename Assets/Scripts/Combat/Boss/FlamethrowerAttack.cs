@@ -1,18 +1,9 @@
+// Attack 1 — Flamethrower.
 using System.Collections;
 using UnityEngine;
 
 namespace Signal.Combat.Boss
 {
-    /// <summary>
-    /// Attack 1 — Flamethrower. The boss faces the player, its nozzle glows through a short windup, then
-    /// it fires a continuous cone that slowly sweeps to one side while drifting toward the player, and
-    /// drips small burning patches along the ground. It's a positioning tool: the safe answer is to move
-    /// opposite the sweep, step out of range, or get behind it.
-    ///
-    /// The burn is measured from the boss outward, with a splash covering its own footprint — a cone hung
-    /// off the nozzle would pinch to nothing exactly where a melee player stands, making the safest place
-    /// in the room the one place a flamethrower should never be safe.
-    /// </summary>
     public sealed class FlamethrowerAttack : BossAttack
     {
         [Header("Aim / Windup")]
@@ -46,7 +37,6 @@ namespace Signal.Combat.Boss
 
         public override float WeightAt(float distance, BossContext ctx)
         {
-            // Best at mid range where the whole cone lands; useless if the player is outside its reach.
             if (distance > range + 3f) return 0.15f;
             return 3f + Mathf.Max(0f, 4f - Mathf.Abs(distance - idealDistance));
         }
@@ -57,25 +47,23 @@ namespace Signal.Combat.Boss
             float dps = damagePerSecond;
             float duration = fireDuration * ctx.FlameDurationMultiplier;
 
-            // Face the player during the windup so the aim is honest before flames appear.
-            ctx.Anim?.Anticipate(0.3f); // squeeze down like a gripped bottle — pressure building, not growing
+            ctx.Anim?.Anticipate(0.3f);
             yield return FaceOverTime(ctx, faceTime);
 
             var jet = new GameObject("FlameJet");
             jet.transform.SetParent(ctx.Boss, false);
             jet.transform.localPosition = nozzleOffset;
-            jet.transform.localRotation = Quaternion.Euler(12f, 0f, 0f); // tilt down so it licks the ground
+            jet.transform.localRotation = Quaternion.Euler(12f, 0f, 0f);
             ParticleSystem flames = FlameVfx.BuildJet(jet, range, coneHalfAngle);
             ParticleSystem.EmissionModule emission = flames.emission;
 
-            // Nozzle "glow": a weak flicker during windup, then full blast.
             emission.rateOverTime = 12f;
             flames.Play();
             yield return Wait(windup, ctx);
             emission.rateOverTime = 120f;
 
-            ctx.Anim?.Pulse(0.4f);       // the squeeze releases as the flame catches
-            ctx.Anim?.Anticipate(0.12f); // then stay lightly compressed while it sprays
+            ctx.Anim?.Pulse(0.4f);
+            ctx.Anim?.Anticipate(0.12f);
 
             Quaternion baseRot = FacingPlayer(ctx);
             float side = Random.value < 0.5f ? -1f : 1f;
@@ -86,13 +74,9 @@ namespace Signal.Combat.Boss
             {
                 float k = t / duration;
 
-                // The sweep is the attack, but a fixed arc is trivially walked out of — so the aim drifts
-                // toward the player underneath it. Slow enough that running still beats it.
                 baseRot = Quaternion.RotateTowards(baseRot, FacingPlayer(ctx), trackingSpeed * Time.deltaTime);
                 ctx.Boss.rotation = baseRot * Quaternion.Euler(0f, side * sweepArc * (k - 0.5f), 0f);
 
-                // Damage is measured from the boss, not from the nozzle out in front of it: the cone has to
-                // start where the boss is, or standing on top of it is safe.
                 Vector3 origin = ctx.Boss.position;
                 Vector3 forward = ctx.Boss.forward;
 
@@ -129,7 +113,7 @@ namespace Signal.Combat.Boss
             for (float t = 0f; t < seconds; t += Time.deltaTime)
             {
                 ctx.Boss.rotation = Quaternion.Slerp(from, to, t / seconds);
-                to = FacingPlayer(ctx); // keep tracking while turning
+                to = FacingPlayer(ctx);
                 yield return null;
             }
             ctx.Boss.rotation = FacingPlayer(ctx);
