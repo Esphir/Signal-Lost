@@ -12,7 +12,7 @@ namespace Signal.Combat.Boss
     {
         [SerializeField] private string playerTag = "Player";
         [SerializeField, Min(0.5f)] private float moveSpeed = 4.5f;
-        [SerializeField, Min(0.5f)] private float contactRange = 1.4f;
+        [SerializeField, Min(0.5f)] private float contactRange = 1f;
         [SerializeField, Min(0f)] private float contactDps = 12f;
 
         private Rigidbody _rb;

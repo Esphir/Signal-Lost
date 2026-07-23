@@ -149,11 +149,17 @@ namespace Signal.Minimap
         {
             if (_rooms.Count == 0) return;
 
+            // Collapsing hallways out and following each door's world direction can send two
+            // branches at the same cell — especially once rotating hallways curl a path back on
+            // itself. Track occupied cells so a clash lands on the nearest free one instead of
+            // stamping two tiles on top of each other.
+            var occupied = new Dictionary<Vector2Int, MinimapRoom>();
             var placed = new HashSet<MinimapRoom>();
             var queue = new Queue<MinimapRoom>();
 
             MinimapRoom start = _rooms[0];
             start.GridPosition = Vector2Int.zero;
+            occupied[Vector2Int.zero] = start;
             placed.Add(start);
             queue.Enqueue(start);
 
@@ -169,12 +175,51 @@ namespace Signal.Minimap
                     if (neighbourDef == null || !_byDefinition.TryGetValue(neighbourDef, out MinimapRoom neighbour)) continue;
                     if (!placed.Add(neighbour)) continue;
 
-                    neighbour.GridPosition = room.GridPosition + connector.WorldDirection.ToGridOffset();
+                    Vector2Int desired = room.GridPosition + connector.WorldDirection.ToGridOffset();
+                    Vector2Int cell = FreeCellNear(room.GridPosition, desired, occupied);
+                    neighbour.GridPosition = cell;
+                    occupied[cell] = neighbour;
                     queue.Enqueue(neighbour);
                 }
             }
         }
 
+        private static readonly Vector2Int[] Neighbourhood =
+        {
+            new Vector2Int(0, 1), new Vector2Int(0, -1),
+            new Vector2Int(1, 0), new Vector2Int(-1, 0),
+        };
+
+        // The desired cell if it's free; otherwise another cell touching the source (so the link
+        // stays one tile long), and only if the source is boxed in, the nearest free cell out from
+        // the desired one. Deterministic, so a given seed always collapses to the same map.
+        private static Vector2Int FreeCellNear(Vector2Int source, Vector2Int desired,
+                                               Dictionary<Vector2Int, MinimapRoom> occupied)
+        {
+            if (!occupied.ContainsKey(desired)) return desired;
+
+            foreach (Vector2Int offset in Neighbourhood)
+            {
+                Vector2Int cell = source + offset;
+                if (!occupied.ContainsKey(cell)) return cell;
+            }
+
+            for (int radius = 1; radius <= 24; radius++)
+                for (int dx = -radius; dx <= radius; dx++)
+                for (int dy = -radius; dy <= radius; dy++)
+                {
+                    if (Mathf.Abs(dx) != radius && Mathf.Abs(dy) != radius) continue; // ring edge only
+                    Vector2Int cell = desired + new Vector2Int(dx, dy);
+                    if (!occupied.ContainsKey(cell)) return cell;
+                }
+
+            return desired; // nothing free within reach — overlap rather than fail
+        }
+
+        // The minimap hides hallways, so a door that opens into one really leads to whatever room
+        // is on the far side of that hallway (or chain of them). Step across the connector to its
+        // partner; if we land in a hallway, hop to the hallway's *other* door and keep walking until
+        // a real room turns up. The guard caps pathological loops of hallways joined end to end.
         private RoomDefinition RealRoomThrough(RoomConnector connector)
         {
             RoomConnector current = connector;
@@ -235,13 +280,15 @@ namespace Signal.Minimap
 
                     Vector2 a = (Vector2)room.GridPosition * roomSpacing;
                     Vector2 b = (Vector2)other.GridPosition * roomSpacing;
-                    rt.anchoredPosition = (a + b) * 0.5f;
-                    bool horizontal = Mathf.Abs(a.x - b.x) > Mathf.Abs(a.y - b.y);
+                    Vector2 delta = b - a;
 
-                    float length = Mathf.Max(roomSpacing, horizontal ? Mathf.Abs(a.x - b.x) : Mathf.Abs(a.y - b.y));
-                    rt.sizeDelta = horizontal
-                        ? new Vector2(length, connectionWidth)
-                        : new Vector2(connectionWidth, length);
+                    // Draw one rotated bar from centre to centre. For the usual axis-adjacent pair
+                    // this is the same horizontal/vertical stub as before; for a pair the collapse
+                    // couldn't keep adjacent it still points at the right room instead of floating.
+                    float length = Mathf.Max(roomSpacing, delta.magnitude);
+                    rt.anchoredPosition = (a + b) * 0.5f;
+                    rt.sizeDelta = new Vector2(length, connectionWidth);
+                    rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg);
 
                     var img = go.GetComponent<Image>();
                     img.raycastTarget = false;
@@ -308,18 +355,30 @@ namespace Signal.Minimap
 
         private MinimapRoom FindRoomAt(Vector3 worldPoint)
         {
-            MinimapRoom best = null;
-            float bestSqr = float.MaxValue;
+            if (float.IsInfinity(worldPoint.x)) return null;
+
+            MinimapRoom over = null;
+            MinimapRoom nearest = null;
+            float overBest = float.MaxValue;
+            float nearestBest = float.MaxValue;
+
             foreach (MinimapRoom room in _rooms)
             {
                 if (room.Source == null) continue;
                 Bounds b = room.Source.WorldBounds;
-                if (!b.Contains(worldPoint)) continue;
-
                 float sqr = (b.center - worldPoint).sqrMagnitude;
-                if (sqr < bestSqr) { bestSqr = sqr; best = room; }
+
+                if (worldPoint.x >= b.min.x && worldPoint.x <= b.max.x &&
+                    worldPoint.z >= b.min.z && worldPoint.z <= b.max.z &&
+                    sqr < overBest)
+                {
+                    overBest = sqr;
+                    over = room;
+                }
+
+                if (sqr < nearestBest) { nearestBest = sqr; nearest = room; }
             }
-            return best;
+            return over != null ? over : nearest;
         }
 
         private void ApplyContainerSettings()
@@ -359,6 +418,8 @@ namespace Signal.Minimap
             _arrow.SetAsLastSibling();
             _arrow.sizeDelta = Vector2.one * arrowSize;
             _arrow.anchoredPosition = (Vector2)_current.GridPosition * roomSpacing;
+            // The sprite is authored pointing up = north. World yaw runs clockwise seen from above,
+            // but UI Z-rotation runs counter-clockwise, so negate it to make the two agree.
             _arrow.localRotation = Quaternion.Euler(0f, 0f, -LookYaw());
         }
 
@@ -369,6 +430,11 @@ namespace Signal.Minimap
             return _player != null ? _player.eulerAngles.y : 0f;
         }
 
+        // Bakes the player arrow into a texture once, so no art asset is needed. First mark the
+        // pixels of a solid upward triangle: at each row the half-width shrinks linearly from the
+        // full base down to a point at the apex, any
+        // clear pixel within `outline` of the triangle black (a cheap outline), everything else
+        // transparent. Cached in a static so every arrow across every map shares the one sprite.
         private static Sprite ArrowSprite()
         {
             if (_arrowSprite != null) return _arrowSprite;
@@ -402,6 +468,9 @@ namespace Signal.Minimap
             return _arrowSprite;
         }
 
+        // True if any solid pixel lies within `distance` of (x, y). Scans the square window around
+        // the pixel but accepts on a circular radius (dx² + dy² ≤ distance²), so the outline it
+        // produces is evenly rounded rather than square-cornered.
         private static bool NearSolid(bool[,] solid, int x, int y, float distance)
         {
             int reach = Mathf.CeilToInt(distance);

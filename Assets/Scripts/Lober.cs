@@ -56,6 +56,11 @@ public class LobTurret : MonoBehaviour
     [Tooltip("How aggressively the arc steepens as the player closes in. 1 = linear ramp; 2 = full max angle already at half the close-range distance (even more reaction time).")]
     public float reactionTimeMultiplier = 1f;
 
+    [Header("Aim Scatter")]
+    [Min(0f)]
+    [Tooltip("The turret aims at a random point within this radius (metres) of the target instead of dead-on, so shots aren't always centred on the player and leave room to dodge-roll clear. A fresh point is rolled for each shot; 0 = always aim exactly at the target.")]
+    public float aimScatterRadius = 2.5f;
+
     [Header("Lead Prediction")]
     [Range(0f, 1f)]
     [Tooltip("0 = aim at the player's current position (default — most accurate). 1 = fully lead the target by its velocity. Lob flight times are long, so even small values shift shots far ahead.")]
@@ -78,6 +83,7 @@ public class LobTurret : MonoBehaviour
     private Vector3 _lastTargetPos;
     private float _fireTimer;
     private Vector3 _predictedAimPoint;
+    private Vector3 _aimOffset;
     private IStunnable _stunnable;
     private ProjectilePool _pool;
     private LobProjectile _projectileTemplate;
@@ -121,9 +127,12 @@ public class LobTurret : MonoBehaviour
 
         _currentLaunchAngle = CurrentLaunchAngle();
 
+        // Offset the aim by a fixed per-shot amount so the shot lands near the player rather than
+        // dead-on. It's held steady between shots (not re-rolled per frame) so the head can settle
+        // within aimTolerance and actually fire, then re-rolled once the shot goes out.
         _predictedAimPoint = PredictInterceptPoint(
             SpawnPoint.position, _target.position, _targetVelocity, _currentLaunchAngle, predictionIterations,
-            _projectileGravity, predictionStrength, maxPredictionDistance);
+            _projectileGravity, predictionStrength, maxPredictionDistance) + _aimOffset;
 
         RotateTowardPoint(_predictedAimPoint);
 
@@ -132,6 +141,7 @@ public class LobTurret : MonoBehaviour
         {
             Fire(_predictedAimPoint);
             _fireTimer = fireRate;
+            RerollAimScatter();
         }
     }
 
@@ -158,7 +168,17 @@ public class LobTurret : MonoBehaviour
             _targetRb = _target != null ? _target.GetComponent<Rigidbody>() : null;
             _targetVelocity = Vector3.zero;
             _lastTargetPos = _target != null ? _target.position : Vector3.zero;
+            RerollAimScatter();
         }
+    }
+
+    // Pick a fresh aim offset: a random point within aimScatterRadius on the ground plane. Called
+    // once per shot (and on acquiring a target) so each lob lands somewhere new around the player.
+    private void RerollAimScatter()
+    {
+        if (aimScatterRadius <= 0.001f) { _aimOffset = Vector3.zero; return; }
+        Vector2 disc = Random.insideUnitCircle * aimScatterRadius;
+        _aimOffset = new Vector3(disc.x, 0f, disc.y);
     }
 
     private bool HasLineOfSight()
@@ -342,6 +362,12 @@ public class LobTurret : MonoBehaviour
 
         Gizmos.color = Color.red;
         Gizmos.DrawLine(SpawnPoint.position, _target.position);
+
+        if (aimScatterRadius > 0f)
+        {
+            Gizmos.color = new Color(1f, 0.9f, 0.2f, 0.5f);
+            Gizmos.DrawWireSphere(_target.position, aimScatterRadius);
+        }
 
         if (showPredictionGizmo && _predictedAimPoint != Vector3.zero)
         {

@@ -88,6 +88,8 @@ namespace Signal.Minimap
 
             float scaleGoal = _targetScale;
             if (_pulse) scaleGoal += 0.06f * Mathf.Sin(Time.unscaledTime * 5f);
+            // Frame-rate-independent easing: a plain Lerp with a constant t eases faster the higher
+            // the frame rate, so derive t from elapsed time as 1 - e^(-k·dt). Same feel at any fps.
             _scale = Mathf.Lerp(_scale, scaleGoal, 1f - Mathf.Exp(-step * 10f));
 
             if (_targetReveal == 0f && _reveal <= 0.001f)
