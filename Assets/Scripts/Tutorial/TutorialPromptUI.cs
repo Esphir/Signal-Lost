@@ -208,7 +208,8 @@ namespace Signal.Tutorial
             _titleText = UiBuilder.CreateText(bg.transform, "Title", "", 30, FontStyle.Bold, TextAnchor.UpperCenter);
             _titleText.rectTransform.anchorMin = new Vector2(0f, 1f);
             _titleText.rectTransform.anchorMax = new Vector2(1f, 1f);
-            _titleText.rectTransform.anchoredPosition = new Vector2(0f, -16f);
+            _titleText.rectTransform.pivot = new Vector2(0.5f, 1f);
+            _titleText.rectTransform.anchoredPosition = new Vector2(0f, -14f);
             _titleText.rectTransform.sizeDelta = new Vector2(-40f, 44f);
 
             _descText = UiBuilder.CreateText(bg.transform, "Description", "", 22, FontStyle.Normal, TextAnchor.MiddleCenter);

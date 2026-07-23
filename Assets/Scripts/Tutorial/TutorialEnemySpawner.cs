@@ -1,4 +1,4 @@
-// Spawns a configured set of enemy prefabs (the existing Lober/Plummeter/Supporter prefabs) at their spawn points and raises AllCleared once every spawned enemy has died.
+// Spawns a configured set of enemy prefabs (the existing KernelCannon/Panquake/Garlic prefabs) at their spawn points and raises AllCleared once every spawned enemy has died.
 using System;
 using System.Collections.Generic;
 using Signal.Combat.Health;
@@ -16,7 +16,7 @@ namespace Signal.Tutorial
             public GameObject prefab;
             [Tooltip("Where to spawn. Empty = this spawner's transform.")]
             public Transform point;
-            [Tooltip("Name used in the objective checklist (e.g. \"Lobber\"). Empty = derived from the prefab name.")]
+            [Tooltip("Name used in the objective checklist (e.g. \"Kernel Cannon\"). Empty = derived from the prefab name.")]
             public string displayName;
         }
 

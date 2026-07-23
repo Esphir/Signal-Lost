@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 4566139534252428626}
   - component: {fileID: 4566139534252428700}
   m_Layer: 0
-  m_Name: Sewage
+  m_Name: Frying Oil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -221,7 +221,7 @@ MonoBehaviour:
   affectsPlayer: 1
   affectsEnemies: 1
   enemyTag: Enemy
-  damageAmount: 50
+  damageAmount: 25
   respawnDelay: 0.2
   invulnerabilityTimeAfterRespawn: 1
   dealDamage: 1

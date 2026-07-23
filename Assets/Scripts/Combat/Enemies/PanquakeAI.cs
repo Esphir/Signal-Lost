@@ -1,11 +1,11 @@
-// Decision-making for the Plummeter: chase the player into slam range, then trigger the SlamAttackAbility.
+// Decision-making for the Panquake: chase the player into slam range, then trigger the SlamAttackAbility.
 using UnityEngine;
 using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Enemies
 {
     [RequireComponent(typeof(EnemyMotor), typeof(SlamAttackAbility))]
-    public class PlummeterAI : MonoBehaviour
+    public class PanquakeAI : MonoBehaviour
     {
         [Header("Targeting")]
         [SerializeField] private string targetTag = "Player";

@@ -27,7 +27,7 @@ GameObject:
   - component: {fileID: 4644212239799149002}
   - component: {fileID: 7413000000000000001}
   m_Layer: 3
-  m_Name: Plummeter
+  m_Name: Panquake
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

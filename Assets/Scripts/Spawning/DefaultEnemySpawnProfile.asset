@@ -20,19 +20,19 @@ MonoBehaviour:
     maxCount: 4
     canSpawnMultiple: 1
   - prefab: {fileID: 9171620467850103300, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
-    displayName: Lobber
+    displayName: Kernel Cannon
     weight: 30
     minCount: 0
     maxCount: 3
     canSpawnMultiple: 1
   - prefab: {fileID: 8111276562493136826, guid: 93fb79be2942ab14b8c7551146aea0d8, type: 3}
-    displayName: Plummeter
+    displayName: Panquake
     weight: 15
     minCount: 0
     maxCount: 2
     canSpawnMultiple: 1
   - prefab: {fileID: 1513119564538955794, guid: 3bdaec7a99280a04caa90f55b6793885, type: 3}
-    displayName: Support
+    displayName: Garlic
     weight: 5
     minCount: 0
     maxCount: 1

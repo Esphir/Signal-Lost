@@ -201,7 +201,7 @@ MonoBehaviour:
   title: Bash
   description: Press <Bash> to knock lighter enemies backwards. If an enemy collides
     with a wall or terrain, they become stunned for a short time. You can also Bash
-    lighter enemies off ledges for an instant kill during normal gameplay. Plummeters
+    lighter enemies off ledges for an instant kill during normal gameplay. Panquakes
     are too heavy to be knocked back.
   promptActionName: Bash
   spawner: {fileID: 76632288}
@@ -575,10 +575,10 @@ MonoBehaviour:
   enemies:
   - prefab: {fileID: 9171620467850103300, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
     point: {fileID: 0}
-    displayName: Lobber
+    displayName: Kernel Cannon
   - prefab: {fileID: 1513119564538955794, guid: 3bdaec7a99280a04caa90f55b6793885, type: 3}
     point: {fileID: 1711081844}
-    displayName: Support Enemy
+    displayName: Garlic
   arena:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}
@@ -1539,7 +1539,7 @@ GameObject:
   - component: {fileID: 1780221086}
   - component: {fileID: 1780221085}
   m_Layer: 0
-  m_Name: 08_Plummeter
+  m_Name: 08_Panquake
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1572,11 +1572,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: caa7774c2fbb0ad6b8ff10c6bfb7144d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  title: Plummeter
+  title: Panquake
   description: Wait for the slam indicator, then <Dodge> clear before it lands.
   promptActionName: Dodge
   spawner: {fileID: 1780221086}
-  dodgeObjectiveText: Dodge the Plummeter slam
+  dodgeObjectiveText: Dodge the Panquake slam
   defeatObjectiveFormat: Defeat the {0}
 --- !u!114 &1780221086
 MonoBehaviour:
@@ -1648,7 +1648,7 @@ MonoBehaviour:
     your invulnerability frames.
   promptActionName: Dodge
   spawner: {fileID: 1814727605}
-  dodgeObjectiveText: Dodge a Lobber projectile
+  dodgeObjectiveText: Dodge a Kernel Cannon projectile
   defeatObjectiveFormat: Defeat the {0}
 --- !u!114 &1814727605
 MonoBehaviour:
@@ -1665,7 +1665,7 @@ MonoBehaviour:
   enemies:
   - prefab: {fileID: 9171620467850103300, guid: 5acae8ae4bd982940a6b0d33998bb2b6, type: 3}
     point: {fileID: 0}
-    displayName: Lobber
+    displayName: Kernel Cannon
   arena:
     m_Center: {x: 0, y: 0, z: 0}
     m_Extent: {x: 0, y: 0, z: 0}

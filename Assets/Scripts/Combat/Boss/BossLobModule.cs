@@ -1,4 +1,4 @@
-// The boss's occasional lobbed fireball: thrown while it prowls, using the lobber's arc, and leaving a patch of burning ground where it lands that flares briefly then fades.
+// The boss's occasional lobbed fireball: thrown while it prowls, using the Kernel Cannon's arc, and leaving a patch of burning ground where it lands that flares briefly then fades.
 using Signal.Combat.Projectiles;
 using UnityEngine;
 
@@ -55,7 +55,7 @@ namespace Signal.Combat.Boss
             }
 
             float gravity = template.Config != null ? template.Config.EffectiveGravity : Mathf.Abs(Physics.gravity.y);
-            Vector3? velocity = LobTurret.CalculateLobVelocity(origin, aim, launchAngle, gravity);
+            Vector3? velocity = KernelCannon.CalculateLobVelocity(origin, aim, launchAngle, gravity);
             if (velocity == null) return;
 
             LobProjectile proj = Instantiate(template, origin, Quaternion.identity);

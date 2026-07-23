@@ -25,12 +25,12 @@ namespace Signal.Spawning
         [Tooltip("Hard cap per section. Once this many have been chosen, the row leaves the weighted pool and its weight passes to the others.")]
         public int maxCount = 4;
 
-        [Tooltip("Off = at most one per section, no matter what Max Count says. This is the switch that keeps a section to a single Support enemy.")]
+        [Tooltip("Off = at most one per section, no matter what Max Count says. This is the switch that keeps a section to a single Garlic enemy.")]
         public bool canSpawnMultiple = true;
 
         [Min(1)]
         [Tooltip("Earliest run this enemy may appear on. 1 = from the very first run. Raise it to hold a " +
-                 "harder or more annoying type (e.g. Supporters) back until players have a run or two under their belt.")]
+                 "harder or more annoying type (e.g. Garlic) back until players have a run or two under their belt.")]
         public int minRunNumber = 1;
 
         public bool IsValid => prefab != null;

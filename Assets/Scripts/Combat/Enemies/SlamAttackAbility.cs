@@ -1,4 +1,4 @@
-// The Plummeter's signature move: leap above the target point, hang for anticipation, crash down, and emit an expanding AoE shockwave that damages each target exactly once as the front reaches them.
+// The Panquake's signature move: leap above the target point, hang for anticipation, crash down, and emit an expanding AoE shockwave that damages each target exactly once as the front reaches them.
 using System;
 using System.Collections;
 using UnityEngine;

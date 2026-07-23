@@ -26,8 +26,8 @@ namespace Signal.Minimap
         [SerializeField, Min(1f)] private float iconSize = 20f;
         [SerializeField, Min(0f)] private float connectionWidth = 5f;
         [SerializeField, Min(0f)] private float padding = 12f;
-        [SerializeField, Min(0.1f), Tooltip("Overall size of the map widget.")]
-        private float mapScale = 1.25f;
+        [SerializeField, Min(0.1f), Tooltip("Overall on-screen size of the map widget. Tune this live in the inspector.")]
+        private float minimapScale = 1.9f;
         [SerializeField, Range(0f, 1f)] private float opacity = 1f;
         [SerializeField, Tooltip("Screen corner the map sits in. Applied on rebuild, so it also moves a map placed elsewhere.")]
         private MinimapCorner corner = MinimapCorner.BottomRight;
@@ -95,8 +95,13 @@ namespace Signal.Minimap
             if (revealEntireMap != _lastReveal) { _lastReveal = revealEntireMap; RefreshAll(); }
             if (_rooms.Count == 0) return;
 
-            MinimapRoom here = FindRoomAt(PlayerPosition());
-            if (here != null && here != _current) EnterRoom(here);
+            Vector3 playerPos = PlayerPosition();
+            if (!StillInside(_current, playerPos))
+            {
+                MinimapRoom here = ContainingRoom(playerPos);
+                if (here == null && _current == null) here = NearestRoom(playerPos);
+                if (here != null && here != _current) EnterRoom(here);
+            }
 
             UpdateFacingArrow();
         }
@@ -353,39 +358,53 @@ namespace Signal.Minimap
             return _player != null ? _player.position : Vector3.positiveInfinity;
         }
 
-        private MinimapRoom FindRoomAt(Vector3 worldPoint)
+        private MinimapRoom ContainingRoom(Vector3 worldPoint)
         {
             if (float.IsInfinity(worldPoint.x)) return null;
 
             MinimapRoom over = null;
-            MinimapRoom nearest = null;
-            float overBest = float.MaxValue;
-            float nearestBest = float.MaxValue;
-
+            float best = float.MaxValue;
             foreach (MinimapRoom room in _rooms)
             {
                 if (room.Source == null) continue;
                 Bounds b = room.Source.WorldBounds;
-                float sqr = (b.center - worldPoint).sqrMagnitude;
+                if (!ContainsXZ(b, worldPoint)) continue;
 
-                if (worldPoint.x >= b.min.x && worldPoint.x <= b.max.x &&
-                    worldPoint.z >= b.min.z && worldPoint.z <= b.max.z &&
-                    sqr < overBest)
-                {
-                    overBest = sqr;
-                    over = room;
-                }
-
-                if (sqr < nearestBest) { nearestBest = sqr; nearest = room; }
+                Vector3 toCenter = b.center - worldPoint; toCenter.y = 0f;
+                float sqr = toCenter.sqrMagnitude;
+                if (sqr < best) { best = sqr; over = room; }
             }
-            return over != null ? over : nearest;
+            return over;
         }
+
+        private MinimapRoom NearestRoom(Vector3 worldPoint)
+        {
+            if (float.IsInfinity(worldPoint.x)) return null;
+
+            MinimapRoom nearest = null;
+            float best = float.MaxValue;
+            foreach (MinimapRoom room in _rooms)
+            {
+                if (room.Source == null) continue;
+                Vector3 toCenter = room.Source.WorldBounds.center - worldPoint; toCenter.y = 0f;
+                float sqr = toCenter.sqrMagnitude;
+                if (sqr < best) { best = sqr; nearest = room; }
+            }
+            return nearest;
+        }
+
+        private bool StillInside(MinimapRoom room, Vector3 worldPoint)
+            => room != null && room.Source != null && !float.IsInfinity(worldPoint.x)
+               && ContainsXZ(room.Source.WorldBounds, worldPoint);
+
+        private static bool ContainsXZ(Bounds b, Vector3 p)
+            => p.x >= b.min.x && p.x <= b.max.x && p.z >= b.min.z && p.z <= b.max.z;
 
         private void ApplyContainerSettings()
         {
             if (container == null) return;
 
-            container.localScale = Vector3.one * mapScale;
+            container.localScale = Vector3.one * minimapScale;
 
             Vector2 anchor = corner switch
             {

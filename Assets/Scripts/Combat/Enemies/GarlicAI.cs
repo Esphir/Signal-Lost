@@ -1,11 +1,11 @@
-// Decision-making for the Support enemy: keep an ally between itself and the player (hide behind the front line), retreating directly when no allies remain.
+// Decision-making for the Garlic enemy: keep an ally between itself and the player (hide behind the front line), retreating directly when no allies remain.
 using UnityEngine;
 using Signal.Combat.Interfaces;
 
 namespace Signal.Combat.Enemies
 {
     [RequireComponent(typeof(EnemyMotor), typeof(AllyBuffAbility))]
-    public class SupportAI : MonoBehaviour
+    public class GarlicAI : MonoBehaviour
     {
         [Header("Targeting")]
         [SerializeField] private string threatTag = "Player";
@@ -156,7 +156,7 @@ namespace Signal.Combat.Enemies
                 if (!root.CompareTag(allyTag)) continue;
 
                 float dist = (root.position - transform.position).sqrMagnitude;
-                if (root.GetComponentInChildren<SupportAI>() != null)
+                if (root.GetComponentInChildren<GarlicAI>() != null)
                 {
                     if (dist < bestSupportDist) { bestSupportDist = dist; bestSupport = root; }
                 }

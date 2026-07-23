@@ -73,7 +73,7 @@ namespace Signal.Combat.Boss
         private bool enableLobbing = true;
 
         [SerializeField]
-        [Tooltip("A LobProjectile prefab (the Lobber's projectile). Lobbing is skipped while this is unassigned.")]
+        [Tooltip("A LobProjectile prefab (the Kernel Cannon's projectile). Lobbing is skipped while this is unassigned.")]
         private GameObject lobProjectilePrefab;
 
         [Header("Setup")]

@@ -11,7 +11,7 @@ namespace Signal.Tutorial
 
         [Header("Objectives")]
         [SerializeField]
-        [Tooltip("Optional extra line, ticked the first time the player dodges during this encounter (e.g. \"Dodge a Lobber projectile\"). Empty = no dodge objective.")]
+        [Tooltip("Optional extra line, ticked the first time the player dodges during this encounter (e.g. \"Dodge a Kernel Cannon projectile\"). Empty = no dodge objective.")]
         private string dodgeObjectiveText;
         [SerializeField]
         [Tooltip("Objective text per enemy. {0} = that enemy's display name from the spawner entry.")]

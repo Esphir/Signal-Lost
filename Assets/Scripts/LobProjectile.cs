@@ -92,7 +92,7 @@ public class LobProjectile : MonoBehaviour
         if (_indicator == null)
             _indicator = AoeTelegraph.Create(config.landingIndicatorPrefab);
 
-        _indicator.Show(predictedLanding, new AoeTelegraphSettings
+        _indicator.Show(GroundProbe.Below(predictedLanding), new AoeTelegraphSettings
         {
             Radius = config.explosionRadius,
             Color = config.indicatorColor,

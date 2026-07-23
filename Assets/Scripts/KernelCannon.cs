@@ -3,7 +3,7 @@ using UnityEngine;
 using Signal.Combat.Interfaces;
 using Signal.Combat.Projectiles;
 
-public class LobTurret : MonoBehaviour
+public class KernelCannon : MonoBehaviour
 {
     public event System.Action<Vector3> Fired;
 
@@ -101,11 +101,11 @@ public class LobTurret : MonoBehaviour
         _currentLaunchAngle = lobAngle;
 
         if (barrelPivot == null)
-            Debug.LogWarning($"[Combat] LobTurret '{name}': 'Barrel Pivot' is not assigned — projectiles will spawn from {(barrelTip != null ? "Barrel Tip" : "the turret root")} instead.", this);
+            Debug.LogWarning($"[Combat] KernelCannon '{name}': 'Barrel Pivot' is not assigned — projectiles will spawn from {(barrelTip != null ? "Barrel Tip" : "the turret root")} instead.", this);
 
         _projectileTemplate = projectilePrefab != null ? projectilePrefab.GetComponent<LobProjectile>() : null;
         if (_projectileTemplate == null)
-            Debug.LogError("[Combat] LobTurret: projectile prefab has no LobProjectile component.", this);
+            Debug.LogError("[Combat] KernelCannon: projectile prefab has no LobProjectile component.", this);
 
         _projectileGravity = _projectileTemplate != null && _projectileTemplate.Config != null
             ? _projectileTemplate.Config.EffectiveGravity

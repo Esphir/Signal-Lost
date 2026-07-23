@@ -1,4 +1,4 @@
-// Designer data for the Plummeter's leap-and-slam attack.
+// Designer data for the Panquake's leap-and-slam attack.
 using UnityEngine;
 
 namespace Signal.Combat.Enemies

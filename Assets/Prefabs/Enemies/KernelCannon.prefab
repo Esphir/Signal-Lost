@@ -165,7 +165,7 @@ GameObject:
   - component: {fileID: 4644212239799149001}
   - component: {fileID: 7412000000000000001}
   m_Layer: 3
-  m_Name: Lober
+  m_Name: KernelCannon
   m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
