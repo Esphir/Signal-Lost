@@ -35,7 +35,12 @@ public class PlayerDodge : MonoBehaviour, IInvulnerabilityGate
 
     public event System.Action DodgeStarted;
 
-    bool IInvulnerabilityGate.IsInvulnerable => IsInvincible;
+    private float _briefInvincibleUntil;
+
+    bool IInvulnerabilityGate.IsInvulnerable => IsInvincible || Time.time < _briefInvincibleUntil;
+
+    public void GrantBriefInvincibility(float seconds)
+        => _briefInvincibleUntil = Mathf.Max(_briefInvincibleUntil, Time.time + Mathf.Max(0f, seconds));
 
     private PlayerController      _controller;
     private PlayerInputHandler    _input;

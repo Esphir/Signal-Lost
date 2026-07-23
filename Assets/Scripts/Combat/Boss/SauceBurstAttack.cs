@@ -26,7 +26,7 @@ namespace Signal.Combat.Boss
         [Header("Burning ground")]
         [SerializeField, Min(1)] private int patchCount = 5;
         [SerializeField, Min(0.3f)] private float patchRadius = 1.4f;
-        [SerializeField, Min(0f)] private float patchDps = 10f;
+        [SerializeField, Min(0f)] private float patchDps = 12f;
         [SerializeField, Min(0.5f)] private float patchLifetime = 2.5f;
 
         private AoeTelegraph _telegraph;

@@ -20,11 +20,11 @@ namespace Signal.Combat.Boss
         [Header("Flame")]
         [SerializeField, Min(1f)] private float range = 8f;
         [SerializeField, Min(5f)] private float coneHalfAngle = 20f;
-        [SerializeField, Min(1f)] private float damagePerSecond = 24f;
+        [SerializeField, Min(1f)] private float damagePerSecond = 26f;
 
         [SerializeField]
-        [Tooltip("Where the cap sits while lying down, relative to the boss's centre: x sideways, y up, z along the spray.")]
-        private Vector3 nozzleOffset = new Vector3(0f, 0f, 1.8f);
+        [Tooltip("Where the flame leaves the cap while lying down: x sideways, y above the floor, z along the spray.")]
+        private Vector3 nozzleOffset = new Vector3(0f, 0.4f, 1.8f);
 
         [SerializeField, Min(0f)]
         [Tooltip("Splash around the thrashing bottle. Standing on top of a spinning flamethrower must be the worst place in the room, not the safest.")]
@@ -32,7 +32,7 @@ namespace Signal.Combat.Boss
 
         [Header("Burning ground")]
         [SerializeField, Min(0.3f)] private float patchRadius = 1.5f;
-        [SerializeField, Min(0f)] private float patchDps = 10f;
+        [SerializeField, Min(0f)] private float patchDps = 12f;
         [SerializeField, Min(0.5f)] private float patchLifetime = 4f;
         [SerializeField, Min(1)] private int patchesPerRotation = 8;
 
@@ -49,6 +49,7 @@ namespace Signal.Combat.Boss
         private GameObject _jet;
         private Rigidbody _held;
         private bool _heldWasKinematic;
+        private Renderer[] _renderers;
 
         public override float WeightAt(float distance, BossContext ctx)
         {
@@ -60,8 +61,10 @@ namespace Signal.Combat.Boss
             float dps = damagePerSecond;
             float duration = spinDuration * ctx.FlameDurationMultiplier;
             float yaw = ctx.Boss.eulerAngles.y;
-            float standY = ctx.Boss.position.y;
-            float drop = settleToGround ? GroundDrop(ctx) : 0f;
+
+            _renderers = ctx.Boss.GetComponentsInChildren<Renderer>();
+            float low = LowestRenderedY();
+            float floorY = float.IsInfinity(low) ? ctx.Boss.position.y : low;
 
             ShowTelegraph(ctx);
             ctx.Anim?.Anticipate(0.45f);
@@ -69,7 +72,7 @@ namespace Signal.Combat.Boss
             HideTelegraph();
 
             HoldPhysics(ctx);
-            yield return Tip(ctx, yaw, standY, drop, onSide: true);
+            yield return Tip(ctx, yaw, floorY, onSide: true);
             ctx.Anim?.Pulse(0.7f);
 
             _jet = new GameObject("FlameJet");
@@ -87,10 +90,11 @@ namespace Signal.Combat.Boss
             for (float t = 0f; t < duration; t += Time.deltaTime)
             {
                 sweptDeg = totalDeg * (t / duration);
-                SetPose(ctx, yaw + sweptDeg, standY - drop, 1f);
+                SetPose(ctx, yaw + sweptDeg, 1f);
+                if (settleToGround) RestOnFloor(ctx, floorY);
 
                 Vector3 forward = Quaternion.Euler(0f, yaw + sweptDeg, 0f) * Vector3.forward;
-                _jet.transform.SetPositionAndRotation(Nozzle(ctx, forward), Quaternion.LookRotation(forward));
+                _jet.transform.SetPositionAndRotation(Nozzle(ctx, forward, floorY), Quaternion.LookRotation(forward));
 
                 bool burning = ctx.Player != null &&
                                FlameDamage.InFlame(ctx.Boss.position, forward, coneHalfAngle, range, splashRadius, ctx.Player.position);
@@ -103,7 +107,7 @@ namespace Signal.Combat.Boss
 
                     float reach = range * ((patchIndex++ % 2 == 0) ? 0.3f : 0.75f);
                     Vector3 spot = ctx.Boss.position + forward * reach;
-                    spot.y = ctx.Boss.position.y;
+                    spot.y = floorY;
                     BurningGround.Spawn(spot, patchRadius, ctx.ScaleDamage(patchDps),
                                         patchLifetime * ctx.FlameDurationMultiplier, ctx.Instigator);
                 }
@@ -117,26 +121,27 @@ namespace Signal.Combat.Boss
             DestroyJet();
 
             ctx.Anim?.Anticipate(0.4f);
-            yield return Tip(ctx, yaw + sweptDeg, standY, drop, onSide: false);
+            yield return Tip(ctx, yaw + sweptDeg, floorY, onSide: false);
             ReleasePhysics();
             ctx.Anim?.Pulse(0.5f);
             ctx.Anim?.Relax();
         }
 
-        private IEnumerator Tip(BossContext ctx, float yaw, float standY, float drop, bool onSide)
+        private IEnumerator Tip(BossContext ctx, float yaw, float floorY, bool onSide)
         {
             float time = (onSide ? tipOverTime : uprightTime) / Mathf.Max(0.1f, ctx.SpeedMultiplier);
             for (float t = 0f; t < time; t += Time.deltaTime)
             {
                 float k = Mathf.SmoothStep(0f, 1f, t / time);
-                float tip = onSide ? k : 1f - k;
-                SetPose(ctx, yaw, standY - drop * tip, tip);
+                SetPose(ctx, yaw, onSide ? k : 1f - k);
+                if (settleToGround) RestOnFloor(ctx, floorY);
                 yield return null;
             }
-            SetPose(ctx, yaw, onSide ? standY - drop : standY, onSide ? 1f : 0f);
+            SetPose(ctx, yaw, onSide ? 1f : 0f);
+            if (settleToGround) RestOnFloor(ctx, floorY);
         }
 
-        private void SetPose(BossContext ctx, float yaw, float y, float tip)
+        private void SetPose(BossContext ctx, float yaw, float tip)
         {
             Quaternion spin = Quaternion.Euler(0f, yaw, 0f);
             Quaternion tilt = Quaternion.Euler(90f * Mathf.Clamp01(tip), 0f, 0f);
@@ -150,33 +155,32 @@ namespace Signal.Combat.Boss
             {
                 ctx.Boss.rotation = spin * tilt;
             }
-
-            Vector3 position = ctx.Boss.position;
-            position.y = y;
-            ctx.Boss.position = position;
         }
 
-        private Vector3 Nozzle(BossContext ctx, Vector3 forward)
+        private Vector3 Nozzle(BossContext ctx, Vector3 forward, float floorY)
         {
             Vector3 right = Vector3.Cross(Vector3.up, forward);
-            return ctx.Boss.position + right * nozzleOffset.x + Vector3.up * nozzleOffset.y + forward * nozzleOffset.z;
+            Vector3 p = ctx.Boss.position + right * nozzleOffset.x + forward * nozzleOffset.z;
+            p.y = floorY + nozzleOffset.y;
+            return p;
         }
 
-        private static float GroundDrop(BossContext ctx)
+        private float LowestRenderedY()
         {
-            Bounds bounds = default;
-            bool any = false;
-            foreach (Renderer r in ctx.Boss.GetComponentsInChildren<Renderer>())
-            {
-                if (r is ParticleSystemRenderer) continue;
-                if (!any) { bounds = r.bounds; any = true; }
-                else bounds.Encapsulate(r.bounds);
-            }
-            if (!any) return 0f;
+            float minY = float.PositiveInfinity;
+            if (_renderers != null)
+                foreach (Renderer r in _renderers)
+                    if (r != null && !(r is ParticleSystemRenderer)) minY = Mathf.Min(minY, r.bounds.min.y);
+            return minY;
+        }
 
-            float standingClearance = ctx.Boss.position.y - bounds.min.y;
-            float lyingRadius = Mathf.Min(bounds.extents.x, bounds.extents.z);
-            return Mathf.Max(0f, standingClearance - lyingRadius);
+        private void RestOnFloor(BossContext ctx, float floorY)
+        {
+            float minY = LowestRenderedY();
+            if (float.IsInfinity(minY)) return;
+            Vector3 p = ctx.Boss.position;
+            p.y += floorY - minY;
+            ctx.Boss.position = p;
         }
 
         private void HoldPhysics(BossContext ctx)

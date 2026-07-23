@@ -32,6 +32,8 @@ namespace Signal.Run
 
         public static bool HasInstance => _instance != null;
 
+        public static int? PendingRun;
+
         public static RunManager Instance
         {
             get
@@ -112,6 +114,13 @@ namespace Signal.Run
             StatsChanged?.Invoke();
         }
 
+        public void SetRun(int run)
+        {
+            CurrentRun = Mathf.Max(1, run);
+            Debug.Log($"[Run] Run number set to {CurrentRun}.");
+            StatsChanged?.Invoke();
+        }
+
         public void EndRun(RunEndReason reason)
         {
             if (!RunActive) return;
@@ -184,9 +193,19 @@ namespace Signal.Run
                 RunSaveSystem.Apply(RunSaveSystem.PendingResume);
                 RunSaveSystem.PendingResume = null;
             }
+
+            if (PendingRun.HasValue)
+            {
+                SetRun(PendingRun.Value);
+                PendingRun = null;
+            }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => _instance = null;
+        private static void ResetStatics()
+        {
+            _instance = null;
+            PendingRun = null;
+        }
     }
 }

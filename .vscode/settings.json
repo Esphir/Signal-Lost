@@ -67,6 +67,6 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "GAM-604-Signal-Lost.slnx",
+    "dotnet.defaultSolution": "Signal-Lost.slnx",
     "dotnet.enableWorkspaceBasedDevelopment": false
 }

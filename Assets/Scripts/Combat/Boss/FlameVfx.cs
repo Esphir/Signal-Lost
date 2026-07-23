@@ -13,14 +13,14 @@ namespace Signal.Combat.Boss
             var ps = host.AddComponent<ParticleSystem>();
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
 
-            float life = Mathf.Max(0.2f, range / 14f);
+            float life = 0.55f;
 
             ParticleSystem.MainModule main = ps.main;
             main.loop = true;
             main.playOnAwake = false;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
-            main.startLifetime = new ParticleSystem.MinMaxCurve(life * 0.7f, life);
-            main.startSpeed = new ParticleSystem.MinMaxCurve(range * 0.7f, range * 1.1f);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(life * 0.8f, life);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(range / life, range / life * 1.15f);
             main.startSize = new ParticleSystem.MinMaxCurve(0.5f, 1.1f);
             main.startColor = new ParticleSystem.MinMaxGradient(Hot, Cool);
             main.gravityModifier = -0.05f;

@@ -11,6 +11,11 @@ namespace Signal.Combat.Configs
         public float upwardForce = 5f;
         public ForceMode forceMode = ForceMode.Impulse;
 
+        [Header("Reward")]
+        [Min(0f)]
+        [Tooltip("Very short invincibility granted to the player only when the bash actually connects with an enemy.")]
+        public float iFrameDuration = 0.25f;
+
         [Header("Cooldown")]
         [Min(0f)]
         [Tooltip("Real-time seconds before Bash can fire again. Starts when the bash executes and is independent of attack-speed upgrades — so Bash can't be spammed.")]

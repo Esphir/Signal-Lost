@@ -67,6 +67,15 @@ namespace Signal.Combat.Boss
         [Tooltip("Killing this boss finishes the run — it raises the same screen the End room does.")]
         private bool completesRunOnDeath = true;
 
+        [Header("Lobbing")]
+        [SerializeField]
+        [Tooltip("Occasionally lob a fireball at the player while prowling, leaving lingering fire where it lands.")]
+        private bool enableLobbing = true;
+
+        [SerializeField]
+        [Tooltip("A LobProjectile prefab (the Lobber's projectile). Lobbing is skipped while this is unassigned.")]
+        private GameObject lobProjectilePrefab;
+
         [Header("Setup")]
         [SerializeField]
         [Tooltip("Minion prefab handed to the summon attack if it doesn't already have one (your Little GhostPeppers).")]
@@ -77,6 +86,7 @@ namespace Signal.Combat.Boss
         private HealthComponent _health;
         private BossContext _ctx;
         private BossLocomotion _move;
+        private BossLobModule _lob;
         private readonly List<BossAttack> _attacks = new List<BossAttack>();
         private readonly List<float> _weights = new List<float>();
         private BossAttack _lastAttack;
@@ -91,6 +101,14 @@ namespace Signal.Combat.Boss
 
             _move = GetComponent<BossLocomotion>();
             if (_move == null) _move = gameObject.AddComponent<BossLocomotion>();
+
+            if (enableLobbing)
+            {
+                _lob = GetComponent<BossLobModule>();
+                if (_lob == null) _lob = gameObject.AddComponent<BossLobModule>();
+                if (lobProjectilePrefab == null)
+                    CombatLog.Info($"'{name}' has lobbing enabled but no lob projectile assigned — it won't lob.", this);
+            }
 
             if (completesRunOnDeath && GetComponent<BossVictoryTrigger>() == null)
                 gameObject.AddComponent<BossVictoryTrigger>();
@@ -280,6 +298,7 @@ namespace Signal.Combat.Boss
             {
                 if (_ctx.Player != null) _move.Face(_ctx.Player.position);
                 if (!_move.HasDestination) _move.MoveTo(PickProwlSpot());
+                if (_lob != null) _lob.TryLob(_ctx, lobProjectilePrefab);
                 yield return null;
             }
             _move.Stop();

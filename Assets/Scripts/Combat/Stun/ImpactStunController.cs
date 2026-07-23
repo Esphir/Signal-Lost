@@ -11,6 +11,14 @@ namespace Signal.Combat.Stun
         [Header("Stun")]
         [SerializeField, Min(0f)] private float stunDuration = 2f;
 
+        [Header("Stagger")]
+        [SerializeField]
+        [Tooltip("Briefly stagger the enemy the moment it's knocked back, even if it never hits a wall.")]
+        private bool staggerOnKnockback = true;
+        [SerializeField, Min(0f)]
+        [Tooltip("How long that stagger lasts. A wall impact during the knockback upgrades it to the full stun.")]
+        private float staggerDuration = 0.08f;
+
         [Header("Impact Detection")]
         [Tooltip("How long after a knockback the enemy is considered 'still flying' for stun purposes.")]
         [SerializeField, Min(0f)] private float knockbackWindow = 1.5f;
@@ -28,6 +36,8 @@ namespace Signal.Combat.Stun
         private IKnockbackable _knockbackSource;
         private float _knockbackActiveUntil;
         private float _stunTimer;
+        private bool _staggering;
+        private bool _announced;
 
         private void Awake()
         {
@@ -47,6 +57,7 @@ namespace Signal.Combat.Stun
         private void OnKnockbackApplied(Vector3 force)
         {
             _knockbackActiveUntil = Time.time + knockbackWindow;
+            if (staggerOnKnockback) ApplyStun(staggerDuration, stagger: true);
         }
 
         private void Update()
@@ -59,7 +70,7 @@ namespace Signal.Combat.Stun
 
         private void OnCollisionEnter(Collision collision)
         {
-            if (IsStunned) return;
+            if (IsStunned && !_staggering) return;
             if (Time.time > _knockbackActiveUntil) return;
             if ((solidCollisionMask.value & (1 << collision.gameObject.layer)) == 0) return;
 
@@ -68,20 +79,32 @@ namespace Signal.Combat.Stun
             Stun(stunDuration);
         }
 
-        public void Stun(float duration)
+        public void Stun(float duration) => ApplyStun(duration, stagger: false);
+
+        private void ApplyStun(float duration, bool stagger)
         {
-            if (IsStunned) return;
+            if (IsStunned)
+            {
+                if (stagger) return;
+                if (!_staggering) return;
+            }
 
             IsStunned = true;
+            _staggering = stagger;
             _stunTimer = duration;
-            _knockbackActiveUntil = 0f;
-            StunStarted?.Invoke();
+
+            if (!stagger)
+            {
+                _knockbackActiveUntil = 0f;
+                if (!_announced) { _announced = true; StunStarted?.Invoke(); }
+            }
         }
 
         private void EndStun()
         {
             IsStunned = false;
-            StunEnded?.Invoke();
+            _staggering = false;
+            if (_announced) { _announced = false; StunEnded?.Invoke(); }
         }
     }
 }

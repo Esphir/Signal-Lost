@@ -22,7 +22,9 @@ namespace Signal.Combat.Boss
 
         [Header("Minion tuning")]
         [SerializeField, Min(1f)] private float minionHealth = 20f;
-        [SerializeField, Min(0f)] private float minionContactDps = 12f;
+        [SerializeField, Min(0f)]
+        [Tooltip("Damage each pepper's detonation deals if the player is caught in the blast.")]
+        private float minionExplosionDamage = 22f;
         [SerializeField, Min(1f)] private float minionMoveSpeed = 4.5f;
 
         [Header("Placement")]
@@ -92,7 +94,7 @@ namespace Signal.Combat.Boss
 
             var ai = go.GetComponent<GhostPepperAI>();
             if (ai == null) ai = go.AddComponent<GhostPepperAI>();
-            ai.Configure(ctx.Boss, minionHealth, ctx.ScaleDamage(minionContactDps), minionMoveSpeed);
+            ai.Configure(ctx.Boss, minionHealth, ctx.ScaleDamage(minionExplosionDamage), minionMoveSpeed);
             return ai;
         }
 

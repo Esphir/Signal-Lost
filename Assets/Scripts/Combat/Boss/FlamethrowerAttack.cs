@@ -15,12 +15,8 @@ namespace Signal.Combat.Boss
         [SerializeField, Min(1f)] private float range = 9f;
         [SerializeField, Min(5f)] private float coneHalfAngle = 24f;
         [SerializeField, Min(10f)] private float sweepArc = 75f;
-        [SerializeField, Min(1f)] private float damagePerSecond = 22f;
+        [SerializeField, Min(1f)] private float damagePerSecond = 24f;
         [SerializeField] private Vector3 nozzleOffset = new Vector3(0f, 1.2f, 0.6f);
-
-        [SerializeField, Min(0f)]
-        [Tooltip("Splash around the boss that burns too — closes the safe pocket a bare cone leaves at its feet. Only ahead of it; behind is still safe.")]
-        private float splashRadius = 2.6f;
 
         [SerializeField, Min(0f)]
         [Tooltip("Degrees per second the sweep drifts toward the player while firing. 0 = fully committed to its opening aim.")]
@@ -32,7 +28,7 @@ namespace Signal.Combat.Boss
         [Header("Burning ground")]
         [SerializeField, Min(0f)] private float patchInterval = 0.35f;
         [SerializeField, Min(0.3f)] private float patchRadius = 1.4f;
-        [SerializeField, Min(0f)] private float patchDps = 10f;
+        [SerializeField, Min(0f)] private float patchDps = 12f;
         [SerializeField, Min(0.5f)] private float patchLifetime = 3.5f;
 
         public override float WeightAt(float distance, BossContext ctx)
@@ -81,7 +77,7 @@ namespace Signal.Combat.Boss
                 Vector3 forward = ctx.Boss.forward;
 
                 bool burning = ctx.Player != null &&
-                               FlameDamage.InFlame(origin, forward, coneHalfAngle, range, splashRadius, ctx.Player.position);
+                               FlameDamage.InCone(origin, forward, coneHalfAngle, range, ctx.Player.position);
                 float due = ticker.Tick(burning, Time.deltaTime, tick);
                 if (due > 0f && ctx.Player != null) ctx.DamagePlayer(dps * due, ctx.Player.position);
 

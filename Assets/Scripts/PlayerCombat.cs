@@ -127,7 +127,8 @@ public class PlayerCombat : MonoBehaviour, IAttacker
             OnImpact = () => AttackImpact?.Invoke(_currentAttackKind),
             TriggerHitStop = duration => StartCoroutine(HitStopRoutine(duration)),
             TriggerCameraShake = (amount, duration) => cameraShake?.Shake(amount, duration),
-            OnAttackLanded = hits => AttackLanded?.Invoke(hits)
+            OnAttackLanded = hits => AttackLanded?.Invoke(hits),
+            OnBashConnected = seconds => _dodge?.GrantBriefInvincibility(seconds)
         };
 
         InitializeUpperBodyLayer();

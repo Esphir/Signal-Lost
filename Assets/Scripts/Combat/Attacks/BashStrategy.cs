@@ -64,7 +64,11 @@ namespace Signal.Combat.Attacks
                 yield return null;
             }
 
-            if (totalHits > 0) ctx.OnAttackLanded?.Invoke(totalHits);
+            if (totalHits > 0)
+            {
+                ctx.OnAttackLanded?.Invoke(totalHits);
+                ctx.OnBashConnected?.Invoke(_config.iFrameDuration);
+            }
             CombatLog.Info($"Bash: {totalHits} target(s) knocked back");
 
             yield return ctx.WaitForAttackExit(_config);

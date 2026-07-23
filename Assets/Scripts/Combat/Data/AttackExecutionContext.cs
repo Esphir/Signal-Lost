@@ -55,6 +55,8 @@ namespace Signal.Combat.Data
 
         public Action<int> OnAttackLanded;
 
+        public Action<float> OnBashConnected;
+
         public bool SetAttackTrigger(AttackConfigBaseSO config)
         {
             if (string.IsNullOrEmpty(config.animatorTrigger))

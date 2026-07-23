@@ -157,6 +157,8 @@ MonoBehaviour:
   phase2ChainChance: 0.5
   scaleWithRun: 1
   completesRunOnDeath: 1
+  enableLobbing: 1
+  lobProjectilePrefab: {fileID: 1353132545629664502, guid: 9d067ecbcbb845145bf7d8043b218bbf, type: 3}
   ghostPepperPrefab: {fileID: 2788491344456485545, guid: ac454c3447ea34d4f8f23b4ba561d412, type: 3}
 --- !u!54 &-971999719148969679
 Rigidbody:
